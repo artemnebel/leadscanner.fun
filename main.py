@@ -5,9 +5,6 @@ from pydantic import BaseModel
 import httpx
 import asyncio
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -61,28 +58,25 @@ async def send_contact(
     subject: str = Form(...),
     message: str = Form(...),
 ):
-    gmail_user = os.getenv("GMAIL_USER")
-    gmail_password = os.getenv("GMAIL_APP_PASSWORD")
-
-    if not gmail_user or not gmail_password:
+    resend_key = os.getenv("RESEND_API_KEY")
+    if not resend_key:
         raise HTTPException(status_code=500, detail="Email not configured on server.")
 
-    msg = MIMEMultipart()
-    msg["From"] = f"Lead Scanner <{gmail_user}>"
-    msg["To"] = "artem.nebel07@gmail.com"
-    msg["Reply-To"] = f"{name} <{email}>"
-    msg["Subject"] = f"[LeadScanner] {subject}"
-    body = f"From: {name} <{email}>\n\n{message}\n\n---\nSent via leadscanner.fun"
-    msg.attach(MIMEText(body, "plain"))
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {resend_key}"},
+            json={
+                "from": "Lead Scanner <onboarding@resend.dev>",
+                "to": ["artem.nebel07@gmail.com"],
+                "reply_to": f"{name} <{email}>",
+                "subject": f"[LeadScanner] {subject}",
+                "text": f"From: {name} <{email}>\n\n{message}\n\n---\nSent via leadscanner.fun",
+            },
+        )
 
-    try:
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(gmail_user, gmail_password)
-            server.send_message(msg)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    if resp.status_code != 200:
+        raise HTTPException(status_code=500, detail=resp.text)
 
     return {"ok": True}
 
