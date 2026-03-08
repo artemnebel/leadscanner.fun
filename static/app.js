@@ -26,6 +26,9 @@ const state = {
     sortAsc: true,
     totalScanned: 0,
     totalSkipped: 0,
+    // multi-scan
+    bulkMode: false,
+    bulkTargets: [],       // [{latlng, circle, marker}]
 };
 
 /* ===== CUSTOM ICONS ===== */
@@ -52,6 +55,97 @@ const dragHandleIcon = L.divIcon({
     iconSize: [44, 44],
     iconAnchor: [22, 22],
 });
+
+/* ===== BULK TARGET ICON ===== */
+const bulkTargetIcon = L.divIcon({
+    className: '',
+    html: `<div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+            <line x1="18" y1="2" x2="18" y2="12" stroke="#ffb000" stroke-width="1.5" opacity="0.9"/>
+            <line x1="18" y1="24" x2="18" y2="34" stroke="#ffb000" stroke-width="1.5" opacity="0.9"/>
+            <line x1="2" y1="18" x2="12" y2="18" stroke="#ffb000" stroke-width="1.5" opacity="0.9"/>
+            <line x1="24" y1="18" x2="34" y2="18" stroke="#ffb000" stroke-width="1.5" opacity="0.9"/>
+            <circle cx="18" cy="18" r="8" fill="rgba(255,176,0,0.08)" stroke="#ffb000" stroke-width="1.5" stroke-dasharray="3 2"/>
+            <circle cx="18" cy="18" r="2.5" fill="#ffb000" opacity="0.95"/>
+        </svg>
+        <span style="position:absolute;top:4px;right:4px;font-family:monospace;font-size:10px;color:#ffb000;line-height:1;opacity:0.7">×</span>
+    </div>`,
+    iconSize: [64, 64],
+    iconAnchor: [32, 32],
+});
+
+/* ===== BULK SCAN FUNCTIONS ===== */
+function addBulkTarget(latlng) {
+    const radius = parseInt(document.getElementById('radius-slider').value, 10);
+    const circle = L.circle(latlng, {
+        radius,
+        color: '#ffb000',
+        fillColor: '#ffb000',
+        fillOpacity: 0.05,
+        weight: 1.5,
+        dashArray: '5 4',
+    }).addTo(state.map);
+
+    const marker = L.marker(latlng, {
+        icon: bulkTargetIcon,
+        zIndexOffset: 900,
+    }).addTo(state.map);
+
+    const target = { latlng, circle, marker };
+    marker.on('click', e => {
+        L.DomEvent.stopPropagation(e);
+        const idx = state.bulkTargets.indexOf(target);
+        if (idx !== -1) {
+            state.map.removeLayer(target.circle);
+            state.map.removeLayer(target.marker);
+            state.bulkTargets.splice(idx, 1);
+            updateBulkBtn();
+        }
+    });
+
+    state.bulkTargets.push(target);
+    updateBulkBtn();
+}
+
+function clearBulkTargets() {
+    state.bulkTargets.forEach(t => {
+        state.map.removeLayer(t.circle);
+        state.map.removeLayer(t.marker);
+    });
+    state.bulkTargets = [];
+}
+
+function updateBulkBtn() {
+    const btn = document.getElementById('multi-btn');
+    if (!btn) return;
+    if (state.bulkMode) {
+        const n = state.bulkTargets.length;
+        btn.classList.add('bulk-active');
+        btn.querySelector('svg').setAttribute('stroke', 'currentColor');
+        const label = n === 0 ? 'MULTI' : `MULTI [${n}]`;
+        btn.childNodes[btn.childNodes.length - 1].textContent = label;
+    } else {
+        btn.classList.remove('bulk-active');
+        btn.childNodes[btn.childNodes.length - 1].textContent = 'MULTI';
+    }
+}
+
+function toggleBulkMode() {
+    if (state.bulkMode) {
+        // Turn off: clear all targets
+        clearBulkTargets();
+        state.bulkMode = false;
+        // Restore main circle/marker visibility
+        if (state.searchCircle) state.searchCircle.setStyle({ opacity: 1, fillOpacity: 0.05 });
+        if (state.centerMarker) state.centerMarker.setOpacity(1);
+    } else {
+        state.bulkMode = true;
+        // Dim main circle/marker
+        if (state.searchCircle) state.searchCircle.setStyle({ opacity: 0.25, fillOpacity: 0.02 });
+        if (state.centerMarker) state.centerMarker.setOpacity(0.25);
+    }
+    updateBulkBtn();
+}
 
 /* ===== MAP INIT ===== */
 function initMap() {
@@ -89,12 +183,15 @@ function initMap() {
         state.searchCircle.setLatLng(e.target.getLatLng());
     });
 
-    // Click anywhere on the map to reposition the circle
+    // Click anywhere on the map to reposition (normal) or place target (bulk)
     state.map.on('click', e => {
-        // Don't move if clicking a marker popup
         if (e.originalEvent.target.closest && e.originalEvent.target.closest('.leaflet-popup')) return;
-        state.centerMarker.setLatLng(e.latlng);
-        state.searchCircle.setLatLng(e.latlng);
+        if (state.bulkMode) {
+            addBulkTarget(e.latlng);
+        } else {
+            state.centerMarker.setLatLng(e.latlng);
+            state.searchCircle.setLatLng(e.latlng);
+        }
     });
 }
 
@@ -107,9 +204,8 @@ function initRadiusSlider() {
         const meters = parseInt(slider.value, 10);
         const miles = meters / 1609.34;
         label.textContent = miles >= 10 ? `${Math.round(miles)}mi` : `${miles.toFixed(1)}mi`;
-        if (state.searchCircle) {
-            state.searchCircle.setRadius(meters);
-        }
+        if (state.searchCircle) state.searchCircle.setRadius(meters);
+        state.bulkTargets.forEach(t => t.circle.setRadius(meters));
     }
 
     slider.addEventListener('input', updateRadius);
@@ -166,6 +262,22 @@ function addResultPins(leads) {
     });
 }
 
+/* ===== PAYWALL MODAL ===== */
+function showPaywallModal(message) {
+    let modal = document.getElementById('paywall-modal');
+    if (modal) modal.remove();
+    modal = document.createElement('div');
+    modal.id = 'paywall-modal';
+    modal.innerHTML = `
+        <div class="paywall-box">
+            <div class="paywall-title">&gt; LIMIT_REACHED</div>
+            <p class="paywall-msg">${message}</p>
+            <a href="/pricing" class="auth-btn paywall-upgrade-btn">[ UPGRADE PLAN ]</a>
+            <button class="paywall-close" onclick="document.getElementById('paywall-modal').remove()">[ DISMISS ]</button>
+        </div>`;
+    document.body.appendChild(modal);
+}
+
 /* ===== SEARCH HANDLER ===== */
 async function handleSearch() {
     const category = document.getElementById('category-input').value.trim();
@@ -175,25 +287,94 @@ async function handleSearch() {
         return;
     }
 
-    const { lat, lng } = state.centerMarker.getLatLng();
+    const token = typeof getToken === 'function' ? getToken() : null;
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
     const radius = parseInt(document.getElementById('radius-slider').value, 10);
 
+    // ── BULK SCAN ──
+    if (state.bulkMode) {
+        if (state.bulkTargets.length === 0) {
+            showToast('No targets placed. Click the map to add scan areas.', 'warn');
+            return;
+        }
+        setLoading(true);
+        const total = state.bulkTargets.length;
+        for (let i = 0; i < total; i++) {
+            document.getElementById('search-btn').textContent = `[ SCANNING ${i + 1}/${total}... ]`;
+            const { latlng } = state.bulkTargets[i];
+            try {
+                const resp = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ category, lat: latlng.lat, lng: latlng.lng, radius_meters: radius }),
+                });
+                const data = await resp.json();
+                if (resp.status === 401) { window.location.href = '/login'; return; }
+                if (resp.status === 429) {
+                    showPaywallModal('You\'ve reached your monthly limit. Upgrade to keep scanning.');
+                    setLoading(false);
+                    return;
+                }
+                if (!resp.ok) { showToast(`Zone ${i + 1}: ${data.detail || 'Search failed'}`, 'error'); continue; }
+                if (data.usage && typeof renderUsage === 'function') {
+                    renderUsage(data.usage);
+                    localStorage.removeItem('ls_user');
+                }
+                const newLeads = data.leads.filter(l => !state.seenUrls.has(l.maps_url));
+                newLeads.forEach(l => state.seenUrls.add(l.maps_url));
+                state.allLeads = [...state.allLeads, ...newLeads];
+                state.totalScanned += data.total_found;
+                state.totalSkipped += data.skipped_has_website;
+                addResultPins(newLeads);
+            } catch (err) {
+                showToast(`Zone ${i + 1}: ${err.message}`, 'error');
+            }
+        }
+        setLoading(false);
+        applyFilterAndRender();
+        showLeadsUI();
+        return;
+    }
+
+    // ── SINGLE SCAN ──
+    const { lat, lng } = state.centerMarker.getLatLng();
     setLoading(true);
 
     try {
         const resp = await fetch('/api/search', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
             body: JSON.stringify({ category, lat, lng, radius_meters: radius }),
         });
 
         const data = await resp.json();
 
+        if (resp.status === 401) {
+            window.location.href = '/login';
+            return;
+        }
+
+        if (resp.status === 429) {
+            showPaywallModal('You\'ve reached your monthly limit. Upgrade to keep scanning.');
+            return;
+        }
+
         if (!resp.ok) {
             throw new Error(data.detail || 'Search failed');
         }
 
-        // Accumulate leads — deduplicate by Maps URL
+        if (data.usage && typeof renderUsage === 'function') {
+            renderUsage(data.usage);
+            localStorage.removeItem('ls_user');
+        }
+
         const newLeads = data.leads.filter(l => !state.seenUrls.has(l.maps_url));
         newLeads.forEach(l => state.seenUrls.add(l.maps_url));
         state.allLeads = [...state.allLeads, ...newLeads];
@@ -304,31 +485,58 @@ function clearSortClasses() {
     document.querySelectorAll('#leads-table thead th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
 }
 
-/* ===== CSV EXPORT ===== */
-function exportCSV() {
-    const headers = ['Name', 'Phone', 'City', 'Rating', 'Reviews', 'Google Maps URL'];
-    const rows = state.filteredLeads.map(lead => [
-        lead.name,
-        lead.phone || '',
-        lead.city,
-        lead.rating ?? '',
-        lead.reviews ?? '',
-        lead.maps_url,
-    ]);
-
-    const csvContent = [headers, ...rows]
-        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-        .join('\r\n');
-
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+/* ===== EXPORT ===== */
+function downloadBlob(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+function exportCSV() {
+    const headers = ['Name', 'Phone', 'City', 'Rating', 'Reviews', 'Google Maps URL'];
+    const rows = state.filteredLeads.map(lead => [
+        lead.name, lead.phone || '', lead.city,
+        lead.rating ?? '', lead.reviews ?? '', lead.maps_url,
+    ]);
+    const content = [headers, ...rows]
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\r\n');
+    downloadBlob(new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' }),
+        `leads-${new Date().toISOString().slice(0, 10)}.csv`);
+}
+
+function exportJSON() {
+    const data = state.filteredLeads.map(({ name, phone, city, rating, reviews, maps_url }) =>
+        ({ name, phone, city, rating, reviews, maps_url }));
+    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+        `leads-${new Date().toISOString().slice(0, 10)}.json`);
+}
+
+function exportXLSX() {
+    const rows = state.filteredLeads.map(lead => ({
+        Name: lead.name,
+        Phone: lead.phone || '',
+        City: lead.city,
+        Rating: lead.rating ?? '',
+        Reviews: lead.reviews ?? '',
+        'Google Maps URL': lead.maps_url,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+    XLSX.writeFile(wb, `leads-${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+function doExport(format) {
+    document.getElementById('export-menu').classList.add('hidden');
+    if (format === 'csv') exportCSV();
+    else if (format === 'json') exportJSON();
+    else if (format === 'xlsx') exportXLSX();
 }
 
 /* ===== CLEAR ALL ===== */
@@ -511,11 +719,13 @@ async function explodeAndClear() {
 function setLoading(isLoading) {
     document.getElementById('spinner').classList.toggle('hidden', !isLoading);
     document.getElementById('search-btn').disabled = isLoading;
-    document.getElementById('search-btn').textContent = isLoading ? '[ SCANNING... ]' : '[ SCAN ]';
+    if (!isLoading) document.getElementById('search-btn').textContent = '[ SCAN ]';
+    const multiBtn = document.getElementById('multi-btn');
+    if (multiBtn) multiBtn.disabled = isLoading;
 }
 
 function showLeadsUI() {
-    document.getElementById('export-btn').classList.remove('hidden');
+    document.getElementById('export-wrap').classList.remove('hidden');
     document.getElementById('clear-btn').classList.remove('hidden');
     document.getElementById('filter-wrap').classList.remove('hidden');
 }
@@ -528,8 +738,15 @@ document.addEventListener('DOMContentLoaded', () => {
     initLocateBtn();
 
     document.getElementById('search-btn').addEventListener('click', handleSearch);
+    document.getElementById('multi-btn').addEventListener('click', toggleBulkMode);
     document.getElementById('filter-input').addEventListener('input', applyFilterAndRender);
-    document.getElementById('export-btn').addEventListener('click', exportCSV);
+    document.getElementById('export-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        document.getElementById('export-menu').classList.toggle('hidden');
+    });
+    document.addEventListener('click', () => {
+        document.getElementById('export-menu')?.classList.add('hidden');
+    });
     document.getElementById('clear-btn').addEventListener('click', explodeAndClear);
 
     document.getElementById('category-input').addEventListener('keydown', e => {

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Lead Scanner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+    <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body class="page">
+    <div id="crt-overlay"></div>
+
+    <header id="top-bar">
+        <div id="logo">
+            <span id="logo-blink">█</span>
+            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <div class="nav-left">
+            <a href="/" class="nav-link">[ HOME ]</a>
+            <a href="/about" class="nav-link">[ ABOUT ]</a>
+            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
+            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
+        </div>
+        <div class="nav-right">
+            <a href="/contact" class="nav-link">[ CONTACT ]</a>
+            <a href="/pricing" class="nav-link">[ PRICING ]</a>
+            <a href="/login" class="nav-link active" id="nav-auth-link">[ LOGIN ]</a>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <h1 class="page-title">&gt; LOGIN.EXE</h1>
+
+        <div class="auth-box">
+            <div id="auth-error" class="auth-error" style="display:none"></div>
+
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label class="form-label">&gt; EMAIL</label>
+                    <input type="email" id="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">&gt; PASSWORD</label>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="auth-btn" id="submit-btn">[ AUTHENTICATE ]</button>
+            </form>
+
+            <div class="auth-divider"><span>── OR ──</span></div>
+
+            <a href="/api/auth/google" class="google-btn">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:8px">
+                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.259c-.806.54-1.837.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                    <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+            </a>
+
+            <p class="auth-footer">No account? <a href="/signup">[ SIGN UP ]</a></p>
+        </div>
+    </main>
+
+    <script>
+        // Redirect if already logged in
+        const existingToken = localStorage.getItem('ls_token');
+        if (existingToken) {
+            fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + existingToken } })
+                .then(r => { if (r.ok) window.location.href = '/'; })
+                .catch(() => {});
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            const errEl = document.getElementById('auth-error');
+            btn.textContent = '[ AUTHENTICATING... ]';
+            btn.disabled = true;
+            errEl.style.display = 'none';
+
+            const email    = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    errEl.textContent = '> ERR: ' + (data.detail || 'Login failed.');
+                    errEl.style.display = 'block';
+                    btn.textContent = '[ AUTHENTICATE ]';
+                    btn.disabled = false;
+                    return;
+                }
+                localStorage.setItem('ls_token', data.token);
+                localStorage.removeItem('ls_user');
+                window.location.href = '/';
+            } catch {
+                errEl.textContent = '> ERR: Network error.';
+                errEl.style.display = 'block';
+                btn.textContent = '[ AUTHENTICATE ]';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

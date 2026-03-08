@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Lead Scanner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+    <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body class="page">
+    <div id="crt-overlay"></div>
+
+    <header id="top-bar">
+        <div id="logo">
+            <span id="logo-blink">█</span>
+            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <div class="nav-left">
+            <a href="/" class="nav-link">[ HOME ]</a>
+            <a href="/about" class="nav-link">[ ABOUT ]</a>
+            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
+            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
+        </div>
+        <div class="nav-right">
+            <a href="/contact" class="nav-link">[ CONTACT ]</a>
+            <a href="/pricing" class="nav-link">[ PRICING ]</a>
+            <a href="/dashboard" class="nav-link active" id="nav-auth-link">[ ACCOUNT ]</a>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <h1 class="page-title">&gt; DASHBOARD.EXE</h1>
+
+        <div id="dash-loading" class="page-section">
+            <p>LOADING...</p>
+        </div>
+
+        <div id="dash-content" style="display:none">
+
+            <div class="page-section">
+                <h2>&gt; ACCOUNT</h2>
+                <p>Email: <span id="dash-email" class="dash-value"></span></p>
+                <p>Plan: <span id="dash-tier" class="dash-value"></span></p>
+            </div>
+
+            <div class="page-section">
+                <h2>&gt; USAGE THIS MONTH</h2>
+                <div id="dash-usage-bar" class="usage-bar-wrap">
+                    <div class="usage-bar-track">
+                        <div class="usage-bar-fill" id="usage-fill"></div>
+                    </div>
+                    <p id="dash-usage-text" class="dash-value"></p>
+                </div>
+            </div>
+
+            <div class="page-section">
+                <h2>&gt; BILLING</h2>
+                <div id="dash-billing-free" style="display:none">
+                    <p>You are on the free plan. <a href="/pricing">[ UPGRADE ]</a> to unlock more leads.</p>
+                </div>
+                <div id="dash-billing-paid" style="display:none">
+                    <button class="auth-btn" id="portal-btn" onclick="openPortal()">[ MANAGE SUBSCRIPTION ]</button>
+                    <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--muted)">Cancel, change plan, or update payment method.</p>
+                </div>
+            </div>
+
+            <div class="page-section">
+                <button class="auth-btn auth-btn-danger" onclick="doLogout()">[ LOGOUT ]</button>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="/static/auth.js"></script>
+    <script>
+        (async function() {
+            const token = getToken();
+            if (!token) { window.location.href = '/login'; return; }
+
+            // Check for upgrade success
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('upgraded')) {
+                history.replaceState({}, '', '/dashboard');
+            }
+
+            const user = await getUser(true); // force refresh
+            if (!user) { window.location.href = '/login'; return; }
+
+            document.getElementById('dash-loading').style.display = 'none';
+            document.getElementById('dash-content').style.display = 'block';
+
+            document.getElementById('dash-email').textContent = user.email;
+            document.getElementById('dash-tier').textContent = user.tier.toUpperCase();
+
+            const { type, used, limit, tier } = user.usage;
+            const label = type === 'scans' ? 'scans' : 'leads';
+            const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+
+            document.getElementById('dash-usage-text').textContent =
+                tier === 'unlimited'
+                    ? `${used} leads used (unlimited)`
+                    : `${used} / ${limit} ${label} used this month (${pct}%)`;
+
+            const fill = document.getElementById('usage-fill');
+            fill.style.width = tier === 'unlimited' ? '10%' : pct + '%';
+            fill.style.background = pct >= 90 ? 'var(--amber)' : 'var(--green)';
+
+            if (tier === 'free') {
+                document.getElementById('dash-billing-free').style.display = 'block';
+            } else {
+                document.getElementById('dash-billing-paid').style.display = 'block';
+            }
+        })();
+
+        async function openPortal() {
+            const btn = document.getElementById('portal-btn');
+            btn.textContent = '[ LOADING... ]';
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/billing/portal', {
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+                const data = await res.json();
+                if (res.ok) window.location.href = data.url;
+                else {
+                    btn.textContent = '[ MANAGE SUBSCRIPTION ]';
+                    btn.disabled = false;
+                }
+            } catch {
+                btn.textContent = '[ MANAGE SUBSCRIPTION ]';
+                btn.disabled = false;
+            }
+        }
+
+        function doLogout() { logout(); }
+    </script>
+</body>
+</html>
