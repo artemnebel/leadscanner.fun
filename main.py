@@ -76,7 +76,9 @@ async def send_contact(
     msg.attach(MIMEText(body, "plain"))
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+            server.ehlo()
+            server.starttls()
             server.login(gmail_user, gmail_password)
             server.send_message(msg)
     except Exception as e:
