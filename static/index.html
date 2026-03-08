@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Scanner — Find Businesses Without a Website</title>
+    <meta name="description" content="Find local businesses that don't have a website. Search by category and location on an interactive map — potential clients for web design services.">
+    <meta name="keywords" content="lead generation, web design leads, businesses without website, local business finder">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://leadscanner.fun/">
+    <meta property="og:title" content="Lead Scanner — Find Businesses Without a Website">
+    <meta property="og:description" content="Interactive map tool to find local businesses that don't have a website — potential web design clients.">
+    <meta property="og:url" content="https://leadscanner.fun/">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Lead Scanner">
+    <meta name="twitter:description" content="Find local businesses without a website on an interactive map.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+    <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+    <div id="crt-overlay"></div>
+
+    <header id="top-bar">
+        <div id="logo">
+            <span id="logo-blink">█</span>
+            <span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span>
+        </div>
+        <div id="search-form">
+            <div class="input-wrap">
+                <span class="prompt">&gt;</span>
+                <input type="text" id="category-input" placeholder="target..."/>
+            </div>
+            <div id="radius-group">
+                <label for="radius-slider">--search-radius=<span id="radius-label">3.1mi</span></label>
+                <input type="range" id="radius-slider" min="500" max="50000" step="500" value="5000"/>
+            </div>
+            <button id="locate-btn" class="btn-term" title="Center on my location">[ GPS ]</button>
+            <button id="search-btn" class="btn-term btn-primary">[ SCAN ]</button>
+        </div>
+        <div id="map-hint">// click map or drag crosshair to reposition</div>
+    </header>
+
+    <nav id="main-nav">
+        <a href="/" class="nav-link active">[ HOME ]</a>
+        <a href="/about" class="nav-link">[ ABOUT ]</a>
+        <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
+        <a href="/cold-calling" class="nav-link">[ COLD_CALLING ]</a>
+        <a href="/resources" class="nav-link">[ RESOURCES ]</a>
+        <a href="/contact" class="nav-link">[ CONTACT ]</a>
+    </nav>
+
+    <main id="content">
+        <section id="map-section">
+            <div id="map-titlebar">+--- MAP::SCAN ---+</div>
+            <div id="map"></div>
+            <div id="spinner" class="hidden">
+                <div id="spinner-inner">
+                    <span id="scan-text">SCANNING</span><span id="scan-cursor">_</span>
+                </div>
+            </div>
+        </section>
+
+        <aside id="leads-section">
+            <div id="leads-header">
+                <span id="lead-count">&gt; awaiting input_</span>
+                <div id="header-btns">
+                    <button id="clear-btn" class="btn-term hidden">[ CLR ]</button>
+                    <button id="export-btn" class="btn-term hidden">[ EXPORT.CSV ]</button>
+                </div>
+            </div>
+            <div id="filter-wrap" class="hidden">
+                <div class="input-wrap filter-input-wrap">
+                    <span class="prompt">$</span>
+                    <input type="text" id="filter-input" placeholder="grep -i..."/>
+                </div>
+            </div>
+            <div id="table-container">
+                <table id="leads-table">
+                    <thead>
+                        <tr>
+                            <th data-col="name">NAME <span class="sort-icon"></span></th>
+                            <th data-col="phone">PHONE <span class="sort-icon"></span></th>
+                            <th data-col="city">CITY <span class="sort-icon"></span></th>
+                            <th data-col="rating">RATING <span class="sort-icon"></span></th>
+                            <th data-col="reviews">REVIEWS <span class="sort-icon"></span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="leads-tbody">
+                        <tr id="empty-row">
+                            <td colspan="5">&gt; null. run a scan first.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </aside>
+    </main>
+
+    <div id="toast-container"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>

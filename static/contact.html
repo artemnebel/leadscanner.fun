@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact — Lead Scanner</title>
+    <meta name="description" content="Get in touch with the Lead Scanner team. Send feedback, report issues, or ask questions.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+    <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body class="page">
+
+    <div id="crt-overlay"></div>
+
+    <header id="top-bar">
+        <div id="logo">
+            <span id="logo-blink">█</span>
+            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <a href="/" class="nav-link">[ HOME ]</a>
+        <a href="/about" class="nav-link">[ ABOUT ]</a>
+        <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
+        <a href="/cold-calling" class="nav-link">[ COLD_CALLING ]</a>
+        <a href="/resources" class="nav-link">[ RESOURCES ]</a>
+        <a href="/contact" class="nav-link active">[ CONTACT ]</a>
+    </nav>
+
+    <main class="page-content">
+        <h1 class="page-title">&gt; CONTACT.EXE</h1>
+
+        <div class="page-section">
+            <h2>&gt; SEND_A_MESSAGE</h2>
+            <p>Have feedback, found a bug, or want to suggest a feature? Send a message below.</p>
+
+            <form class="contact-form" id="contact-form">
+                <div class="form-group">
+                    <label>// NAME</label>
+                    <input type="text" name="name" placeholder="Your name" required />
+                </div>
+                <div class="form-group">
+                    <label>// EMAIL</label>
+                    <input type="email" name="email" placeholder="your@email.com" required />
+                </div>
+                <div class="form-group">
+                    <label>// SUBJECT</label>
+                    <input type="text" name="subject" placeholder="What's this about?" required />
+                </div>
+                <div class="form-group">
+                    <label>// MESSAGE</label>
+                    <textarea name="message" rows="6" placeholder="Your message..." required></textarea>
+                </div>
+                <button type="submit" class="btn-term btn-primary" id="submit-btn">[ TRANSMIT ]</button>
+            </form>
+
+            <div id="form-status" style="margin-top:16px;font-size:12px;display:none;"></div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+
+    <script>
+        const form = document.getElementById('contact-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const statusEl = document.getElementById('form-status');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.textContent = '[ TRANSMITTING... ]';
+
+            const body = new URLSearchParams(new FormData(form));
+
+            try {
+                const resp = await fetch('/api/contact', { method: 'POST', body });
+                if (resp.ok) {
+                    statusEl.style.display = 'block';
+                    statusEl.style.color = '#33ff00';
+                    statusEl.textContent = '> MESSAGE_SENT. We\'ll get back to you soon._';
+                    form.reset();
+                } else {
+                    const data = await resp.json();
+                    throw new Error(data.detail || 'Transmission failed.');
+                }
+            } catch (err) {
+                statusEl.style.display = 'block';
+                statusEl.style.color = '#ff3333';
+                statusEl.textContent = '> ERR: ' + err.message;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '[ TRANSMIT ]';
+            }
+        });
+    </script>
+</body>
+</html>
