@@ -402,8 +402,9 @@
             sessionStorage.removeItem('ls_launched');
         }
 
-        if (sessionStorage.getItem('ls_launched')) {
+        if (sessionStorage.getItem('ls_launched') || localStorage.getItem('ls_token')) {
             ov.style.display = 'none';
+            sessionStorage.setItem('ls_launched', '1');
         }
 
         document.getElementById('land-cube').addEventListener('click', function() {
