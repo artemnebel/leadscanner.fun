@@ -144,6 +144,10 @@ async def serve_dashboard():
 async def serve_sitemap():
     return FileResponse("static/sitemap.xml", media_type="application/xml")
 
+@app.get("/favicon.ico")
+async def serve_favicon():
+    return FileResponse("static/favicon-48.png", media_type="image/png")
+
 # ── Contact form ──────────────────────────────────────────────────────────────
 
 @app.post("/api/contact")
