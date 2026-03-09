@@ -140,6 +140,10 @@ async def serve_pricing():
 async def serve_dashboard():
     return FileResponse("static/dashboard.html")
 
+@app.get("/sitemap.xml")
+async def serve_sitemap():
+    return FileResponse("static/sitemap.xml", media_type="application/xml")
+
 # ── Contact form ──────────────────────────────────────────────────────────────
 
 @app.post("/api/contact")
