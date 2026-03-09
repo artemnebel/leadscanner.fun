@@ -179,6 +179,10 @@ async def serve_sitemap():
 async def serve_favicon():
     return FileResponse("static/favicon-48.png", media_type="image/png")
 
+@app.get("/robots.txt")
+async def serve_robots():
+    return FileResponse("static/robots.txt", media_type="text/plain")
+
 # ── Contact form ──────────────────────────────────────────────────────────────
 
 @app.post("/api/contact")
