@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException, Form, Depends, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+import subprocess
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import httpx
@@ -50,8 +52,20 @@ DETAILS_URL   = "https://maps.googleapis.com/maps/api/place/details/json"
 DETAIL_FIELDS = "name,formatted_phone_number,rating,user_ratings_total,website,url,vicinity,geometry"
 
 # ── App ──────────────────────────────────────────────────────────────────────
+def _get_version():
+    try:
+        return subprocess.check_output(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            stderr=subprocess.DEVNULL
+        ).decode().strip()
+    except Exception:
+        return os.environ.get('RENDER_GIT_COMMIT', 'v1')[:7]
+
+APP_VERSION = _get_version()
+
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="static")
 init_db()
 
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -100,45 +114,48 @@ def usage_info(user: User) -> dict:
 
 # ── Page routes ───────────────────────────────────────────────────────────────
 
+def _ctx(request: Request):
+    return {"request": request, "version": APP_VERSION}
+
 @app.get("/")
-async def serve_index():
-    return FileResponse("static/index.html")
+async def serve_index(request: Request):
+    return templates.TemplateResponse("index.html", _ctx(request))
 
 @app.get("/about")
-async def serve_about():
-    return FileResponse("static/about.html")
+async def serve_about(request: Request):
+    return templates.TemplateResponse("about.html", _ctx(request))
 
 @app.get("/how-it-works")
-async def serve_how_it_works():
-    return FileResponse("static/how-it-works.html")
+async def serve_how_it_works(request: Request):
+    return templates.TemplateResponse("how-it-works.html", _ctx(request))
 
 @app.get("/cold-calling")
-async def serve_cold_calling():
-    return FileResponse("static/cold-calling.html")
+async def serve_cold_calling(request: Request):
+    return templates.TemplateResponse("cold-calling.html", _ctx(request))
 
 @app.get("/resources")
-async def serve_resources():
-    return FileResponse("static/resources.html")
+async def serve_resources(request: Request):
+    return templates.TemplateResponse("resources.html", _ctx(request))
 
 @app.get("/contact")
-async def serve_contact():
-    return FileResponse("static/contact.html")
+async def serve_contact(request: Request):
+    return templates.TemplateResponse("contact.html", _ctx(request))
 
 @app.get("/login")
-async def serve_login():
-    return FileResponse("static/login.html")
+async def serve_login(request: Request):
+    return templates.TemplateResponse("login.html", _ctx(request))
 
 @app.get("/signup")
-async def serve_signup():
-    return FileResponse("static/signup.html")
+async def serve_signup(request: Request):
+    return templates.TemplateResponse("signup.html", _ctx(request))
 
 @app.get("/pricing")
-async def serve_pricing():
-    return FileResponse("static/pricing.html")
+async def serve_pricing(request: Request):
+    return templates.TemplateResponse("pricing.html", _ctx(request))
 
 @app.get("/dashboard")
-async def serve_dashboard():
-    return FileResponse("static/dashboard.html")
+async def serve_dashboard(request: Request):
+    return templates.TemplateResponse("dashboard.html", _ctx(request))
 
 @app.get("/sitemap.xml")
 async def serve_sitemap():
