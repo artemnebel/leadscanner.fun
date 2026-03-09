@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service — Lead Scanner</title>
+    <meta name="description" content="Lead Scanner terms of service — rules for using the platform.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
+    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+</head>
+<body class="page">
+
+    <div id="crt-overlay"></div>
+
+    <header id="top-bar">
+        <div id="logo">
+            <span id="logo-blink">█</span>
+            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <div class="nav-left">
+            <a href="/" class="nav-link">[ HOME ]</a>
+            <a href="/about" class="nav-link">[ ABOUT ]</a>
+            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
+            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
+        </div>
+        <div class="nav-right">
+            <a href="/contact" class="nav-link">[ CONTACT ]</a>
+            <a href="/pricing" class="nav-link">[ PRICING ]</a>
+            <a href="/login" class="nav-link" id="nav-auth-link">[ LOGIN ]</a>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <h1 class="page-title">&gt; TERMS_OF_SERVICE.TXT</h1>
+        <p class="page-subtitle">Last updated: March 2026</p>
+
+        <div class="page-section">
+            <h2>&gt; 1. ACCEPTANCE</h2>
+            <p>By creating an account or using Lead Scanner ("the Service"), you agree to these Terms of Service. If you do not agree, do not use the Service.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 2. WHAT_THE_SERVICE_DOES</h2>
+            <p>Lead Scanner queries the Google Maps API in real time to surface local businesses that lack a website. Results are provided for informational and prospecting purposes only. We do not guarantee the accuracy, completeness, or timeliness of any data returned by Google.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 3. ACCEPTABLE_USE</h2>
+            <p>You agree not to:</p>
+            <ul style="margin:0.75rem 0 0.75rem 1.5rem; line-height:2">
+                <li>Use the Service to spam, harass, or send unsolicited bulk messages to businesses</li>
+                <li>Resell, redistribute, or sublicense access to the Service</li>
+                <li>Attempt to reverse-engineer, scrape, or extract the underlying API calls</li>
+                <li>Use automated scripts to exceed the rate limits of your subscription tier</li>
+                <li>Violate any applicable law or regulation in your use of the lead data</li>
+            </ul>
+            <p>Violation of these terms may result in immediate account termination without refund.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 4. SUBSCRIPTIONS_AND_BILLING</h2>
+            <p>Paid plans are billed monthly via Stripe. Your subscription renews automatically on the same day each month. Lead quotas reset at the start of each billing period.</p>
+            <p><strong>Refunds:</strong> We offer a full refund within 48 hours of your first payment if you are unsatisfied. After 48 hours, payments are non-refundable. To request a refund, email <a href="mailto:artem.nebel07@gmail.com">artem.nebel07@gmail.com</a> within the refund window.</p>
+            <p><strong>Cancellation:</strong> You can cancel your subscription at any time via the dashboard. Your plan remains active until the end of the current billing period, after which your account reverts to the free tier.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 5. FREE_TIER</h2>
+            <p>The free tier provides 25 leads per month at no cost. No credit card is required. We reserve the right to modify free tier limits with reasonable notice.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 6. SERVICE_AVAILABILITY</h2>
+            <p>We aim for high availability but do not guarantee uninterrupted access. The Service depends on third-party APIs (Google Maps, Stripe) and may be unavailable during outages of those services. We are not liable for losses caused by downtime.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 7. LIMITATION_OF_LIABILITY</h2>
+            <p>Lead Scanner is provided "as is" without warranties of any kind. We are not responsible for how you use the lead data, outcomes of your outreach, or any indirect, incidental, or consequential damages arising from use of the Service. Our total liability to you shall not exceed the amount you paid us in the 30 days prior to the claim.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 8. TERMINATION</h2>
+            <p>We reserve the right to suspend or terminate accounts that violate these terms, engage in abuse, or present a security risk — without prior notice in severe cases. You may delete your account at any time by contacting us.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 9. CHANGES_TO_TERMS</h2>
+            <p>We may update these terms occasionally. Continued use of the Service after changes constitutes acceptance. We will notify registered users of material changes by email.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 10. CONTACT</h2>
+            <p>Questions? Contact us at <a href="mailto:artem.nebel07@gmail.com">artem.nebel07@gmail.com</a> or via the <a href="/contact">contact page</a>.</p>
+        </div>
+    </main>
+
+    <script src="/static/auth.js?v={{ version }}"></script>
+</body>
+</html>

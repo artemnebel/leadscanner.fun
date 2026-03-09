@@ -4,6 +4,9 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import subprocess
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel
 import httpx
 import asyncio
@@ -63,7 +66,10 @@ def _get_version():
 
 APP_VERSION = _get_version()
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="static")
 init_db()
@@ -157,6 +163,14 @@ async def serve_pricing(request: Request):
 async def serve_dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", _ctx(request))
 
+@app.get("/privacy")
+async def serve_privacy(request: Request):
+    return templates.TemplateResponse("privacy.html", _ctx(request))
+
+@app.get("/terms")
+async def serve_terms(request: Request):
+    return templates.TemplateResponse("terms.html", _ctx(request))
+
 @app.get("/sitemap.xml")
 async def serve_sitemap():
     return FileResponse("static/sitemap.xml", media_type="application/xml")
@@ -184,7 +198,7 @@ async def send_contact(
             headers={"Authorization": f"Bearer {resend_key}"},
             json={
                 "from": "Lead Scanner <onboarding@resend.dev>",
-                "to": ["artem.nebel07@gmail.com"],
+                "to": [os.getenv("CONTACT_EMAIL", "artem.nebel07@gmail.com")],
                 "reply_to": f"{name} <{email}>",
                 "subject": f"[LeadScanner] {subject}",
                 "text": f"From: {name} <{email}>\n\n{message}\n\n---\nSent via leadscanner.fun",
@@ -443,7 +457,9 @@ async def get_details_batch(client: httpx.AsyncClient, place_ids: list, batch_si
 
 
 @app.post("/api/search")
+@limiter.limit("15/minute")
 async def search_leads(
+    request: Request,
     req: SearchRequest,
     user=Depends(get_current_user),
     db: Session = Depends(get_db),

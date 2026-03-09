@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Lead Scanner</title>
+    <meta name="description" content="Lead Scanner privacy policy — how we collect, use, and protect your data.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
+    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+</head>
+<body class="page">
+
+    <div id="crt-overlay"></div>
+
+    <header id="top-bar">
+        <div id="logo">
+            <span id="logo-blink">█</span>
+            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <div class="nav-left">
+            <a href="/" class="nav-link">[ HOME ]</a>
+            <a href="/about" class="nav-link">[ ABOUT ]</a>
+            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
+            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
+        </div>
+        <div class="nav-right">
+            <a href="/contact" class="nav-link">[ CONTACT ]</a>
+            <a href="/pricing" class="nav-link">[ PRICING ]</a>
+            <a href="/login" class="nav-link" id="nav-auth-link">[ LOGIN ]</a>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <h1 class="page-title">&gt; PRIVACY_POLICY.TXT</h1>
+        <p class="page-subtitle">Last updated: March 2026</p>
+
+        <div class="page-section">
+            <h2>&gt; 1. WHAT_WE_COLLECT</h2>
+            <p>When you create an account we collect your <strong>email address</strong> and a <strong>bcrypt-hashed password</strong> (we never store plaintext passwords). If you sign in with Google, we receive your email and name from Google OAuth — no password is stored.</p>
+            <p>We also store <strong>usage data</strong>: the number of leads generated each billing period, your subscription tier, and your Stripe customer ID (if you subscribe to a paid plan). We do not store the actual leads or search results you generate — those are returned directly to your browser.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 2. HOW_WE_USE_IT</h2>
+            <p>Your data is used solely to operate the service: authenticating your account, enforcing monthly lead quotas, processing subscription payments via Stripe, and sending transactional emails (password reset, contact form replies). We do not sell your data, share it with third parties for marketing, or use it for advertising.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 3. THIRD_PARTY_SERVICES</h2>
+            <p><strong>Stripe</strong> — processes all payments. Stripe stores your payment method and billing details. We never see your full card number. Stripe's privacy policy: <a href="https://stripe.com/privacy" target="_blank" rel="noopener">stripe.com/privacy</a>.</p>
+            <p><strong>Google Maps API</strong> — powers all scans. Your search queries (business category + location) are sent to Google. Google's privacy policy: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy</a>.</p>
+            <p><strong>Resend</strong> — delivers transactional emails. Your email address is passed to Resend when sending emails.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 4. DATA_RETENTION</h2>
+            <p>Your account and associated data are retained for as long as your account is active. If you delete your account, all personal data (email, hashed password, usage records, Stripe customer link) is permanently deleted from our database within 30 days.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 5. YOUR_RIGHTS</h2>
+            <p>You have the right to access, correct, or delete your personal data at any time. To delete your account and all associated data, email <a href="mailto:artem.nebel07@gmail.com">artem.nebel07@gmail.com</a> with the subject line "Delete my account" from your registered email address. We will process your request within 30 days.</p>
+            <p>If you are located in the EU/EEA, you also have the right to data portability and to lodge a complaint with your local data protection authority.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 6. COOKIES_AND_STORAGE</h2>
+            <p>We use <strong>localStorage</strong> in your browser to store your authentication token (JWT). This token is used to identify you across sessions. No third-party tracking cookies are used. You can clear your browser storage at any time to log out.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 7. SECURITY</h2>
+            <p>All data is transmitted over HTTPS. Passwords are hashed with bcrypt and never stored in plaintext. Authentication tokens expire and are signed with a server-side secret. We do not log or store search queries beyond what is needed to enforce usage limits.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; 8. CONTACT</h2>
+            <p>Questions about this policy? Contact us at <a href="mailto:artem.nebel07@gmail.com">artem.nebel07@gmail.com</a> or via the <a href="/contact">contact page</a>.</p>
+        </div>
+    </main>
+
+    <script src="/static/auth.js?v={{ version }}"></script>
+</body>
+</html>

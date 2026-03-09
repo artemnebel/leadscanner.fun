@@ -49,4 +49,16 @@
     <priority>0.6</priority>
   </url>
 
+  <url>
+    <loc>https://leadscanner.fun/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://leadscanner.fun/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
 </urlset>

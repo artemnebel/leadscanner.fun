@@ -668,6 +668,13 @@ body {
     letter-spacing: 0.08em;
 }
 
+.footer-legal {
+    color: rgba(51,255,0,0.4);
+    text-decoration: none;
+    font-size: 11px;
+}
+.footer-legal:hover { color: var(--green); }
+
 .footer-social {
     display: flex;
     gap: 14px;
