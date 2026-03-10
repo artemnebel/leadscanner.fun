@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Lead Scanner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
+    <link rel="shortcut icon" href="/favicon.ico"/>
+    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <style>
+        .admin-stats {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .admin-stat-box {
+            border: 1px solid var(--muted);
+            padding: 0.75rem 1.25rem;
+            min-width: 110px;
+        }
+        .admin-stat-label {
+            font-size: 0.7rem;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            margin-bottom: 0.25rem;
+        }
+        .admin-stat-val {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--green);
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .admin-table th {
+            text-align: left;
+            padding: 6px 10px;
+            border-bottom: 1px solid var(--green);
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            font-weight: 700;
+        }
+        .admin-table td {
+            padding: 6px 10px;
+            border-bottom: 1px solid #111;
+            color: var(--green);
+        }
+        .admin-table tr:hover td {
+            background: #0f1f0f;
+        }
+        .tier-free    { color: var(--muted); }
+        .tier-paid    { color: var(--green); font-weight: 700; }
+        .tier-unlimited { color: #fff; font-weight: 700; }
+        .badge-g  { color: #4da6ff; }
+        .badge-pw { color: var(--muted); }
+    </style>
+</head>
+<body class="page">
+    <div id="crt-overlay"></div>
+
+    <header id="top-bar">
+        <div id="logo">
+            <span id="logo-blink">█</span>
+            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <div class="nav-left">
+            <a href="/" class="nav-link">[ HOME ]</a>
+            <a href="/about" class="nav-link">[ ABOUT ]</a>
+            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
+            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
+        </div>
+        <div class="nav-right">
+            <a href="/contact" class="nav-link">[ CONTACT ]</a>
+            <a href="/pricing" class="nav-link">[ PRICING ]</a>
+            <a href="/dashboard" class="nav-link" id="nav-auth-link">[ ACCOUNT ]</a>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <h1 class="page-title">&gt; ADMIN.EXE</h1>
+
+        <div id="admin-loading" class="page-section">
+            <p>LOADING...</p>
+        </div>
+
+        <div id="admin-content" style="display:none">
+
+            <div class="page-section">
+                <h2>&gt; USER STATS</h2>
+                <div class="admin-stats">
+                    <div class="admin-stat-box">
+                        <div class="admin-stat-label">TOTAL</div>
+                        <div class="admin-stat-val" id="stat-total">0</div>
+                    </div>
+                    <div class="admin-stat-box">
+                        <div class="admin-stat-label">FREE</div>
+                        <div class="admin-stat-val" id="stat-free">0</div>
+                    </div>
+                    <div class="admin-stat-box">
+                        <div class="admin-stat-label">STARTER</div>
+                        <div class="admin-stat-val" id="stat-starter">0</div>
+                    </div>
+                    <div class="admin-stat-box">
+                        <div class="admin-stat-label">PRO</div>
+                        <div class="admin-stat-val" id="stat-pro">0</div>
+                    </div>
+                    <div class="admin-stat-box">
+                        <div class="admin-stat-label">BUSINESS</div>
+                        <div class="admin-stat-val" id="stat-business">0</div>
+                    </div>
+                    <div class="admin-stat-box">
+                        <div class="admin-stat-label">UNLIMITED</div>
+                        <div class="admin-stat-val" id="stat-unlimited">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-section">
+                <h2>&gt; REGISTERED USERS</h2>
+                <div style="overflow-x:auto">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>EMAIL</th>
+                                <th>TIER</th>
+                                <th>LEADS USED</th>
+                                <th>RESET DATE</th>
+                                <th>JOINED</th>
+                                <th>AUTH</th>
+                                <th>STRIPE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="/static/auth.js?v={{ version }}"></script>
+    <script>
+        (async function() {
+            const token = getToken();
+            if (!token) { window.location.href = '/login'; return; }
+
+            let users;
+            try {
+                const res = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.status === 401 || res.status === 403) {
+                    window.location.href = '/login';
+                    return;
+                }
+                users = await res.json();
+            } catch (e) {
+                document.getElementById('admin-loading').textContent = 'ERROR: Could not load users.';
+                return;
+            }
+
+            document.getElementById('admin-loading').style.display = 'none';
+            document.getElementById('admin-content').style.display = 'block';
+
+            // Stats
+            const counts = { free: 0, starter: 0, pro: 0, business: 0, unlimited: 0 };
+            users.forEach(u => { if (counts[u.tier] !== undefined) counts[u.tier]++; });
+            document.getElementById('stat-total').textContent = users.length;
+            Object.keys(counts).forEach(t => {
+                document.getElementById('stat-' + t).textContent = counts[t];
+            });
+
+            // Table
+            const tbody = document.getElementById('user-table-body');
+            users.forEach((u, i) => {
+                const tierClass = u.tier === 'free' ? 'tier-free'
+                    : u.tier === 'unlimited' ? 'tier-unlimited'
+                    : 'tier-paid';
+                const joined = u.created_at ? u.created_at.slice(0, 10) : '—';
+                const reset  = u.usage_reset ? u.usage_reset.slice(0, 10) : '—';
+                const auth   = u.google
+                    ? '<span class="badge-g">[ G ]</span>'
+                    : '<span class="badge-pw">[ PW ]</span>';
+                const stripe = u.has_stripe ? '[ YES ]' : '<span style="color:var(--muted)">[ NO ]</span>';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="color:var(--muted)">${i + 1}</td>
+                    <td>${u.email}</td>
+                    <td class="${tierClass}">${u.tier.toUpperCase()}</td>
+                    <td>${u.leads_used}</td>
+                    <td style="color:var(--muted)">${reset}</td>
+                    <td style="color:var(--muted)">${joined}</td>
+                    <td>${auth}</td>
+                    <td>${stripe}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -174,6 +174,10 @@ async def serve_privacy(request: Request):
 async def serve_terms(request: Request):
     return templates.TemplateResponse("terms.html", _ctx(request))
 
+@app.get("/admin")
+async def serve_admin(request: Request):
+    return templates.TemplateResponse("admin.html", _ctx(request))
+
 @app.get("/sitemap.xml")
 async def serve_sitemap():
     return FileResponse("static/sitemap.xml", media_type="application/xml")
@@ -245,6 +249,24 @@ async def me(user=Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated.")
     return {"email": user.email, "tier": user.tier, "usage": usage_info(user)}
+
+@app.get("/api/admin/users")
+async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if not user or user.email != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    return [
+        {
+            "email": u.email,
+            "tier": u.tier,
+            "leads_used": u.leads_used,
+            "usage_reset": str(u.usage_reset),
+            "created_at": str(u.created_at),
+            "has_stripe": bool(u.stripe_customer_id),
+            "google": bool(u.google_id),
+        }
+        for u in users
+    ]
 
 @app.get("/api/auth/google")
 async def google_login():
