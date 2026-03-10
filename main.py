@@ -31,6 +31,7 @@ GOOGLE_CLIENT_SECRET  = os.getenv("GOOGLE_CLIENT_SECRET")
 STRIPE_SECRET_KEY     = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 BASE_URL              = os.getenv("BASE_URL", "http://localhost:8000")
+ADMIN_EMAIL           = os.getenv("ADMIN_EMAIL", "artem.nebel07@gmail.com")
 
 PRICE_IDS = {
     "starter":   os.getenv("STRIPE_PRICE_STARTER"),
@@ -115,6 +116,8 @@ def reset_usage_if_needed(user: User, db: Session):
         db.commit()
 
 def usage_info(user: User) -> dict:
+    if user.email == ADMIN_EMAIL:
+        return {"type": "leads", "used": user.leads_used, "limit": None, "tier": "unlimited"}
     cfg = TIER_LIMITS[user.tier]
     return {"type": "leads", "used": user.leads_used, "limit": cfg["limit"], "tier": user.tier}
 
@@ -476,7 +479,7 @@ async def search_leads(
     reset_usage_if_needed(user, db)
 
     # Pre-check: block if user already hit their monthly lead limit
-    cfg = TIER_LIMITS.get(user.tier, TIER_LIMITS["free"])
+    cfg = TIER_LIMITS["unlimited"] if user.email == ADMIN_EMAIL else TIER_LIMITS.get(user.tier, TIER_LIMITS["free"])
     if cfg["limit"] is not None and user.leads_used >= cfg["limit"]:
         raise HTTPException(status_code=429, detail="LIMIT_REACHED")
 

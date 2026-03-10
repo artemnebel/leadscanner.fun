@@ -1081,7 +1081,7 @@ body.page #top-bar {
 
 .export-menu {
     position: absolute;
-    bottom: calc(100% + 4px);
+    top: calc(100% + 4px);
     right: 0;
     background: var(--bg);
     border: 1px solid var(--green);
