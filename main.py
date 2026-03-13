@@ -12,7 +12,8 @@ import httpx
 import asyncio
 import os
 import stripe
-from datetime import date
+from datetime import date, datetime, timezone, timedelta
+import re
 from dotenv import load_dotenv
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -41,7 +42,7 @@ PRICE_IDS = {
 }
 
 TIER_LIMITS = {
-    "free":      {"type": "leads", "limit": 25},
+    "free":      {"type": "leads", "limit": 100},
     "starter":   {"type": "leads", "limit": 500},
     "pro":       {"type": "leads", "limit": 2500},
     "business":  {"type": "leads", "limit": 7500},
@@ -87,7 +88,8 @@ def verify_password(pw: str, hashed: str) -> bool:
     return pwd_ctx.verify(pw, hashed)
 
 def create_jwt(user_id: str) -> str:
-    return jwt.encode({"sub": user_id}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    exp = datetime.now(timezone.utc) + timedelta(days=30)
+    return jwt.encode({"sub": user_id, "exp": exp}, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 def decode_jwt(token: str):
     try:
@@ -192,16 +194,27 @@ async def serve_robots():
 
 # ── Contact form ──────────────────────────────────────────────────────────────
 
+def _strip_headers(s: str) -> str:
+    """Remove newlines and carriage returns to prevent email header injection."""
+    return re.sub(r'[\r\n]+', ' ', s).strip()
+
 @app.post("/api/contact")
 async def send_contact(
-    name: str = Form(...),
-    email: str = Form(...),
-    subject: str = Form(...),
-    message: str = Form(...),
+    name: str = Form(..., max_length=100),
+    email: str = Form(..., max_length=254),
+    subject: str = Form(..., max_length=200),
+    message: str = Form(..., max_length=5000),
 ):
     resend_key = os.getenv("RESEND_API_KEY")
     if not resend_key:
         raise HTTPException(status_code=500, detail="Email not configured on server.")
+
+    safe_name    = _strip_headers(name)
+    safe_email   = _strip_headers(email)
+    safe_subject = _strip_headers(subject)
+
+    if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', safe_email):
+        raise HTTPException(status_code=400, detail="Invalid email address.")
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(
@@ -210,9 +223,9 @@ async def send_contact(
             json={
                 "from": "Lead Scanner <onboarding@resend.dev>",
                 "to": [os.getenv("CONTACT_EMAIL", "artem.nebel07@gmail.com")],
-                "reply_to": f"{name} <{email}>",
-                "subject": f"[LeadScanner] {subject}",
-                "text": f"From: {name} <{email}>\n\n{message}\n\n---\nSent via leadscanner.fun",
+                "reply_to": f"{safe_name} <{safe_email}>",
+                "subject": f"[LeadScanner] {safe_subject}",
+                "text": f"From: {safe_name} <{safe_email}>\n\n{message}\n\n---\nSent via leadscanner.fun",
             },
         )
 
@@ -228,7 +241,10 @@ class AuthBody(BaseModel):
     password: str
 
 @app.post("/api/auth/register")
-async def register(body: AuthBody, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+async def register(request: Request, body: AuthBody, db: Session = Depends(get_db)):
+    if len(body.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=400, detail="Email already registered.")
     user = User(email=body.email, password_hash=hash_password(body.password))
@@ -238,7 +254,8 @@ async def register(body: AuthBody, db: Session = Depends(get_db)):
     return {"token": create_jwt(user.id), "user": {"email": user.email, "tier": user.tier}}
 
 @app.post("/api/auth/login")
-async def login(body: AuthBody, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+async def login(request: Request, body: AuthBody, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not user.password_hash or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
@@ -359,14 +376,12 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     payload = await request.body()
     sig = request.headers.get("stripe-signature", "")
 
-    if STRIPE_WEBHOOK_SECRET:
-        try:
-            event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid webhook signature.")
-    else:
-        import json
-        event = json.loads(payload)
+    if not STRIPE_WEBHOOK_SECRET:
+        raise HTTPException(status_code=500, detail="Webhook secret not configured.")
+    try:
+        event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid webhook signature.")
 
     ev_type = event["type"]
     sub = event["data"]["object"]
@@ -538,8 +553,16 @@ async def search_leads(
 
     leads_count = len(leads)
 
-    if cfg["limit"] is not None and user.leads_used + leads_count > cfg["limit"]:
-        raise HTTPException(status_code=429, detail="LIMIT_REACHED")
+    limit_reached = False
+    if cfg["limit"] is not None:
+        remaining = cfg["limit"] - user.leads_used
+        if remaining <= 0:
+            raise HTTPException(status_code=429, detail="LIMIT_REACHED")
+        if leads_count > remaining:
+            leads = leads[:remaining]
+            leads_count = remaining
+            limit_reached = True
+
     user.leads_used += leads_count
     db.commit()
 
@@ -549,6 +572,7 @@ async def search_leads(
         "total_found": len(all_details),
         "skipped_has_website": skipped_has_website,
         "usage": usage_info(user),
+        "limit_reached": limit_reached,
     }
 
 

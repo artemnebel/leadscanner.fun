@@ -2000,3 +2000,13 @@ body.page #top-bar {
     .livescan-vs { flex-direction: column; }
     .livescan-divider { padding: 0.5rem 0; transform: rotate(90deg); }
 }
+
+/* ===== FAQ ===== */
+.land-faq { display: flex; flex-direction: column; gap: 2px; max-width: 860px; margin: 0 auto; }
+.faq-item { border: 1px solid #1a1a1a; background: #0d0d0d; }
+.faq-item[open] { border-color: var(--green); }
+.faq-q { padding: 18px 22px; cursor: pointer; font-family: var(--font); font-size: 0.9rem; color: var(--green); list-style: none; user-select: none; }
+.faq-q::before { content: '> '; opacity: 0.5; }
+.faq-item[open] .faq-q { color: #fff; }
+.faq-q::-webkit-details-marker { display: none; }
+.faq-a { padding: 0 22px 18px; font-size: 0.85rem; color: var(--muted); line-height: 1.7; margin: 0; }

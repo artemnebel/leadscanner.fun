@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin — Lead Scanner</title>
+    <title>Admin - Lead Scanner</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -189,24 +189,35 @@
                 const tierClass = u.tier === 'free' ? 'tier-free'
                     : u.tier === 'unlimited' ? 'tier-unlimited'
                     : 'tier-paid';
-                const joined = u.created_at ? u.created_at.slice(0, 10) : '—';
-                const reset  = u.usage_reset ? u.usage_reset.slice(0, 10) : '—';
+                const joined = u.created_at ? u.created_at.slice(0, 10) : '-';
+                const reset  = u.usage_reset ? u.usage_reset.slice(0, 10) : '-';
                 const auth   = u.google
                     ? '<span class="badge-g">[ G ]</span>'
                     : '<span class="badge-pw">[ PW ]</span>';
                 const stripe = u.has_stripe ? '[ YES ]' : '<span style="color:var(--muted)">[ NO ]</span>';
 
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="color:var(--muted)">${i + 1}</td>
-                    <td>${u.email}</td>
-                    <td class="${tierClass}">${u.tier.toUpperCase()}</td>
-                    <td>${u.leads_used}</td>
-                    <td style="color:var(--muted)">${reset}</td>
-                    <td style="color:var(--muted)">${joined}</td>
-                    <td>${auth}</td>
-                    <td>${stripe}</td>
-                `;
+                const cells = [
+                    { text: String(i + 1), style: 'color:var(--muted)' },
+                    { text: u.email },
+                    { text: u.tier.toUpperCase(), cls: tierClass },
+                    { text: String(u.leads_used) },
+                    { text: reset, style: 'color:var(--muted)' },
+                    { text: joined, style: 'color:var(--muted)' },
+                ];
+                cells.forEach(({ text, style, cls }) => {
+                    const td = document.createElement('td');
+                    td.textContent = text;
+                    if (style) td.setAttribute('style', style);
+                    if (cls) td.className = cls;
+                    tr.appendChild(td);
+                });
+                // auth and stripe are trusted static HTML strings, safe to use innerHTML
+                const authTd = document.createElement('td');
+                authTd.innerHTML = auth;
+                const stripeTd = document.createElement('td');
+                stripeTd.innerHTML = stripe;
+                tr.append(authTd, stripeTd);
                 tbody.appendChild(tr);
             });
         })();

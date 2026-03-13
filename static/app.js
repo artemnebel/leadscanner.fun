@@ -149,7 +149,7 @@ function toggleBulkMode() {
 
 /* ===== MAP INIT ===== */
 function initMap() {
-    state.map = L.map('map', { zoomControl: false }).setView([40.0379, -76.3055], 11); // Lancaster, PA default
+    state.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([40.0379, -76.3055], 11); // Lancaster, PA default
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
@@ -268,13 +268,24 @@ function showPaywallModal(message) {
     if (modal) modal.remove();
     modal = document.createElement('div');
     modal.id = 'paywall-modal';
-    modal.innerHTML = `
-        <div class="paywall-box">
-            <div class="paywall-title">&gt; LIMIT_REACHED</div>
-            <p class="paywall-msg">${message}</p>
-            <a href="/pricing" class="auth-btn paywall-upgrade-btn">[ UPGRADE PLAN ]</a>
-            <button class="paywall-close" onclick="document.getElementById('paywall-modal').remove()">[ DISMISS ]</button>
-        </div>`;
+    const box = document.createElement('div');
+    box.className = 'paywall-box';
+    const title = document.createElement('div');
+    title.className = 'paywall-title';
+    title.textContent = '> LIMIT_REACHED';
+    const msg = document.createElement('p');
+    msg.className = 'paywall-msg';
+    msg.textContent = message;
+    const upgradeBtn = document.createElement('a');
+    upgradeBtn.href = '/pricing';
+    upgradeBtn.className = 'auth-btn paywall-upgrade-btn';
+    upgradeBtn.textContent = '[ UPGRADE PLAN ]';
+    const dismissBtn = document.createElement('button');
+    dismissBtn.className = 'paywall-close';
+    dismissBtn.textContent = '[ DISMISS ]';
+    dismissBtn.onclick = () => modal.remove();
+    box.append(title, msg, upgradeBtn, dismissBtn);
+    modal.appendChild(box);
     document.body.appendChild(modal);
 }
 
@@ -317,6 +328,8 @@ async function handleSearch() {
                 if (resp.status === 429) {
                     showPaywallModal('You\'ve reached your monthly limit. Upgrade to keep scanning.');
                     setLoading(false);
+                    applyFilterAndRender();
+                    showLeadsUI();
                     return;
                 }
                 if (!resp.ok) { showToast(`Zone ${i + 1}: ${data.detail || 'Search failed'}`, 'error'); continue; }
@@ -330,6 +343,13 @@ async function handleSearch() {
                 state.totalScanned += data.total_found;
                 state.totalSkipped += data.skipped_has_website;
                 addResultPins(newLeads);
+                if (data.limit_reached) {
+                    setLoading(false);
+                    applyFilterAndRender();
+                    showLeadsUI();
+                    showPaywallModal('You\'ve reached your monthly limit. Here are the leads we found before the cutoff — upgrade to keep scanning.');
+                    return;
+                }
             } catch (err) {
                 showToast(`Zone ${i + 1}: ${err.message}`, 'error');
             }
@@ -384,6 +404,10 @@ async function handleSearch() {
         addResultPins(newLeads);
         applyFilterAndRender();
         showLeadsUI();
+
+        if (data.limit_reached) {
+            showPaywallModal('You\'ve reached your monthly limit. Here are the leads we found before the cutoff — upgrade to keep scanning.');
+        }
 
     } catch (err) {
         showToast(err.message);

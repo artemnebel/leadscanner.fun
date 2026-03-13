@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lead Scanner — Find Businesses Without a Website</title>
-    <meta name="description" content="Find local businesses that don't have a website. Search by category and location on an interactive map — potential clients for web design services.">
+    <title>Lead Scanner - Find Businesses Without a Website</title>
+    <meta name="description" content="Find local businesses that don't have a website. Search by category and location on an interactive map - potential clients for web design services.">
     <meta name="keywords" content="lead generation, web design leads, businesses without website, local business finder">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://leadscanner.fun/">
     <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-    <meta property="og:title" content="Lead Scanner — Find Businesses Without a Website">
-    <meta property="og:description" content="Interactive map tool to find local businesses that don't have a website — potential web design clients.">
+    <meta property="og:title" content="Lead Scanner - Find Businesses Without a Website">
+    <meta property="og:description" content="Scan any city. Find local businesses with no website. Export leads in seconds. Free to start.">
     <meta property="og:url" content="https://leadscanner.fun/">
     <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Lead Scanner">
-    <meta name="twitter:description" content="Find local businesses without a website on an interactive map.">
+    <meta property="og:image" content="https://leadscanner.fun/static/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Lead Scanner - Find Businesses Without a Website">
+    <meta name="twitter:description" content="Scan any city. Find local businesses with no website. Export leads in seconds.">
+    <meta name="twitter:image" content="https://leadscanner.fun/static/og-image.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -26,6 +30,72 @@
     <link rel="icon" href="/favicon.ico"/>
     <link rel="shortcut icon" href="/favicon.ico"/>
     <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Lead Scanner",
+          "url": "https://leadscanner.fun/",
+          "description": "Lead Scanner finds local businesses without a website. Search any city by category, scan an interactive map, and export phone numbers and Google Maps links as CSV, JSON, or XLSX.",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "offers": [
+            { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD" },
+            { "@type": "Offer", "name": "Starter", "price": "29", "priceCurrency": "USD" },
+            { "@type": "Offer", "name": "Pro", "price": "79", "priceCurrency": "USD" },
+            { "@type": "Offer", "name": "Business", "price": "149", "priceCurrency": "USD" },
+            { "@type": "Offer", "name": "Unlimited", "price": "300", "priceCurrency": "USD" }
+          ],
+          "featureList": [
+            "Interactive map-based business scanning",
+            "Finds businesses with no website",
+            "Phone number and Google Maps link per lead",
+            "Export leads as CSV, JSON, or XLSX",
+            "Multi-zone bulk scanning",
+            "Real-time Google Maps data"
+          ],
+          "creator": { "@type": "Person", "name": "Artem Nebel" }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is Lead Scanner?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Lead Scanner is a web tool that finds local businesses without a website. You search by category and city, and it returns a list of businesses with a phone number but no website, so you can reach out and offer web design services." }
+            },
+            {
+              "@type": "Question",
+              "name": "How does Lead Scanner find businesses without a website?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Lead Scanner uses the Google Places API to search for businesses in a given area. It checks each result for a website field. Any business with a phone number but no website is added to your leads list." }
+            },
+            {
+              "@type": "Question",
+              "name": "Is Lead Scanner free to use?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Yes. The free plan includes 100 leads per month with no credit card required. Paid plans start at $29/month for higher lead limits." }
+            },
+            {
+              "@type": "Question",
+              "name": "What information does each lead include?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Each lead includes the business name, phone number, city, Google rating, review count, and a direct link to their Google Maps profile." }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I export my leads?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can export all your leads as CSV, JSON, or XLSX with one click. The export includes phone numbers and Google Maps links." }
+            },
+            {
+              "@type": "Question",
+              "name": "What types of businesses can I find with Lead Scanner?",
+              "acceptedAnswer": { "@type": "Answer", "text": "You can search for any business category, such as plumbers, restaurants, hair salons, dentists, landscapers, roofers, and more. Any category you can search on Google Maps works with Lead Scanner." }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
 </head>
 <body>
 
@@ -44,7 +114,7 @@
                     <li><span class="land-bi">[+]</span> Export as CSV, JSON, or XLSX</li>
                     <li><span class="land-bi">[+]</span> Multi-zone bulk scanning</li>
                 </ul>
-                <a href="/signup" class="land-free-cta">[ FREE — 25 LEADS / MONTH ]</a>
+                <a href="/signup" class="land-free-cta">[ FREE - 100 LEADS / MONTH ]</a>
             </div>
             <div class="land-hero-right">
                 <div class="land-cube-wrap">
@@ -87,11 +157,11 @@
                     </div>
                     <div class="mockup-leads-panel">
                         <div class="mockup-thead"><span>NAME</span><span>PHONE</span><span>CITY</span></div>
-                        <div class="mockup-row mr1"><span>ABC Plumbing Co.</span><span>(555) 0182</span><span>Lancaster</span></div>
-                        <div class="mockup-row mr2"><span>FastFix Services</span><span>(555) 0347</span><span>Ephrata</span></div>
-                        <div class="mockup-row mr3"><span>Pro Pipe &amp; Drain</span><span>(555) 0561</span><span>Lititz</span></div>
-                        <div class="mockup-row mr4"><span>Central Plumbing</span><span>(555) 0729</span><span>Manheim</span></div>
-                        <div class="mockup-row mr5"><span>QuickFlow LLC</span><span>(555) 0914</span><span>Columbia</span></div>
+                        <div class="mockup-row mr1"><span>ABC Plumbing Co.</span><span>(555) 0182</span><span>New York</span></div>
+                        <div class="mockup-row mr2"><span>FastFix Services</span><span>(555) 0347</span><span>Los Angeles</span></div>
+                        <div class="mockup-row mr3"><span>Pro Pipe &amp; Drain</span><span>(555) 0561</span><span>Chicago</span></div>
+                        <div class="mockup-row mr4"><span>Central Plumbing</span><span>(555) 0729</span><span>Houston</span></div>
+                        <div class="mockup-row mr5"><span>QuickFlow LLC</span><span>(555) 0914</span><span>Phoenix</span></div>
                         <div class="mockup-status">&gt;&nbsp;<span class="mockup-found">5 LEADS FOUND</span>&nbsp;<span class="mockup-meta">[12 SCANNED / 7 SKIPPED]</span></div>
                     </div>
                 </div>
@@ -107,7 +177,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="3"/></svg>
                     </div>
                     <div class="feat-title">MAP SCANNING</div>
-                    <p class="feat-body">Live scan — not archived data. Results are pulled fresh in real time. Set a radius and every business with no website and a working phone number is surfaced on an interactive dark map.</p>
+                    <p class="feat-body">Live scan, not archived data. Results are pulled fresh in real time. Set a radius and every business with no website and a working phone number is surfaced on an interactive dark map.</p>
                 </div>
                 <div class="land-feat">
                     <div class="feat-icon">
@@ -152,7 +222,7 @@
                     </div>
                 </div>
                 <blockquote class="livescan-quote">
-                    "Most scrapers sell you stale data from last year. We perform a Real-Time Google Maps Scan the moment you hit search — you're seeing the market exactly as it looks <em>today</em>."
+                    "Most scrapers sell you stale data from last year. We perform a Real-Time Google Maps Scan the moment you hit search, so you're seeing the market exactly as it looks <em>today</em>."
                 </blockquote>
             </div>
         </section>
@@ -164,7 +234,7 @@
                 <div class="land-step">
                     <div class="step-num">01</div>
                     <div class="step-title">SET TARGET</div>
-                    <p class="step-body">Type any business category — plumbers, dentists, landscapers. Set your radius on the map.</p>
+                    <p class="step-body">Type any business category: plumbers, dentists, landscapers. Set your radius on the map.</p>
                 </div>
                 <div class="step-arrow">&gt;&gt;</div>
                 <div class="land-step">
@@ -225,6 +295,37 @@
             </div>
         </section>
 
+        <!-- FAQ -->
+        <section class="land-section">
+            <div class="land-section-label">&gt; FAQ.TXT</div>
+            <div class="land-faq">
+                <details class="faq-item">
+                    <summary class="faq-q">What is Lead Scanner?</summary>
+                    <p class="faq-a">Lead Scanner finds local businesses without a website. Search any city by category, set a radius on the map, and get a list of businesses with a phone number but no website so you can pitch your web design services.</p>
+                </details>
+                <details class="faq-item">
+                    <summary class="faq-q">How does it find businesses without a website?</summary>
+                    <p class="faq-a">It uses the Google Places API in real time. Every scan pulls fresh data, checks each result for a website field, and only returns businesses that have a phone number but no website.</p>
+                </details>
+                <details class="faq-item">
+                    <summary class="faq-q">Is Lead Scanner free to use?</summary>
+                    <p class="faq-a">Yes. The free plan includes 100 leads per month with no credit card required. Paid plans start at $29/month for higher limits.</p>
+                </details>
+                <details class="faq-item">
+                    <summary class="faq-q">What information does each lead include?</summary>
+                    <p class="faq-a">Business name, phone number, city, Google rating, review count, and a direct link to their Google Maps profile.</p>
+                </details>
+                <details class="faq-item">
+                    <summary class="faq-q">Can I export my leads?</summary>
+                    <p class="faq-a">Yes. Export all leads as CSV, JSON, or XLSX with one click. Every export includes phone numbers and Maps links.</p>
+                </details>
+                <details class="faq-item">
+                    <summary class="faq-q">What business categories work with Lead Scanner?</summary>
+                    <p class="faq-a">Any category you can search on Google Maps works: plumbers, restaurants, hair salons, dentists, landscapers, roofers, auto repair, and more.</p>
+                </details>
+            </div>
+        </section>
+
         <!-- CTA -->
         <section class="land-cta-section">
             <div class="land-cta-label">&gt; READY_TO_PROSPECT</div>
@@ -233,7 +334,7 @@
                 <button class="land-launch-btn" id="land-cta-btn">[ LAUNCH APP ]</button>
                 <a href="/pricing" class="land-pricing-link">[ VIEW PRICING ]</a>
             </div>
-            <p class="land-cta-foot">&copy; 2025 LEAD_SCANNER.EXE &mdash; made by Artem Nebel &mdash; <a href="/privacy" class="land-cta-foot" style="opacity:0.6">Privacy</a> &middot; <a href="/terms" class="land-cta-foot" style="opacity:0.6">Terms</a></p>
+            <p class="land-cta-foot">&copy; 2025 LEAD_SCANNER.EXE - made by Artem Nebel - <a href="/privacy" class="land-cta-foot" style="opacity:0.6">Privacy</a> &middot; <a href="/terms" class="land-cta-foot" style="opacity:0.6">Terms</a></p>
         </section>
 
     </div>
@@ -250,15 +351,15 @@
                 document.getElementById('roi-verdict').innerHTML =
                     '&gt; <span class="roi-green">One closed deal covers ' + months + ' months of your subscription.</span><span class="roi-cursor">_</span>';
 
-                // Dynamic footer — only make claims the math supports
+                // Dynamic footer - only make claims the math supports
                 let foot;
                 if (months >= 24) {
-                    foot = 'Land just one client every two years and the tool has already paid for itself — ' + months + ' months covered from a single deal.';
+                    foot = 'Land just one client every two years and the tool has already paid for itself - ' + months + ' months covered from a single deal.';
                 } else if (months >= 12) {
-                    foot = 'Land one client per year and the tool pays for itself — ' + months + ' months covered per deal.';
+                    foot = 'Land one client per year and the tool pays for itself - ' + months + ' months covered per deal.';
                 } else if (months >= 1) {
                     const clientsPerYear = Math.ceil(12 / months);
-                    foot = 'At this price point, ' + clientsPerYear + ' client' + (clientsPerYear > 1 ? 's' : '') + ' per year covers your subscription — raise your rates and the math gets even better.';
+                    foot = 'At this price point, ' + clientsPerYear + ' client' + (clientsPerYear > 1 ? 's' : '') + ' per year covers your subscription - raise your rates and the math gets even better.';
                 } else {
                     foot = 'Even at this price, every lead that converts puts you closer to ROI-positive.';
                 }
@@ -363,7 +464,7 @@
     </main>
 
     <footer id="site-footer">
-        <span class="footer-copy">&copy; 2025 LEAD_SCANNER.EXE &mdash; made by Artem Nebel &mdash; <a href="/privacy" class="footer-legal">Privacy</a> &middot; <a href="/terms" class="footer-legal">Terms</a></span>
+        <span class="footer-copy">&copy; 2025 LEAD_SCANNER.EXE - made by Artem Nebel - <a href="/privacy" class="footer-legal">Privacy</a> &middot; <a href="/terms" class="footer-legal">Terms</a></span>
         <div class="footer-social">
             <a href="#" class="social-link" aria-label="Instagram">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
