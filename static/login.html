@@ -100,7 +100,9 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    errEl.textContent = '> ERR: ' + (data.detail || 'Login failed.');
+                    errEl.textContent = data.detail === 'GOOGLE_ACCOUNT'
+                        ? '> This account was created with Google. Use the "Continue with Google" button below.'
+                        : '> ERR: ' + (data.detail || 'Login failed.');
                     errEl.style.display = 'block';
                     btn.textContent = '[ AUTHENTICATE ]';
                     btn.disabled = false;

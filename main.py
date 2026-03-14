@@ -16,7 +16,7 @@ from datetime import date, datetime, timezone, timedelta
 import re
 from dotenv import load_dotenv
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from sqlalchemy.orm import Session
 
 from database import User, get_db, init_db
@@ -76,16 +76,15 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="static")
 init_db()
 
-pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 bearer  = HTTPBearer(auto_error=False)
 
 # ── Auth helpers ─────────────────────────────────────────────────────────────
 
 def hash_password(pw: str) -> str:
-    return pwd_ctx.hash(pw)
+    return bcrypt.hashpw(pw[:72].encode(), bcrypt.gensalt()).decode()
 
 def verify_password(pw: str, hashed: str) -> bool:
-    return pwd_ctx.verify(pw, hashed)
+    return bcrypt.checkpw(pw[:72].encode(), hashed.encode())
 
 def create_jwt(user_id: str) -> str:
     exp = datetime.now(timezone.utc) + timedelta(days=30)
@@ -257,7 +256,9 @@ async def register(request: Request, body: AuthBody, db: Session = Depends(get_d
 @limiter.limit("20/minute")
 async def login(request: Request, body: AuthBody, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
-    if not user or not user.password_hash or not verify_password(body.password, user.password_hash):
+    if user and not user.password_hash:
+        raise HTTPException(status_code=401, detail="GOOGLE_ACCOUNT")
+    if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
     return {"token": create_jwt(user.id), "user": {"email": user.email, "tier": user.tier}}
 
