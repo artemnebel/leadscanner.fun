@@ -247,14 +247,9 @@ function addResultPins(leads) {
 
         const marker = L.marker([lead.lat, lead.lng], { icon: orangePin });
 
-        const ratingHtml = lead.rating != null
-            ? `<div class="popup-row">RAT: ${lead.rating} [${(lead.reviews ?? 0).toLocaleString()} reviews]</div>`
-            : '';
-
         marker.bindPopup(`
             <div class="popup-name">&gt; ${esc(lead.name)}</div>
-            <div class="popup-row">TEL: ${esc(lead.phone)}</div>
-            ${ratingHtml}
+            <div class="popup-row">${esc(lead.city)}</div>
             <a href="${esc(lead.maps_url)}" target="_blank" rel="noopener" class="popup-link">[ VIEW PROFILE ]</a>
         `);
 
@@ -460,7 +455,7 @@ function renderTable() {
     if (state.filteredLeads.length === 0) {
         const tr = document.createElement('tr');
         tr.id = 'empty-row';
-        tr.innerHTML = `<td colspan="5">${
+        tr.innerHTML = `<td colspan="2">${
             state.allLeads.length === 0
                 ? 'No leads found — try a broader search or different category'
                 : 'No matches for that filter'
@@ -471,17 +466,9 @@ function renderTable() {
 
     state.filteredLeads.forEach(lead => {
         const tr = document.createElement('tr');
-
-        const ratingCell = lead.rating != null
-            ? `<span class="rating-badge">[${lead.rating}]</span>`
-            : `<span style="color:#1f521f">--</span>`;
-
         tr.innerHTML = `
             <td class="name-cell" title="${esc(lead.name)}"><a href="${esc(lead.maps_url)}" target="_blank" rel="noopener" class="name-link">${esc(lead.name)}</a></td>
-            <td class="muted">${esc(lead.phone)}</td>
             <td class="muted" title="${esc(lead.city)}">${esc(lead.city)}</td>
-            <td>${ratingCell}</td>
-            <td class="muted">${lead.reviews != null ? lead.reviews.toLocaleString() : '—'}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -522,10 +509,9 @@ function downloadBlob(blob, filename) {
 }
 
 function exportCSV() {
-    const headers = ['Name', 'Phone', 'City', 'Rating', 'Reviews', 'Google Maps URL'];
+    const headers = ['Name', 'City', 'Google Maps URL'];
     const rows = state.filteredLeads.map(lead => [
-        lead.name, lead.phone || '', lead.city,
-        lead.rating ?? '', lead.reviews ?? '', lead.maps_url,
+        lead.name, lead.city, lead.maps_url,
     ]);
     const content = [headers, ...rows]
         .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
@@ -535,8 +521,8 @@ function exportCSV() {
 }
 
 function exportJSON() {
-    const data = state.filteredLeads.map(({ name, phone, city, rating, reviews, maps_url }) =>
-        ({ name, phone, city, rating, reviews, maps_url }));
+    const data = state.filteredLeads.map(({ name, city, maps_url }) =>
+        ({ name, city, maps_url }));
     downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
         `leads-${new Date().toISOString().slice(0, 10)}.json`);
 }
@@ -544,10 +530,7 @@ function exportJSON() {
 function exportXLSX() {
     const rows = state.filteredLeads.map(lead => ({
         Name: lead.name,
-        Phone: lead.phone || '',
         City: lead.city,
-        Rating: lead.rating ?? '',
-        Reviews: lead.reviews ?? '',
         'Google Maps URL': lead.maps_url,
     }));
     const ws = XLSX.utils.json_to_sheet(rows);

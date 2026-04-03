@@ -52,9 +52,8 @@ TIER_LIMITS = {
 if STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
 
-NEARBY_URL    = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-DETAILS_URL   = "https://maps.googleapis.com/maps/api/place/details/json"
-DETAIL_FIELDS = "name,formatted_phone_number,rating,user_ratings_total,website,url,vicinity,geometry"
+PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
+FIELD_MASK        = "places.id,places.displayName,places.formattedAddress,places.googleMapsUri,places.location"
 
 # ── App ──────────────────────────────────────────────────────────────────────
 def _get_version():
@@ -436,69 +435,97 @@ class SearchRequest(BaseModel):
     radius_meters: int
 
 
+# ── Website detection (server-side domain check) ─────────────────────────────
+
+_STRIP_SUFFIXES = re.compile(
+    r'\b(llc|inc|ltd|co|corp|company|companies|group|associates|'
+    r'solutions|services|service|industries|enterprises|holdings|'
+    r'the|and|of|at)\b',
+    re.IGNORECASE,
+)
+_WEBSITE_SEM = asyncio.Semaphore(10)  # max 10 concurrent outbound checks
+
+
+def _guess_domain(business_name: str) -> str | None:
+    name = _STRIP_SUFFIXES.sub("", business_name)
+    name = re.sub(r"[^a-z0-9]", "", name.lower())
+    return f"{name}.com" if name else None
+
+
+async def _domain_resolves(client: httpx.AsyncClient, domain: str) -> bool:
+    async with _WEBSITE_SEM:
+        for scheme in ("https", "http"):
+            try:
+                r = await client.head(
+                    f"{scheme}://{domain}",
+                    follow_redirects=True,
+                    timeout=3.0,
+                )
+                if r.status_code < 400:
+                    return True
+            except Exception:
+                pass
+    return False
+
+
+async def _has_website(client: httpx.AsyncClient, business_name: str) -> bool:
+    domain = _guess_domain(business_name)
+    if not domain:
+        return False
+    return await _domain_resolves(client, domain)
+
+
 async def get_nearby_places(
     client: httpx.AsyncClient, lat: float, lng: float, radius: int, category: str
 ) -> list:
-    place_ids = []
-    params = {
-        "location": f"{lat},{lng}",
-        "radius": radius,
-        "keyword": category,
-        "key": API_KEY,
-    }
+    places = []
+    page_token = None
 
     for page_num in range(3):
-        if page_num > 0:
-            await asyncio.sleep(2)
+        body: dict = {
+            "textQuery": category,
+            "locationBias": {
+                "circle": {
+                    "center": {"latitude": lat, "longitude": lng},
+                    "radius": float(radius),
+                }
+            },
+            "maxResultCount": 20,
+        }
+        if page_token:
+            body["pageToken"] = page_token
 
-        resp = await client.get(NEARBY_URL, params=params)
+        resp = await client.post(
+            PLACES_SEARCH_URL,
+            json=body,
+            headers={
+                "X-Goog-Api-Key": API_KEY,
+                "X-Goog-FieldMask": FIELD_MASK,
+            },
+        )
         data = resp.json()
-        status = data.get("status")
 
-        if status == "ZERO_RESULTS":
-            break
-        if status != "OK":
-            error_msg = data.get("error_message", "")
+        if resp.status_code != 200:
+            err = data.get("error", {})
             raise HTTPException(
                 status_code=400,
-                detail=f"Places API error: {status}" + (f" — {error_msg}" if error_msg else "")
+                detail=f"Places API error: {err.get('message', 'Unknown error')}",
             )
 
-        for place in data.get("results", []):
-            place_ids.append(place["place_id"])
-
-        next_token = data.get("next_page_token")
-        if not next_token:
+        results = data.get("places", [])
+        if not results:
             break
 
-        params = {"pagetoken": next_token, "key": API_KEY}
+        places.extend(results)
 
-    return place_ids
+        page_token = data.get("nextPageToken")
+        if not page_token:
+            break
 
+        if page_num < 2:
+            await asyncio.sleep(2)
 
-async def get_place_details(client: httpx.AsyncClient, place_id: str):
-    resp = await client.get(
-        DETAILS_URL,
-        params={"place_id": place_id, "fields": DETAIL_FIELDS, "key": API_KEY},
-    )
-    data = resp.json()
-    if data.get("status") != "OK":
-        return None
-    return data.get("result")
-
-
-async def get_details_batch(client: httpx.AsyncClient, place_ids: list, batch_size: int = 10) -> list:
-    results = []
-    for i in range(0, len(place_ids), batch_size):
-        batch = place_ids[i : i + batch_size]
-        batch_results = await asyncio.gather(
-            *[get_place_details(client, pid) for pid in batch],
-            return_exceptions=True,
-        )
-        for r in batch_results:
-            if isinstance(r, dict):
-                results.append(r)
-    return results
+    return places
 
 
 @app.post("/api/search")
@@ -524,31 +551,32 @@ async def search_leads(
     center = {"lat": req.lat, "lng": req.lng}
 
     async with httpx.AsyncClient(timeout=30.0) as client:
-        place_ids = await get_nearby_places(
+        all_places = await get_nearby_places(
             client, req.lat, req.lng, req.radius_meters, req.category
         )
-        all_details = await get_details_batch(client, place_ids)
+
+        # Check each business for a guessed domain concurrently (free, no API cost).
+        names = [p.get("displayName", {}).get("text", "") for p in all_places]
+        website_flags = await asyncio.gather(
+            *[_has_website(client, name) for name in names],
+            return_exceptions=True,
+        )
 
         leads = []
         skipped_has_website = 0
-        for place in all_details:
-            if place.get("website"):
+        for place, has_site in zip(all_places, website_flags):
+            if has_site is True:
                 skipped_has_website += 1
                 continue
-            if not place.get("formatted_phone_number"):
-                continue
 
-            geo = place.get("geometry", {}).get("location", {})
+            geo = place.get("location", {})
             leads.append(
                 {
-                    "name": place.get("name", "Unknown"),
-                    "phone": place.get("formatted_phone_number", ""),
-                    "city": place.get("vicinity", ""),
-                    "rating": place.get("rating"),
-                    "reviews": place.get("user_ratings_total"),
-                    "maps_url": place.get("url", ""),
-                    "lat": geo.get("lat"),
-                    "lng": geo.get("lng"),
+                    "name": place.get("displayName", {}).get("text", "Unknown"),
+                    "city": place.get("formattedAddress", ""),
+                    "maps_url": place.get("googleMapsUri", ""),
+                    "lat": geo.get("latitude"),
+                    "lng": geo.get("longitude"),
                 }
             )
 
@@ -570,7 +598,7 @@ async def search_leads(
     return {
         "center": center,
         "leads": leads,
-        "total_found": len(all_details),
+        "total_found": len(all_places),
         "skipped_has_website": skipped_has_website,
         "usage": usage_info(user),
         "limit_reached": limit_reached,
