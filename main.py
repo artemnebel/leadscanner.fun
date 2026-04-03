@@ -52,12 +52,9 @@ TIER_LIMITS = {
 if STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
 
-PLACES_SEARCH_URL  = "https://places.googleapis.com/v1/places:searchText"
-PLACES_DETAIL_URL  = "https://places.googleapis.com/v1/places/{place_id}"
-# Pass 1 — Pro tier fields only ($32/1K, 5K free/month)
-FIELD_MASK         = "places.id,places.displayName,places.formattedAddress,places.googleMapsUri,places.location,places.businessStatus"
-# Pass 2 — Enterprise tier, websiteUri only ($20/1K, 1K free/month)
-DETAIL_FIELD_MASK  = "websiteUri"
+PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
+# Enterprise tier — includes websiteUri for filtering ($35/1K, 1K free/month)
+FIELD_MASK        = "places.id,places.displayName,places.formattedAddress,places.googleMapsUri,places.location,places.businessStatus,places.websiteUri"
 
 # ── App ──────────────────────────────────────────────────────────────────────
 def _get_version():
@@ -439,34 +436,6 @@ class SearchRequest(BaseModel):
     radius_meters: int
 
 
-# ── Website detection (Place Details — websiteUri only) ───────────────────────
-# Two-pass strategy: Pass 1 uses cheap Pro fields; Pass 2 calls Place Details
-# with ONLY websiteUri (Enterprise tier, $20/1K, 1K free/month).
-# Requesting only websiteUri costs the same as requesting all Enterprise fields,
-# so there is no cheaper way to get this data from Google.
-
-_DETAIL_SEM = asyncio.Semaphore(10)  # max 10 concurrent detail calls
-
-
-async def _has_website(client: httpx.AsyncClient, place_id: str) -> bool:
-    """Return True if the business has a websiteUri listed in Google."""
-    async with _DETAIL_SEM:
-        try:
-            url = PLACES_DETAIL_URL.format(place_id=place_id)
-            r = await client.get(
-                url,
-                headers={
-                    "X-Goog-Api-Key": API_KEY,
-                    "X-Goog-FieldMask": DETAIL_FIELD_MASK,
-                },
-                timeout=10.0,
-            )
-            if r.status_code != 200:
-                return False
-            return bool(r.json().get("websiteUri"))
-        except Exception:
-            return False
-
 
 async def get_nearby_places(
     client: httpx.AsyncClient, lat: float, lng: float, radius: int, category: str
@@ -548,24 +517,12 @@ async def search_leads(
             client, req.lat, req.lng, req.radius_meters, req.category
         )
 
-        # Filter out permanently closed businesses before the Enterprise call.
-        operational = [
-            p for p in all_places
-            if p.get("businessStatus", "OPERATIONAL") != "CLOSED_PERMANENTLY"
-        ]
-
-        # Pass 2 — Place Details: check websiteUri for each operational place.
-        # Enterprise tier ($20/1K), but only websiteUri is requested.
-        place_ids = [p.get("id", "") for p in operational]
-        website_flags = await asyncio.gather(
-            *[_has_website(client, pid) for pid in place_ids],
-            return_exceptions=True,
-        )
-
         leads = []
         skipped_has_website = 0
-        for place, has_site in zip(operational, website_flags):
-            if has_site is True:
+        for place in all_places:
+            if place.get("businessStatus") == "CLOSED_PERMANENTLY":
+                continue
+            if place.get("websiteUri"):
                 skipped_has_website += 1
                 continue
 
