@@ -435,44 +435,51 @@ class SearchRequest(BaseModel):
     radius_meters: int
 
 
-# ── Website detection (server-side domain check) ─────────────────────────────
+# ── Website detection (Maps page JSON-LD check) ───────────────────────────────
 
-_STRIP_SUFFIXES = re.compile(
-    r'\b(llc|inc|ltd|co|corp|company|companies|group|associates|'
-    r'solutions|services|service|industries|enterprises|holdings|'
-    r'the|and|of|at)\b',
-    re.IGNORECASE,
+import json as _json
+
+_LD_JSON_BLOCK = re.compile(
+    r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+    re.DOTALL | re.IGNORECASE,
 )
 _WEBSITE_SEM = asyncio.Semaphore(10)  # max 10 concurrent outbound checks
 
 
-def _guess_domain(business_name: str) -> str | None:
-    name = _STRIP_SUFFIXES.sub("", business_name)
-    name = re.sub(r"[^a-z0-9]", "", name.lower())
-    return f"{name}.com" if name else None
-
-
-async def _domain_resolves(client: httpx.AsyncClient, domain: str) -> bool:
-    async with _WEBSITE_SEM:
-        for scheme in ("https", "http"):
-            try:
-                r = await client.head(
-                    f"{scheme}://{domain}",
-                    follow_redirects=True,
-                    timeout=3.0,
-                )
-                if r.status_code < 400:
-                    return True
-            except Exception:
-                pass
-    return False
-
-
-async def _has_website(client: httpx.AsyncClient, business_name: str) -> bool:
-    domain = _guess_domain(business_name)
-    if not domain:
+async def _maps_has_website(client: httpx.AsyncClient, maps_url: str) -> bool:
+    """Fetch the Google Maps page and detect a listed business website via JSON-LD."""
+    if not maps_url:
         return False
-    return await _domain_resolves(client, domain)
+    async with _WEBSITE_SEM:
+        try:
+            r = await client.get(
+                maps_url,
+                headers={
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/124.0.0.0 Safari/537.36"
+                    )
+                },
+                timeout=5.0,
+                follow_redirects=True,
+            )
+            text = r.text
+            # Primary: JSON-LD structured data — Google includes "url" when a
+            # website is listed in the business's Google profile.
+            for m in _LD_JSON_BLOCK.finditer(text):
+                try:
+                    data = _json.loads(m.group(1))
+                    if isinstance(data, dict) and data.get("url"):
+                        return True
+                except Exception:
+                    pass
+            # Fallback: Google also embeds "websiteUri" in the page data blob.
+            if '"websiteUri":"http' in text:
+                return True
+            return False
+        except Exception:
+            return False
 
 
 async def get_nearby_places(
@@ -555,10 +562,10 @@ async def search_leads(
             client, req.lat, req.lng, req.radius_meters, req.category
         )
 
-        # Check each business for a guessed domain concurrently (free, no API cost).
-        names = [p.get("displayName", {}).get("text", "") for p in all_places]
+        # Check each business's Google Maps page for a listed website (free, no API cost).
+        maps_urls = [p.get("googleMapsUri", "") for p in all_places]
         website_flags = await asyncio.gather(
-            *[_has_website(client, name) for name in names],
+            *[_maps_has_website(client, url) for url in maps_urls],
             return_exceptions=True,
         )
 
