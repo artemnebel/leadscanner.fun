@@ -427,6 +427,42 @@ async def billing_portal(user=Depends(get_current_user)):
     )
     return {"url": session.url}
 
+# ── Domain-guess fallback (free secondary filter) ────────────────────────────
+# For businesses where the API didn't return websiteUri, attempt a HEAD request
+# to a guessed .com domain to catch the obvious cases.
+
+_STRIP_SUFFIXES = re.compile(
+    r'\b(llc|inc|ltd|co|corp|company|companies|group|associates|'
+    r'solutions|services|service|industries|enterprises|holdings|'
+    r'the|and|of|at)\b',
+    re.IGNORECASE,
+)
+_DOMAIN_SEM = asyncio.Semaphore(10)
+
+
+def _guess_domain(name: str) -> str | None:
+    name = _STRIP_SUFFIXES.sub("", name)
+    name = re.sub(r"[^a-z0-9]", "", name.lower())
+    return f"{name}.com" if name else None
+
+
+async def _domain_resolves(client: httpx.AsyncClient, name: str) -> bool:
+    domain = _guess_domain(name)
+    if not domain:
+        return False
+    async with _DOMAIN_SEM:
+        for scheme in ("https", "http"):
+            try:
+                r = await client.head(
+                    f"{scheme}://{domain}", follow_redirects=True, timeout=3.0
+                )
+                if r.status_code < 400:
+                    return True
+            except Exception:
+                pass
+    return False
+
+
 # ── Search ─────────────────────────────────────────────────────────────────────
 
 class SearchRequest(BaseModel):
@@ -517,6 +553,8 @@ async def search_leads(
             client, req.lat, req.lng, req.radius_meters, req.category
         )
 
+        # First pass: filter by websiteUri from the API response
+        no_api_website = []
         leads = []
         skipped_has_website = 0
         for place in all_places:
@@ -524,8 +562,19 @@ async def search_leads(
                 continue
             if place.get("websiteUri"):
                 skipped_has_website += 1
-                continue
+            else:
+                no_api_website.append(place)
 
+        # Second pass: domain-guess check for businesses the API didn't flag
+        domain_flags = await asyncio.gather(
+            *[_domain_resolves(client, p.get("displayName", {}).get("text", "")) for p in no_api_website],
+            return_exceptions=True,
+        )
+
+        for place, has_domain in zip(no_api_website, domain_flags):
+            if has_domain is True:
+                skipped_has_website += 1
+                continue
             geo = place.get("location", {})
             leads.append(
                 {
