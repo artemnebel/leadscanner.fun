@@ -52,8 +52,12 @@ TIER_LIMITS = {
 if STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
 
-PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
-FIELD_MASK        = "places.id,places.displayName,places.formattedAddress,places.googleMapsUri,places.location"
+PLACES_SEARCH_URL  = "https://places.googleapis.com/v1/places:searchText"
+PLACES_DETAIL_URL  = "https://places.googleapis.com/v1/places/{place_id}"
+# Pass 1 — Pro tier fields only ($32/1K, 5K free/month)
+FIELD_MASK         = "places.id,places.displayName,places.formattedAddress,places.googleMapsUri,places.location,places.businessStatus"
+# Pass 2 — Enterprise tier, websiteUri only ($20/1K, 1K free/month)
+DETAIL_FIELD_MASK  = "websiteUri"
 
 # ── App ──────────────────────────────────────────────────────────────────────
 def _get_version():
@@ -435,49 +439,31 @@ class SearchRequest(BaseModel):
     radius_meters: int
 
 
-# ── Website detection (Maps page JSON-LD check) ───────────────────────────────
+# ── Website detection (Place Details — websiteUri only) ───────────────────────
+# Two-pass strategy: Pass 1 uses cheap Pro fields; Pass 2 calls Place Details
+# with ONLY websiteUri (Enterprise tier, $20/1K, 1K free/month).
+# Requesting only websiteUri costs the same as requesting all Enterprise fields,
+# so there is no cheaper way to get this data from Google.
 
-import json as _json
-
-_LD_JSON_BLOCK = re.compile(
-    r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
-    re.DOTALL | re.IGNORECASE,
-)
-_WEBSITE_SEM = asyncio.Semaphore(10)  # max 10 concurrent outbound checks
+_DETAIL_SEM = asyncio.Semaphore(10)  # max 10 concurrent detail calls
 
 
-async def _maps_has_website(client: httpx.AsyncClient, maps_url: str) -> bool:
-    """Fetch the Google Maps page and detect a listed business website via JSON-LD."""
-    if not maps_url:
-        return False
-    async with _WEBSITE_SEM:
+async def _has_website(client: httpx.AsyncClient, place_id: str) -> bool:
+    """Return True if the business has a websiteUri listed in Google."""
+    async with _DETAIL_SEM:
         try:
+            url = PLACES_DETAIL_URL.format(place_id=place_id)
             r = await client.get(
-                maps_url,
+                url,
                 headers={
-                    "User-Agent": (
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                        "AppleWebKit/537.36 (KHTML, like Gecko) "
-                        "Chrome/124.0.0.0 Safari/537.36"
-                    )
+                    "X-Goog-Api-Key": API_KEY,
+                    "X-Goog-FieldMask": DETAIL_FIELD_MASK,
                 },
-                timeout=5.0,
-                follow_redirects=True,
+                timeout=10.0,
             )
-            text = r.text
-            # Primary: JSON-LD structured data — Google includes "url" when a
-            # website is listed in the business's Google profile.
-            for m in _LD_JSON_BLOCK.finditer(text):
-                try:
-                    data = _json.loads(m.group(1))
-                    if isinstance(data, dict) and data.get("url"):
-                        return True
-                except Exception:
-                    pass
-            # Fallback: Google also embeds "websiteUri" in the page data blob.
-            if '"websiteUri":"http' in text:
-                return True
-            return False
+            if r.status_code != 200:
+                return False
+            return bool(r.json().get("websiteUri"))
         except Exception:
             return False
 
@@ -562,16 +548,23 @@ async def search_leads(
             client, req.lat, req.lng, req.radius_meters, req.category
         )
 
-        # Check each business's Google Maps page for a listed website (free, no API cost).
-        maps_urls = [p.get("googleMapsUri", "") for p in all_places]
+        # Filter out permanently closed businesses before the Enterprise call.
+        operational = [
+            p for p in all_places
+            if p.get("businessStatus", "OPERATIONAL") != "CLOSED_PERMANENTLY"
+        ]
+
+        # Pass 2 — Place Details: check websiteUri for each operational place.
+        # Enterprise tier ($20/1K), but only websiteUri is requested.
+        place_ids = [p.get("id", "") for p in operational]
         website_flags = await asyncio.gather(
-            *[_maps_has_website(client, url) for url in maps_urls],
+            *[_has_website(client, pid) for pid in place_ids],
             return_exceptions=True,
         )
 
         leads = []
         skipped_has_website = 0
-        for place, has_site in zip(all_places, website_flags):
+        for place, has_site in zip(operational, website_flags):
             if has_site is True:
                 skipped_has_website += 1
                 continue
