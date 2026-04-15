@@ -118,7 +118,7 @@
                 }
                 localStorage.setItem('ls_token', data.token);
                 localStorage.removeItem('ls_user');
-                window.location.href = '/';
+                window.location.href = '/?launched=1';
             } catch {
                 errEl.textContent = '> ERR: Network error.';
                 errEl.style.display = 'block';

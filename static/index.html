@@ -510,7 +510,9 @@
             sessionStorage.removeItem('ls_launched');
         }
 
-        if (sessionStorage.getItem('ls_launched') || localStorage.getItem('ls_token')) {
+        const _urlParams = new URLSearchParams(window.location.search);
+        const _autoLaunch = _urlParams.get('token') || _urlParams.get('launched');
+        if (sessionStorage.getItem('ls_launched') || localStorage.getItem('ls_token') || _autoLaunch) {
             ov.style.display = 'none';
             sessionStorage.setItem('ls_launched', '1');
         }
