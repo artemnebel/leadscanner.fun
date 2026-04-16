@@ -14,6 +14,7 @@ import os
 import stripe
 from datetime import date, datetime, timezone, timedelta
 import re
+import secrets
 from dotenv import load_dotenv
 from jose import JWTError, jwt
 import bcrypt
@@ -42,10 +43,10 @@ PRICE_IDS = {
 }
 
 TIER_LIMITS = {
-    "free":      {"type": "leads", "limit": 100},
+    "free":      {"type": "leads", "limit": 20},
     "starter":   {"type": "leads", "limit": 500},
-    "pro":       {"type": "leads", "limit": 2500},
-    "business":  {"type": "leads", "limit": 7500},
+    "pro":       {"type": "leads", "limit": 2000},
+    "business":  {"type": "leads", "limit": 5000},
     "unlimited": {"type": "leads", "limit": None},
 }
 
@@ -167,6 +168,14 @@ async def serve_pricing(request: Request):
 async def serve_dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", _ctx(request))
 
+@app.get("/forgot-password")
+async def serve_forgot_password(request: Request):
+    return templates.TemplateResponse("forgot-password.html", _ctx(request))
+
+@app.get("/reset-password")
+async def serve_reset_password(request: Request):
+    return templates.TemplateResponse("reset-password.html", _ctx(request))
+
 @app.get("/privacy")
 async def serve_privacy(request: Request):
     return templates.TemplateResponse("privacy.html", _ctx(request))
@@ -261,6 +270,76 @@ async def login(request: Request, body: AuthBody, db: Session = Depends(get_db))
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
     return {"token": create_jwt(user.id), "user": {"email": user.email, "tier": user.tier}}
+
+class ForgotPasswordBody(BaseModel):
+    email: str
+
+class ResetPasswordBody(BaseModel):
+    token: str
+    password: str
+
+@app.post("/api/auth/forgot-password")
+@limiter.limit("5/minute")
+async def forgot_password(request: Request, body: ForgotPasswordBody, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == body.email).first()
+    # Always return 200 to avoid leaking which emails are registered
+    if not user:
+        return {"ok": True}
+
+    token = secrets.token_urlsafe(32)
+    user.reset_token = token
+    user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
+    db.commit()
+
+    reset_url = f"{BASE_URL}/reset-password?token={token}"
+    # Always log the link so it's available in server console during local dev
+    print(f"\n[PASSWORD RESET] {user.email} → {reset_url}\n", flush=True)
+
+    resend_key = os.getenv("RESEND_API_KEY")
+    if resend_key:
+        # onboarding@resend.dev can only deliver to verified addresses.
+        # Send to the user's email directly; also CC admin so it arrives
+        # even when the recipient hasn't verified with Resend.
+        recipients = [user.email]
+        if user.email != ADMIN_EMAIL:
+            recipients.append(ADMIN_EMAIL)
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {resend_key}"},
+                json={
+                    "from": "Lead Scanner <onboarding@resend.dev>",
+                    "to": recipients,
+                    "subject": f"Password reset for {user.email}",
+                    "text": (
+                        f"Password reset requested for: {user.email}\n\n"
+                        f"Reset link (expires in 1 hour):\n{reset_url}\n\n"
+                        "If you didn't request this, ignore this email."
+                    ),
+                },
+            )
+        print(f"[RESEND] status={r.status_code} body={r.text}", flush=True)
+
+    return {"ok": True}
+
+@app.post("/api/auth/reset-password")
+@limiter.limit("10/minute")
+async def reset_password(request: Request, body: ResetPasswordBody, db: Session = Depends(get_db)):
+    if len(body.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+    user = db.query(User).filter(User.reset_token == body.token).first()
+    if not user or not user.reset_token_expires:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link.")
+    expires = user.reset_token_expires
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) > expires:
+        raise HTTPException(status_code=400, detail="Reset link has expired. Please request a new one.")
+    user.password_hash = hash_password(body.password)
+    user.reset_token = None
+    user.reset_token_expires = None
+    db.commit()
+    return {"ok": True}
 
 @app.get("/api/auth/me")
 async def me(user=Depends(get_current_user)):

@@ -1123,12 +1123,14 @@ body.page #top-bar {
     gap: 1.25rem;
     justify-content: center;
     margin-top: 1.5rem;
+    overflow-x: auto;
 }
 
 .pricing-card {
     border: 1px solid #1a3a1a;
-    padding: 1.75rem 1.5rem;
-    width: 210px;
+    padding: 2.25rem 1.5rem;
+    width: 260px;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -1202,6 +1204,7 @@ body.page #top-bar {
     font-size: 0.8rem;
     color: var(--muted);
     flex: 1;
+    white-space: nowrap;
 }
 
 .pricing-features li::before {

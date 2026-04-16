@@ -139,6 +139,13 @@ function toggleBulkMode() {
         if (state.searchCircle) state.searchCircle.setStyle({ opacity: 1, fillOpacity: 0.05 });
         if (state.centerMarker) state.centerMarker.setOpacity(1);
     } else {
+        // Check if user has a paid plan
+        const cached = localStorage.getItem('ls_user');
+        const tier = cached ? (JSON.parse(cached).tier || 'free') : 'free';
+        if (tier === 'free') {
+            showPaywallModal('Multi-zone scanning is available on the Starter plan and above. Upgrade to scan multiple areas at once.');
+            return;
+        }
         state.bulkMode = true;
         // Dim main circle/marker
         if (state.searchCircle) state.searchCircle.setStyle({ opacity: 0.25, fillOpacity: 0.02 });

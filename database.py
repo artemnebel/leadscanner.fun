@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import date, datetime
-from sqlalchemy import create_engine, Column, String, Integer, Date, DateTime, Boolean
+from sqlalchemy import create_engine, Column, String, Integer, Date, DateTime, Boolean, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./leads.db")
@@ -32,10 +32,23 @@ class User(Base):
     stripe_customer_id = Column(String, nullable=True)
     stripe_subscription_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    reset_token = Column(String, nullable=True)
+    reset_token_expires = Column(DateTime, nullable=True)
 
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    # Add new columns to existing tables if they don't exist (SQLite migration)
+    with engine.connect() as conn:
+        for col, typedef in [
+            ("reset_token", "VARCHAR"),
+            ("reset_token_expires", "DATETIME"),
+        ]:
+            try:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {typedef}"))
+                conn.commit()
+            except Exception:
+                pass  # column already exists
 
 
 def get_db():
