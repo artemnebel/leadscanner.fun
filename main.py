@@ -398,7 +398,8 @@ async def google_callback(
         token_data = token_resp.json()
         access_token = token_data.get("access_token")
         if not access_token:
-            raise HTTPException(status_code=400, detail=f"Google OAuth failed: {token_data}")
+            redirect_uri_used = f"{BASE_URL}/api/auth/google/callback"
+            raise HTTPException(status_code=400, detail=f"Google OAuth failed: {token_data} | redirect_uri={redirect_uri_used} | client_id_set={bool(GOOGLE_CLIENT_ID)} | secret_set={bool(GOOGLE_CLIENT_SECRET)}")
 
         userinfo_resp = await client.get(
             "https://www.googleapis.com/oauth2/v3/userinfo",
