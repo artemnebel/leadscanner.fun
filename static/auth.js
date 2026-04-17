@@ -55,6 +55,11 @@ function renderUsage(usage) {
     history.replaceState({}, '', newUrl);
   }
 
+  if (params.get('auth_error')) {
+    alert('Google sign-in failed. Please try again.');
+    history.replaceState({}, '', window.location.pathname);
+  }
+
   const user = await getUser();
   updateAuthNav(user);
   if (user) renderUsage(user.usage);

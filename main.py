@@ -377,7 +377,13 @@ async def google_login():
     return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{params}")
 
 @app.get("/api/auth/google/callback")
-async def google_callback(code: str, db: Session = Depends(get_db)):
+async def google_callback(
+    code: str | None = None,
+    error: str | None = None,
+    db: Session = Depends(get_db),
+):
+    if error or not code:
+        return RedirectResponse("/?auth_error=google_failed")
     async with httpx.AsyncClient() as client:
         token_resp = await client.post(
             "https://oauth2.googleapis.com/token",
