@@ -47,7 +47,7 @@ PRICE_IDS = {
 }
 
 TIER_LIMITS = {
-    "free":      {"type": "leads", "limit": 20},
+    "free":      {"type": "leads", "limit": 100},
     "starter":   {"type": "leads", "limit": 500},
     "pro":       {"type": "leads", "limit": 2000},
     "business":  {"type": "leads", "limit": 5000},
