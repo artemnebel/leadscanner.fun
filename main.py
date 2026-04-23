@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Form, Depends, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+import math
 import subprocess
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -14,15 +15,18 @@ import os
 import stripe
 from datetime import date, datetime, timezone, timedelta
 import re
+from urllib.parse import urlencode, quote
 import secrets
 from dotenv import load_dotenv
 from jose import JWTError, jwt
 import bcrypt
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from database import User, get_db, init_db
 
 load_dotenv()
+load_dotenv(".env.local", override=True)  # local overrides — not committed
 
 # ── Config ──────────────────────────────────────────────────────────────────
 API_KEY               = os.getenv("GOOGLE_MAPS_API_KEY")
@@ -341,6 +345,14 @@ async def reset_password(request: Request, body: ResetPasswordBody, db: Session 
     db.commit()
     return {"ok": True}
 
+@app.get("/api/healthz")
+async def healthz(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+        return {"ok": True, "db": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"db error: {e}")
+
 @app.get("/api/auth/me")
 async def me(user=Depends(get_current_user)):
     if not user:
@@ -367,13 +379,14 @@ async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_
 
 @app.get("/api/auth/google")
 async def google_login():
-    params = (
-        f"client_id={GOOGLE_CLIENT_ID}"
-        f"&redirect_uri={BASE_URL}/api/auth/google/callback"
-        "&response_type=code"
-        "&scope=openid%20email%20profile"
-        "&access_type=offline"
-    )
+    redirect_uri = f"{BASE_URL}/api/auth/google/callback"
+    params = urlencode({
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+    })
     return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{params}")
 
 @app.get("/api/auth/google/callback")
@@ -398,8 +411,7 @@ async def google_callback(
         token_data = token_resp.json()
         access_token = token_data.get("access_token")
         if not access_token:
-            redirect_uri_used = f"{BASE_URL}/api/auth/google/callback"
-            raise HTTPException(status_code=400, detail=f"Google OAuth failed: {token_data} | redirect_uri={redirect_uri_used} | client_id_set={bool(GOOGLE_CLIENT_ID)} | secret_set={bool(GOOGLE_CLIENT_SECRET)}")
+            raise HTTPException(status_code=400, detail=f"Google OAuth failed: {token_data.get('error', 'unknown')}")
 
         userinfo_resp = await client.get(
             "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -524,6 +536,42 @@ PLACES_DETAIL_URL = "https://places.googleapis.com/v1/places/{place_id}"
 _DETAIL_SEM = asyncio.Semaphore(10)
 
 
+def _generate_sub_circles(lat: float, lng: float, total_radius_m: float) -> list[tuple[float, float]]:
+    """
+    Tile the search area with a hexagonal grid of sub-circles so every part of
+    a large radius gets its own focused query (overcoming the 60-result API cap).
+    Sub-circle radius is fixed at 8 km; for areas <= 8 km a single center is used.
+    """
+    SUB_R = 8_000.0  # metres — Google returns good local density at this scale
+
+    if total_radius_m <= SUB_R:
+        return [(lat, lng)]
+
+    # Hex-grid spacing with 15 % overlap so no gaps at circle edges
+    row_step_m = SUB_R * math.sqrt(3) * 0.85
+    col_step_m = SUB_R * 2.0 * 0.85
+
+    m_per_lat = 111_320.0
+    m_per_lng = 111_320.0 * math.cos(math.radians(lat))
+
+    max_i = math.ceil(total_radius_m / row_step_m)
+    max_j = math.ceil(total_radius_m / col_step_m)
+
+    centers: list[tuple[float, float]] = []
+    for i in range(-max_i, max_i + 1):
+        dlat_m = i * row_step_m
+        hex_offset_m = col_step_m * 0.5 if i % 2 != 0 else 0.0
+        for j in range(-max_j - 1, max_j + 2):
+            dlng_m = j * col_step_m + hex_offset_m
+            if math.sqrt(dlat_m ** 2 + dlng_m ** 2) <= total_radius_m:
+                centers.append((
+                    lat + dlat_m / m_per_lat,
+                    lng + dlng_m / m_per_lng,
+                ))
+
+    return centers
+
+
 async def _confirm_no_website(client: httpx.AsyncClient, place_id: str) -> bool:
     """Return True if the business definitely has no website (safe to include as lead)."""
     async with _DETAIL_SEM:
@@ -537,10 +585,10 @@ async def _confirm_no_website(client: httpx.AsyncClient, place_id: str) -> bool:
                 timeout=10.0,
             )
             if r.status_code != 200:
-                return False  # on error, exclude to be safe
+                return True  # Text Search already said no website; keep the lead on API error
             return not r.json().get("websiteUri")
         except Exception:
-            return False  # on error, exclude to be safe
+            return True  # Text Search already said no website; keep the lead on error
 
 
 # ── Search ─────────────────────────────────────────────────────────────────────
@@ -554,12 +602,17 @@ class SearchRequest(BaseModel):
 
 
 async def get_nearby_places(
-    client: httpx.AsyncClient, lat: float, lng: float, radius: int, category: str
+    client: httpx.AsyncClient,
+    lat: float,
+    lng: float,
+    radius: int,
+    category: str,
+    max_pages: int = 3,
 ) -> list:
     places = []
     page_token = None
 
-    for page_num in range(3):
+    for page_num in range(max_pages):
         body: dict = {
             "textQuery": category,
             "locationBias": {
@@ -569,6 +622,7 @@ async def get_nearby_places(
                 }
             },
             "maxResultCount": 20,
+            "rankPreference": "DISTANCE",  # surface nearby locals, not just popular chains
         }
         if page_token:
             body["pageToken"] = page_token
@@ -600,7 +654,7 @@ async def get_nearby_places(
         if not page_token:
             break
 
-        if page_num < 2:
+        if page_num < max_pages - 1:
             await asyncio.sleep(2)
 
     return places
@@ -628,10 +682,35 @@ async def search_leads(
 
     center = {"lat": req.lat, "lng": req.lng}
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        all_places = await get_nearby_places(
-            client, req.lat, req.lng, req.radius_meters, req.category
-        )
+    sub_circles = _generate_sub_circles(req.lat, req.lng, req.radius_meters)
+    is_grid = len(sub_circles) > 1
+    # For grid mode use 8 km sub-circles and 2 pages each; single mode uses full radius + 3 pages
+    sub_radius = 8_000 if is_grid else req.radius_meters
+    sub_pages = 2 if is_grid else 3
+
+    _search_sem = asyncio.Semaphore(5)  # max 5 concurrent sub-circle requests
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+
+        async def _fetch_sub(slat: float, slng: float) -> list:
+            async with _search_sem:
+                try:
+                    return await get_nearby_places(
+                        client, slat, slng, sub_radius, req.category, max_pages=sub_pages
+                    )
+                except Exception:
+                    return []
+
+        sub_results = await asyncio.gather(*[_fetch_sub(slat, slng) for slat, slng in sub_circles])
+
+        seen_ids: set[str] = set()
+        all_places: list = []
+        for batch in sub_results:
+            for place in batch:
+                pid = place.get("id")
+                if pid and pid not in seen_ids:
+                    seen_ids.add(pid)
+                    all_places.append(place)
 
         # Pass 1: filter businesses already confirmed to have a website
         needs_confirmation = []
@@ -644,8 +723,8 @@ async def search_leads(
             else:
                 needs_confirmation.append(place)
 
-        # Pass 2: Place Details confirms websiteUri for businesses Text Search missed.
-        # On any API error, the business is excluded (safe default).
+        # Pass 2: Place Details confirms websiteUri for any business Text Search missed.
+        # On API error, the lead is kept (Text Search already returned no website).
         confirmed_flags = await asyncio.gather(
             *[_confirm_no_website(client, p.get("id", "")) for p in needs_confirmation],
             return_exceptions=True,

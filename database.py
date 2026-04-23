@@ -37,18 +37,31 @@ class User(Base):
 
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
-    # Add new columns to existing tables if they don't exist (SQLite migration)
+    is_postgres = "postgresql" in DATABASE_URL or "postgres" in DATABASE_URL
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("[init_db] create_all OK", flush=True)
+    except Exception as e:
+        print(f"[init_db] create_all failed: {e}", flush=True)
+
+    migrations = [
+        ("leads_used", "INTEGER DEFAULT 0"),
+        ("scans_used", "INTEGER DEFAULT 0"),
+        ("reset_token", "VARCHAR"),
+        ("reset_token_expires", "DATETIME"),
+    ]
     with engine.connect() as conn:
-        for col, typedef in [
-            ("reset_token", "VARCHAR"),
-            ("reset_token_expires", "DATETIME"),
-        ]:
+        for col, typedef in migrations:
             try:
-                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {typedef}"))
+                if is_postgres:
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col} {typedef}"))
+                else:
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {typedef}"))
                 conn.commit()
-            except Exception:
-                pass  # column already exists
+                print(f"[init_db] migrated column: {col}", flush=True)
+            except Exception as e:
+                conn.rollback()
+                print(f"[init_db] column {col} skipped: {e}", flush=True)
 
 
 def get_db():
