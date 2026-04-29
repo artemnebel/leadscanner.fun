@@ -98,6 +98,7 @@
             // Check for upgrade success
             const params = new URLSearchParams(window.location.search);
             if (params.get('upgraded')) {
+                gtag('event', 'conversion_event_purchase');
                 history.replaceState({}, '', '/dashboard');
             }
 
