@@ -122,7 +122,7 @@
                     <li><span class="land-bi">[+]</span> Export as CSV, JSON, or XLSX</li>
                     <li><span class="land-bi">[+]</span> Multi-zone bulk scanning</li>
                 </ul>
-                <a href="/signup" class="land-free-cta">[ FREE - 100 LEADS / MONTH ]</a>
+                <a href="/signup" class="land-free-cta" id="land-start-btn">[ START FOR FREE ]</a>
             </div>
             <div class="land-hero-right">
                 <div class="land-cube-wrap">
@@ -524,7 +524,13 @@
                 window.location.href = '/login';
             }
         });
-        document.getElementById('land-cta-btn').addEventListener('click', launch);
+        document.getElementById('land-cta-btn').addEventListener('click', function() {
+            if (localStorage.getItem('ls_token')) { launch(); } else { window.location.href = '/login'; }
+        });
+        document.getElementById('land-start-btn').addEventListener('click', function(e) {
+            if (localStorage.getItem('ls_token')) { e.preventDefault(); launch(); }
+            // else follow the href to /signup naturally
+        });
         document.getElementById('logo-text').addEventListener('click', showLanding);
         document.getElementById('logo-blink').addEventListener('click', showLanding);
 
