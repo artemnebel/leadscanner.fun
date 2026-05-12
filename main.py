@@ -547,8 +547,10 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid webhook signature.")
 
-    ev_type = event["type"]
-    obj = event["data"]["object"]
+    # Convert to plain dict — newer Stripe SDK's StripeObject doesn't expose dict.get
+    event_dict = event.to_dict() if hasattr(event, "to_dict") else event
+    ev_type = event_dict["type"]
+    obj = event_dict["data"]["object"]
 
     # ── New pricing: one-time credit pack purchases ─────────────────────────
     if ev_type == "checkout.session.completed":
@@ -567,9 +569,10 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             credits_to_add = PACK_CREDITS[price_id]
         else:
             try:
-                items = stripe.checkout.Session.list_line_items(obj["id"], limit=10)
+                items_obj = stripe.checkout.Session.list_line_items(obj["id"], limit=10)
+                items = items_obj.to_dict() if hasattr(items_obj, "to_dict") else items_obj
                 for item in items.get("data", []):
-                    pid = item.get("price", {}).get("id")
+                    pid = (item.get("price") or {}).get("id")
                     if pid in PACK_CREDITS:
                         credits_to_add += PACK_CREDITS[pid] * (item.get("quantity") or 1)
             except Exception as e:
