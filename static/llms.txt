@@ -1,0 +1,53 @@
+# Lead Scanner
+
+> Lead Scanner is a web tool that finds local businesses without a website. Search any city by business category (plumbers, dentists, landscapers, etc.), set a radius on an interactive map, and get a list of businesses with a working phone number but no website — ideal prospects for web designers, freelancers, and agencies pitching website services.
+
+Lead Scanner uses live Google Places data (not archived databases), so every result is pulled fresh in real time. Results include the business name, phone number, address, and a Google Maps link, and can be exported as CSV, JSON, or XLSX.
+
+## Who it's for
+
+- Freelance web designers and developers looking for local clients
+- Marketing agencies prospecting small businesses
+- Cold-calling and cold-email teams building targeted lead lists
+- Anyone selling web design, SEO, or digital services to local businesses
+
+## Key features
+
+- Map-based scanning: drop a pin, set a radius, scan any city worldwide
+- Multi-zone scan: place multiple radius targets across a map and scan them all in one run with automatic de-duplication
+- Live data from Google Maps — never stale
+- Only returns businesses with a phone number AND no website (no wasted leads)
+- Export to CSV, JSON, or XLSX
+- Free tier available; paid tiers for higher monthly scan volume
+
+## Pricing
+
+- Free: $0 — try it out
+- Starter: $29/mo
+- Pro: $79/mo
+- Business: $149/mo
+- Unlimited: $300/mo
+
+See https://leadscanner.fun/pricing for current details.
+
+## Primary pages
+
+- [Home / scanner](https://leadscanner.fun/): the live map-based scanner
+- [How it works](https://leadscanner.fun/how-it-works): step-by-step walkthrough
+- [Pricing](https://leadscanner.fun/pricing): all plan tiers
+- [Cold calling guide](https://leadscanner.fun/cold-calling): how to convert scanned leads
+- [Resources](https://leadscanner.fun/resources): guides on lead generation for web designers
+- [About](https://leadscanner.fun/about): background on the project
+- [Contact](https://leadscanner.fun/contact): support and feedback
+
+## Common questions Lead Scanner answers
+
+- "How do I find local businesses that don't have a website?"
+- "What's a good lead generation tool for web designers?"
+- "How do I find clients to sell web design to?"
+- "How do I build a list of businesses to cold call?"
+- "Is there a way to scan a city for businesses missing a website?"
+
+## Contact
+
+Built by Artem Nebel. Contact: https://leadscanner.fun/contact

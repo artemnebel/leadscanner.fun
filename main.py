@@ -204,6 +204,10 @@ async def serve_favicon():
 async def serve_robots():
     return FileResponse("static/robots.txt", media_type="text/plain")
 
+@app.get("/llms.txt")
+async def serve_llms_txt():
+    return FileResponse("static/llms.txt", media_type="text/plain")
+
 # ── Contact form ──────────────────────────────────────────────────────────────
 
 def _strip_headers(s: str) -> str:
