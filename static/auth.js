@@ -33,14 +33,20 @@ function logout() {
 function renderUsage(usage) {
   const el = document.getElementById('usage-display');
   if (!el || !usage) return;
-  const { type, used, limit, tier } = usage;
-  if (tier === 'unlimited') {
+  const { tier, free_used, free_limit, credits, available, used, limit } = usage;
+  // Uncapped (admin / legacy unlimited)
+  if (available === null || tier === 'unlimited') {
     el.textContent = '[ UNLIMITED ]';
     return;
   }
-  const label = type === 'scans' ? 'SCANS' : 'LEADS';
+  // New credit-aware shape: show total leads available across free allotment + credits
+  if (typeof available === 'number') {
+    el.textContent = `[ LEADS: ${available} ]`;
+    return;
+  }
+  // Legacy fallback (in case server returns old shape)
   const limitStr = limit != null ? limit : '∞';
-  el.textContent = `[ ${label}: ${used}/${limitStr} ]`;
+  el.textContent = `[ LEADS: ${used ?? 0}/${limitStr} ]`;
 }
 
 // ── On page load: handle Google OAuth token in URL, update nav ────────────────
