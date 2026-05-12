@@ -25,10 +25,11 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=True)   # null for Google-only accounts
     google_id = Column(String, nullable=True, unique=True)
-    tier = Column(String, default="free")           # free | starter | pro | business | unlimited
-    scans_used = Column(Integer, default=0)         # free tier: counts scans
-    leads_used = Column(Integer, default=0)         # paid tiers: counts leads returned
-    usage_reset = Column(Date, default=date.today)  # reset on 1st of each month
+    tier = Column(String, default="free")           # legacy: free | starter | pro | business | unlimited (grandfathered subs)
+    scans_used = Column(Integer, default=0)         # legacy, unused for new pricing
+    leads_used = Column(Integer, default=0)         # counts Free-tier monthly allotment usage; resets monthly
+    lead_credits = Column(Integer, default=0)       # paid credit balance from one-time pack purchases; never resets
+    usage_reset = Column(Date, default=date.today)  # reset on 1st of each month (Free allotment only)
     stripe_customer_id = Column(String, nullable=True)
     stripe_subscription_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -47,6 +48,7 @@ def init_db():
     migrations = [
         ("leads_used", "INTEGER DEFAULT 0"),
         ("scans_used", "INTEGER DEFAULT 0"),
+        ("lead_credits", "INTEGER DEFAULT 0"),
         ("reset_token", "VARCHAR"),
         ("reset_token_expires", "DATETIME"),
     ]

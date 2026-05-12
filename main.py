@@ -39,6 +39,7 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 BASE_URL              = os.getenv("BASE_URL", "http://localhost:8000")
 ADMIN_EMAIL           = os.getenv("ADMIN_EMAIL", "artem.nebel07@gmail.com")
 
+# Legacy subscription price IDs — kept so existing subscribers stay grandfathered.
 PRICE_IDS = {
     "starter":   os.getenv("STRIPE_PRICE_STARTER"),
     "pro":       os.getenv("STRIPE_PRICE_PRO"),
@@ -46,12 +47,32 @@ PRICE_IDS = {
     "unlimited": os.getenv("STRIPE_PRICE_UNLIMITED"),
 }
 
-TIER_LIMITS = {
-    "free":      {"type": "leads", "limit": 100},
-    "starter":   {"type": "leads", "limit": 500},
-    "pro":       {"type": "leads", "limit": 2000},
-    "business":  {"type": "leads", "limit": 5000},
-    "unlimited": {"type": "leads", "limit": None},
+# New pricing: one-time credit packs. price_id -> credits granted.
+PACK_PRICE_IDS = {
+    "mini":     os.getenv("STRIPE_PRICE_PACK_MINI"),
+    "starter":  os.getenv("STRIPE_PRICE_PACK_STARTER"),
+    "pro":      os.getenv("STRIPE_PRICE_PACK_PRO"),
+    "business": os.getenv("STRIPE_PRICE_PACK_BUSINESS"),
+    "bulk":     os.getenv("STRIPE_PRICE_PACK_BULK"),
+}
+PACK_CREDITS = {
+    PACK_PRICE_IDS["mini"]:     100,
+    PACK_PRICE_IDS["starter"]:  300,
+    PACK_PRICE_IDS["pro"]:      650,
+    PACK_PRICE_IDS["business"]: 1300,
+    PACK_PRICE_IDS["bulk"]:     2600,
+}
+PACK_CREDITS = {pid: credits for pid, credits in PACK_CREDITS.items() if pid}
+
+FREE_MONTHLY_LEADS = 100
+
+# Legacy monthly caps for grandfathered subscribers. None = uncapped.
+LEGACY_TIER_LIMITS = {
+    "free":      FREE_MONTHLY_LEADS,
+    "starter":   500,
+    "pro":       2000,
+    "business":  5000,
+    "unlimited": None,
 }
 
 if STRIPE_SECRET_KEY:
@@ -121,11 +142,45 @@ def reset_usage_if_needed(user: User, db: Session):
         user.usage_reset = today
         db.commit()
 
-def usage_info(user: User) -> dict:
+def monthly_allotment(user: User) -> int | None:
+    """Free leads available each month. None = uncapped (admin or legacy 'unlimited')."""
     if user.email == ADMIN_EMAIL:
-        return {"type": "leads", "used": user.leads_used, "limit": None, "tier": "unlimited"}
-    cfg = TIER_LIMITS[user.tier]
-    return {"type": "leads", "used": user.leads_used, "limit": cfg["limit"], "tier": user.tier}
+        return None
+    return LEGACY_TIER_LIMITS.get(user.tier, FREE_MONTHLY_LEADS)
+
+def available_leads(user: User) -> int | None:
+    """Total leads the user can still scan right now. None = uncapped."""
+    allotment = monthly_allotment(user)
+    if allotment is None:
+        return None
+    remaining = max(0, allotment - (user.leads_used or 0))
+    return remaining + (user.lead_credits or 0)
+
+def consume_leads(user: User, count: int) -> None:
+    """Deduct N leads: monthly allotment first (resets monthly), then credits (never reset)."""
+    allotment = monthly_allotment(user)
+    if allotment is None:
+        return  # uncapped
+    remaining_allotment = max(0, allotment - (user.leads_used or 0))
+    from_allotment = min(count, remaining_allotment)
+    from_credits = count - from_allotment
+    user.leads_used = (user.leads_used or 0) + from_allotment
+    if from_credits > 0:
+        user.lead_credits = max(0, (user.lead_credits or 0) - from_credits)
+
+def usage_info(user: User) -> dict:
+    allotment = monthly_allotment(user)
+    available = available_leads(user)
+    return {
+        "type": "leads",
+        "tier": user.tier,
+        "free_used": user.leads_used or 0,
+        "free_limit": allotment,                    # None = uncapped
+        "credits": user.lead_credits or 0,
+        "available": available,                     # None = uncapped
+        "used": user.leads_used or 0,               # legacy field, kept for old UI
+        "limit": allotment,                         # legacy field, kept for old UI
+    }
 
 # ── Page routes ───────────────────────────────────────────────────────────────
 
@@ -374,6 +429,7 @@ async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_
             "email": u.email,
             "tier": u.tier,
             "leads_used": u.leads_used,
+            "lead_credits": u.lead_credits or 0,
             "usage_reset": str(u.usage_reset),
             "created_at": str(u.created_at),
             "has_stripe": bool(u.stripe_customer_id),
@@ -446,7 +502,8 @@ async def google_callback(
 # ── Billing routes ────────────────────────────────────────────────────────────
 
 class CheckoutBody(BaseModel):
-    tier: str
+    pack: str | None = None
+    tier: str | None = None  # legacy field name from older clients; treated as pack
 
 @app.post("/api/billing/checkout")
 async def create_checkout(
@@ -456,9 +513,11 @@ async def create_checkout(
 ):
     if not user:
         raise HTTPException(status_code=401, detail="Login required.")
-    price_id = PRICE_IDS.get(body.tier)
+
+    pack_name = (body.pack or body.tier or "").lower()
+    price_id = PACK_PRICE_IDS.get(pack_name)
     if not price_id:
-        raise HTTPException(status_code=400, detail="Invalid tier.")
+        raise HTTPException(status_code=400, detail="Invalid pack.")
 
     if not user.stripe_customer_id:
         customer = stripe.Customer.create(email=user.email)
@@ -469,9 +528,10 @@ async def create_checkout(
         customer=user.stripe_customer_id,
         payment_method_types=["card"],
         line_items=[{"price": price_id, "quantity": 1}],
-        mode="subscription",
-        success_url=f"{BASE_URL}/dashboard?upgraded=1",
+        mode="payment",
+        success_url=f"{BASE_URL}/dashboard?credits_added=1",
         cancel_url=f"{BASE_URL}/pricing",
+        metadata={"user_id": user.id, "pack": pack_name},
     )
     return {"url": session.url}
 
@@ -488,12 +548,51 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid webhook signature.")
 
     ev_type = event["type"]
-    sub = event["data"]["object"]
+    obj = event["data"]["object"]
 
-    if ev_type in ("customer.subscription.updated", "customer.subscription.created"):
-        customer_id = sub.get("customer")
-        status = sub.get("status")
-        price_id = sub["items"]["data"][0]["price"]["id"] if sub.get("items") else None
+    # ── New pricing: one-time credit pack purchases ─────────────────────────
+    if ev_type == "checkout.session.completed":
+        if obj.get("payment_status") != "paid":
+            return {"ok": True}
+
+        metadata = obj.get("metadata") or {}
+        user_id = metadata.get("user_id")
+        pack_name = (metadata.get("pack") or "").lower()
+        customer_id = obj.get("customer")
+
+        # Resolve credits: prefer pack name from metadata, fall back to price_id lookup.
+        credits_to_add = 0
+        price_id = PACK_PRICE_IDS.get(pack_name)
+        if price_id and price_id in PACK_CREDITS:
+            credits_to_add = PACK_CREDITS[price_id]
+        else:
+            try:
+                items = stripe.checkout.Session.list_line_items(obj["id"], limit=10)
+                for item in items.get("data", []):
+                    pid = item.get("price", {}).get("id")
+                    if pid in PACK_CREDITS:
+                        credits_to_add += PACK_CREDITS[pid] * (item.get("quantity") or 1)
+            except Exception as e:
+                print(f"[webhook] failed to list line items: {e}", flush=True)
+
+        if credits_to_add <= 0:
+            return {"ok": True}
+
+        user = None
+        if user_id:
+            user = db.query(User).filter(User.id == user_id).first()
+        if not user and customer_id:
+            user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
+        if user:
+            user.lead_credits = (user.lead_credits or 0) + credits_to_add
+            db.commit()
+            print(f"[webhook] granted {credits_to_add} credits to {user.email}", flush=True)
+
+    # ── Legacy subscription events (grandfathered subscribers only) ──────────
+    elif ev_type in ("customer.subscription.updated", "customer.subscription.created"):
+        customer_id = obj.get("customer")
+        status = obj.get("status")
+        price_id = obj["items"]["data"][0]["price"]["id"] if obj.get("items") else None
 
         tier = "free"
         for t, pid in PRICE_IDS.items():
@@ -504,11 +603,11 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
         if user:
             user.tier = tier if status == "active" else "free"
-            user.stripe_subscription_id = sub.get("id")
+            user.stripe_subscription_id = obj.get("id")
             db.commit()
 
     elif ev_type == "customer.subscription.deleted":
-        customer_id = sub.get("customer")
+        customer_id = obj.get("customer")
         user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
         if user:
             user.tier = "free"
@@ -680,9 +779,9 @@ async def search_leads(
 
     reset_usage_if_needed(user, db)
 
-    # Pre-check: block if user already hit their monthly lead limit
-    cfg = TIER_LIMITS["unlimited"] if user.email == ADMIN_EMAIL else TIER_LIMITS.get(user.tier, TIER_LIMITS["free"])
-    if cfg["limit"] is not None and user.leads_used >= cfg["limit"]:
+    # Pre-check: block if user has no leads available (free allotment exhausted AND no credits).
+    available_before = available_leads(user)
+    if available_before is not None and available_before <= 0:
         raise HTTPException(status_code=429, detail="LIMIT_REACHED")
 
     center = {"lat": req.lat, "lng": req.lng}
@@ -754,16 +853,16 @@ async def search_leads(
     leads_count = len(leads)
 
     limit_reached = False
-    if cfg["limit"] is not None:
-        remaining = cfg["limit"] - user.leads_used
-        if remaining <= 0:
+    available_now = available_leads(user)
+    if available_now is not None:
+        if available_now <= 0:
             raise HTTPException(status_code=429, detail="LIMIT_REACHED")
-        if leads_count > remaining:
-            leads = leads[:remaining]
-            leads_count = remaining
+        if leads_count > available_now:
+            leads = leads[:available_now]
+            leads_count = available_now
             limit_reached = True
 
-    user.leads_used += leads_count
+    consume_leads(user, leads_count)
     db.commit()
 
     return {

@@ -139,13 +139,8 @@ async function toggleBulkMode() {
         if (state.searchCircle) state.searchCircle.setStyle({ opacity: 1, fillOpacity: 0.05 });
         if (state.centerMarker) state.centerMarker.setOpacity(1);
     } else {
-        // Check if user has a paid plan (force refresh from server)
-        const user = await getUser(true);
-        const tier = user ? (user.tier || 'free') : 'free';
-        if (tier === 'free') {
-            showPaywallModal('Multi-zone scanning is available on the Starter plan and above. Upgrade to scan multiple areas at once.');
-            return;
-        }
+        // Multi-zone is available to everyone now (lead cost is paid per-lead from the credit balance).
+        await getUser(true); // refresh in background
         state.bulkMode = true;
         // Dim main circle/marker
         if (state.searchCircle) state.searchCircle.setStyle({ opacity: 0.25, fillOpacity: 0.02 });

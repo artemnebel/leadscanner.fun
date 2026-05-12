@@ -62,23 +62,30 @@
             </div>
 
             <div class="page-section">
-                <h2>&gt; USAGE THIS MONTH</h2>
-                <div id="dash-usage-bar" class="usage-bar-wrap">
+                <h2>&gt; LEADS AVAILABLE</h2>
+                <p style="font-size:1.6rem;margin:0.25rem 0">
+                    <span id="dash-available" class="dash-value">0</span>
+                    <span style="font-size:0.9rem;opacity:0.7">leads ready to scan</span>
+                </p>
+                <div id="dash-usage-bar" class="usage-bar-wrap" style="margin-top:1rem">
                     <div class="usage-bar-track">
                         <div class="usage-bar-fill" id="usage-fill"></div>
                     </div>
                     <p id="dash-usage-text" class="dash-value"></p>
                 </div>
+                <p id="dash-credits-text" class="dash-value" style="margin-top:0.5rem"></p>
             </div>
 
             <div class="page-section">
                 <h2>&gt; BILLING</h2>
                 <div id="dash-billing-free" style="display:none">
-                    <p>You are on the free plan. <a href="/pricing">[ UPGRADE ]</a> to unlock more leads.</p>
+                    <p>Need more leads this month? <a href="/pricing">[ BUY A CREDIT PACK ]</a></p>
+                    <p style="font-size:0.85rem;color:var(--muted)">Credits never expire and stack on top of your free 100/month.</p>
                 </div>
                 <div id="dash-billing-paid" style="display:none">
-                    <button class="auth-btn" id="portal-btn" onclick="openPortal()">[ MANAGE SUBSCRIPTION ]</button>
-                    <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--muted)">Cancel, change plan, or update payment method.</p>
+                    <a href="/pricing" class="auth-btn" style="text-decoration:none">[ BUY MORE CREDITS ]</a>
+                    <button class="auth-btn" id="portal-btn" onclick="openPortal()" style="margin-left:0.5rem">[ MANAGE SUBSCRIPTION ]</button>
+                    <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--muted)">Manage your legacy subscription, or top up credits anytime.</p>
                 </div>
             </div>
 
@@ -95,9 +102,9 @@
             const token = getToken();
             if (!token) { window.location.href = '/login'; return; }
 
-            // Check for upgrade success
+            // Check for purchase success
             const params = new URLSearchParams(window.location.search);
-            if (params.get('upgraded')) {
+            if (params.get('upgraded') || params.get('credits_added')) {
                 gtag('event', 'conversion_event_purchase');
                 history.replaceState({}, '', '/dashboard');
             }
@@ -109,25 +116,40 @@
             document.getElementById('dash-content').style.display = 'block';
 
             document.getElementById('dash-email').textContent = user.email;
-            document.getElementById('dash-tier').textContent = user.tier.toUpperCase();
+            document.getElementById('dash-tier').textContent = (user.tier || 'free').toUpperCase();
 
-            const { type, used, limit, tier } = user.usage;
-            const label = type === 'scans' ? 'scans' : 'leads';
-            const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+            const usage = user.usage || {};
+            const tier = usage.tier || user.tier || 'free';
+            const freeUsed = usage.free_used ?? usage.used ?? 0;
+            const freeLimit = usage.free_limit ?? usage.limit;        // null = uncapped
+            const credits = usage.credits ?? 0;
+            const available = usage.available;                         // null = uncapped
 
-            document.getElementById('dash-usage-text').textContent =
-                tier === 'unlimited'
-                    ? `${used} leads used (unlimited)`
-                    : `${used} / ${limit} ${label} used this month (${pct}%)`;
+            const uncapped = freeLimit === null || freeLimit === undefined;
+            const freeRemaining = uncapped ? null : Math.max(0, freeLimit - freeUsed);
+            const totalAvailable = uncapped ? '∞' : (freeRemaining + credits);
+
+            document.getElementById('dash-available').textContent = totalAvailable;
+
+            const pct = uncapped ? 0 : Math.min(100, Math.round((freeUsed / freeLimit) * 100));
+            document.getElementById('dash-usage-text').textContent = uncapped
+                ? `${freeUsed} leads used (uncapped)`
+                : `Free monthly: ${freeUsed} / ${freeLimit} used (${pct}%)`;
+
+            document.getElementById('dash-credits-text').textContent = credits > 0
+                ? `Credit balance: ${credits} (never expires)`
+                : 'Credit balance: 0 — top up to scan beyond the free monthly allotment.';
 
             const fill = document.getElementById('usage-fill');
-            fill.style.width = tier === 'unlimited' ? '10%' : pct + '%';
+            fill.style.width = uncapped ? '10%' : pct + '%';
             fill.style.background = pct >= 90 ? 'var(--amber)' : 'var(--green)';
 
-            if (tier === 'free') {
-                document.getElementById('dash-billing-free').style.display = 'block';
-            } else {
+            // Show subscription manager only for grandfathered subscribers; otherwise show "buy credits".
+            const hasLegacySub = tier && tier !== 'free' && tier !== 'unlimited';
+            if (hasLegacySub) {
                 document.getElementById('dash-billing-paid').style.display = 'block';
+            } else {
+                document.getElementById('dash-billing-free').style.display = 'block';
             }
         })();
 

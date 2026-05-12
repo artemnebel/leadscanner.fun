@@ -22,13 +22,16 @@ Lead Scanner uses live Google Places data (not archived databases), so every res
 
 ## Pricing
 
-- Free: $0 — try it out
-- Starter: $29/mo
-- Pro: $79/mo
-- Business: $149/mo
-- Unlimited: $300/mo
+Pay only for the leads you need. No subscriptions, one-time credit packs, credits never expire.
 
-See https://leadscanner.fun/pricing for current details.
+- Free: $0 — 100 leads/month, resets monthly
+- Mini: $9.99 — 100 lead credits ($0.10/lead)
+- Starter: $24.99 — 300 lead credits ($0.083/lead)
+- Pro: $49.99 — 650 lead credits ($0.077/lead, best value)
+- Business: $99.99 — 1,300 lead credits ($0.077/lead)
+- Bulk: $199.99 — 2,600 lead credits ($0.077/lead, for agencies)
+
+Every paid user keeps the 100 free monthly leads on top of their credit balance. Free leads spend first, then credits. See https://leadscanner.fun/pricing for current details.
 
 ## Primary pages
 

@@ -12,7 +12,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pricing - Lead Scanner</title>
-    <meta name="description" content="Lead Scanner pricing - free to start, paid plans for serious prospectors.">
+    <meta name="description" content="Lead Scanner pricing - pay only for the leads you need. One-time credit packs, no subscriptions, credits never expire.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -49,7 +49,7 @@
 
     <main class="page-content">
         <h1 class="page-title">&gt; PRICING.EXE</h1>
-        <p class="page-subtitle">Pay for leads, not for features. Cancel anytime.</p>
+        <p class="page-subtitle">Pay only for the leads you need. One-time packs, no subscriptions, credits never expire.</p>
 
         <div id="pricing-error" class="auth-error" style="display:none;margin-bottom:1rem"></div>
 
@@ -61,72 +61,89 @@
                 <div class="pricing-price">$0<span class="pricing-period">/mo</span></div>
                 <ul class="pricing-features">
                     <li>100 leads / month</li>
-                    <li>Phone + Maps link per lead</li>
+                    <li>Resets on the 1st of each month</li>
                     <li>CSV, JSON &amp; XLSX export</li>
-                    <li>Interactive map</li>
+                    <li>Multi-zone scanning</li>
                 </ul>
                 <a href="/signup" class="pricing-btn pricing-btn-outline">[ GET STARTED ]</a>
+            </div>
+
+            <!-- Mini -->
+            <div class="pricing-card">
+                <div class="pricing-tier">MINI</div>
+                <div class="pricing-price">$9.99<span class="pricing-period">one-time</span></div>
+                <ul class="pricing-features">
+                    <li>100 lead credits</li>
+                    <li>$0.10 per lead</li>
+                    <li>Credits never expire</li>
+                    <li>Stacks on top of free monthly</li>
+                </ul>
+                <button class="pricing-btn" onclick="checkout('mini')">[ BUY 100 ]</button>
             </div>
 
             <!-- Starter -->
             <div class="pricing-card">
                 <div class="pricing-tier">STARTER</div>
-                <div class="pricing-price">$29<span class="pricing-period">/mo</span></div>
+                <div class="pricing-price">$24.99<span class="pricing-period">one-time</span></div>
                 <ul class="pricing-features">
-                    <li>500 leads / month</li>
-                    <li>Everything in Free</li>
-                    <li>Multi-zone scanning</li>
-                    <li>Priority support</li>
+                    <li>300 lead credits</li>
+                    <li>$0.083 per lead</li>
+                    <li>Credits never expire</li>
+                    <li>Save 17% vs Mini</li>
                 </ul>
-                <button class="pricing-btn" onclick="checkout('starter')">[ SUBSCRIBE ]</button>
+                <button class="pricing-btn" onclick="checkout('starter')">[ BUY 300 ]</button>
             </div>
 
             <!-- Pro -->
             <div class="pricing-card pricing-card-featured">
-                <div class="pricing-badge">MOST POPULAR</div>
+                <div class="pricing-badge">BEST VALUE</div>
                 <div class="pricing-tier">PRO</div>
-                <div class="pricing-price">$79<span class="pricing-period">/mo</span></div>
+                <div class="pricing-price">$49.99<span class="pricing-period">one-time</span></div>
                 <ul class="pricing-features">
-                    <li>2,000 leads / month</li>
-                    <li>Everything in Starter</li>
-                    <li>Bulk radius scans</li>
-                    <li>Priority support</li>
+                    <li>650 lead credits</li>
+                    <li>$0.077 per lead</li>
+                    <li>Credits never expire</li>
+                    <li>Save 23% vs Mini</li>
                 </ul>
-                <button class="pricing-btn" onclick="checkout('pro')">[ SUBSCRIBE ]</button>
+                <button class="pricing-btn" onclick="checkout('pro')">[ BUY 650 ]</button>
             </div>
 
             <!-- Business -->
             <div class="pricing-card">
                 <div class="pricing-tier">BUSINESS</div>
-                <div class="pricing-price">$149<span class="pricing-period">/mo</span></div>
+                <div class="pricing-price">$99.99<span class="pricing-period">one-time</span></div>
                 <ul class="pricing-features">
-                    <li>5,000 leads / month</li>
-                    <li>Everything in Pro</li>
-                    <li>Team use</li>
-                    <li>Priority support</li>
+                    <li>1,300 lead credits</li>
+                    <li>$0.077 per lead</li>
+                    <li>Credits never expire</li>
+                    <li>For active prospectors</li>
                 </ul>
-                <button class="pricing-btn" onclick="checkout('business')">[ SUBSCRIBE ]</button>
+                <button class="pricing-btn" onclick="checkout('business')">[ BUY 1,300 ]</button>
             </div>
 
-            <!-- Unlimited -->
+            <!-- Bulk -->
             <div class="pricing-card">
-                <div class="pricing-tier">UNLIMITED</div>
-                <div class="pricing-price">$300<span class="pricing-period">/mo</span></div>
+                <div class="pricing-tier">BULK</div>
+                <div class="pricing-price">$199.99<span class="pricing-period">one-time</span></div>
                 <ul class="pricing-features">
-                    <li>No lead cap</li>
-                    <li>Everything in Business</li>
-                    <li>Agency / high-volume use</li>
-                    <li>Priority support</li>
+                    <li>2,600 lead credits</li>
+                    <li>$0.077 per lead</li>
+                    <li>Credits never expire</li>
+                    <li>For agencies &amp; high-volume</li>
                 </ul>
-                <button class="pricing-btn" onclick="checkout('unlimited')">[ SUBSCRIBE ]</button>
+                <button class="pricing-btn" onclick="checkout('bulk')">[ BUY 2,600 ]</button>
             </div>
 
         </div>
+
+        <p class="page-subtitle" style="margin-top:2rem;font-size:0.85rem;opacity:0.7">
+            &gt; Every paid user gets the 100 free monthly leads too. Free leads spend first, then credits.
+        </p>
     </main>
 
     <script src="/static/auth.js?v={{ version }}"></script>
     <script>
-        async function checkout(tier) {
+        async function checkout(pack) {
             const errEl = document.getElementById('pricing-error');
             errEl.style.display = 'none';
             const token = getToken();
@@ -141,7 +158,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`,
                     },
-                    body: JSON.stringify({ tier }),
+                    body: JSON.stringify({ pack }),
                 });
                 const data = await res.json();
                 if (!res.ok) {
