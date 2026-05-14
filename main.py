@@ -852,8 +852,8 @@ async def search_leads(
                 continue
             phone = place.get("nationalPhoneNumber", "") or ""
             review_count = place.get("userRatingCount") or 0
-            # Drop dead-end listings: no phone AND no reviews. Either signal alone is enough to keep.
-            if not phone and review_count == 0:
+            # Require BOTH a phone and at least one review — drop anything missing either signal.
+            if not phone or review_count == 0:
                 skipped_no_contact += 1
                 continue
             geo = place.get("location", {})
