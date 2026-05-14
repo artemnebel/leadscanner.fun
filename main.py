@@ -79,8 +79,15 @@ if STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
 
 PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
-# Enterprise tier — includes websiteUri for filtering ($35/1K, 1K free/month)
-FIELD_MASK        = "places.id,places.displayName,places.formattedAddress,places.googleMapsUri,places.location,places.businessStatus,places.websiteUri"
+# Text Search field mask. Phone is in Enterprise tier; rating/userRatingCount push
+# the call to Enterprise + Atmosphere ($40/1K vs $35/1K) — a flat ~$5/1K calls more,
+# regardless of how many places each call returns.
+FIELD_MASK        = (
+    "places.id,places.displayName,places.formattedAddress,"
+    "places.googleMapsUri,places.location,places.businessStatus,"
+    "places.websiteUri,"
+    "places.nationalPhoneNumber,places.rating,places.userRatingCount"
+)
 
 # ── App ──────────────────────────────────────────────────────────────────────
 def _get_version():
@@ -850,6 +857,9 @@ async def search_leads(
                     "maps_url": place.get("googleMapsUri", ""),
                     "lat": geo.get("latitude"),
                     "lng": geo.get("longitude"),
+                    "phone": place.get("nationalPhoneNumber", ""),
+                    "rating": place.get("rating"),
+                    "reviews": place.get("userRatingCount"),
                 }
             )
 

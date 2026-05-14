@@ -457,7 +457,7 @@ function renderTable() {
     if (state.filteredLeads.length === 0) {
         const tr = document.createElement('tr');
         tr.id = 'empty-row';
-        tr.innerHTML = `<td colspan="2">${
+        tr.innerHTML = `<td colspan="4">${
             state.allLeads.length === 0
                 ? 'No leads found — try a broader search or different category'
                 : 'No matches for that filter'
@@ -468,8 +468,16 @@ function renderTable() {
 
     state.filteredLeads.forEach(lead => {
         const tr = document.createElement('tr');
+        const phoneCell = lead.phone
+            ? `<a href="tel:${esc(lead.phone)}" class="phone-link">${esc(lead.phone)}</a>`
+            : '<span class="muted">—</span>';
+        const ratingCell = (lead.rating != null)
+            ? `${Number(lead.rating).toFixed(1)} ★ <span class="muted">(${lead.reviews ?? 0})</span>`
+            : '<span class="muted">—</span>';
         tr.innerHTML = `
             <td class="name-cell" title="${esc(lead.name)}"><a href="${esc(lead.maps_url)}" target="_blank" rel="noopener" class="name-link">${esc(lead.name)}</a></td>
+            <td>${phoneCell}</td>
+            <td>${ratingCell}</td>
             <td class="muted" title="${esc(lead.city)}">${esc(lead.city)}</td>
         `;
         tbody.appendChild(tr);
@@ -511,9 +519,14 @@ function downloadBlob(blob, filename) {
 }
 
 function exportCSV() {
-    const headers = ['Name', 'City', 'Google Maps URL'];
+    const headers = ['Name', 'Phone', 'Rating', 'Reviews', 'City', 'Google Maps URL'];
     const rows = state.filteredLeads.map(lead => [
-        lead.name, lead.city, lead.maps_url,
+        lead.name,
+        lead.phone || '',
+        lead.rating ?? '',
+        lead.reviews ?? '',
+        lead.city,
+        lead.maps_url,
     ]);
     const content = [headers, ...rows]
         .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
@@ -523,8 +536,8 @@ function exportCSV() {
 }
 
 function exportJSON() {
-    const data = state.filteredLeads.map(({ name, city, maps_url }) =>
-        ({ name, city, maps_url }));
+    const data = state.filteredLeads.map(({ name, phone, rating, reviews, city, maps_url }) =>
+        ({ name, phone, rating, reviews, city, maps_url }));
     downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
         `leads-${new Date().toISOString().slice(0, 10)}.json`);
 }
@@ -532,6 +545,9 @@ function exportJSON() {
 function exportXLSX() {
     const rows = state.filteredLeads.map(lead => ({
         Name: lead.name,
+        Phone: lead.phone || '',
+        Rating: lead.rating ?? '',
+        Reviews: lead.reviews ?? '',
         City: lead.city,
         'Google Maps URL': lead.maps_url,
     }));
