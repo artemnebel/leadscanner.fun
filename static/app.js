@@ -396,7 +396,7 @@ async function handleSearch() {
         newLeads.forEach(l => state.seenUrls.add(l.maps_url));
         state.allLeads = [...state.allLeads, ...newLeads];
         state.totalScanned += data.total_found;
-        state.totalSkipped += data.skipped_has_website;
+        state.totalSkipped += (data.skipped_has_website || 0) + (data.skipped_no_contact || 0);
 
         addResultPins(newLeads);
         applyFilterAndRender();

@@ -845,9 +845,16 @@ async def search_leads(
         )
 
         leads = []
+        skipped_no_contact = 0
         for place, confirmed in zip(needs_confirmation, confirmed_flags):
             if confirmed is not True:
                 skipped_has_website += 1
+                continue
+            phone = place.get("nationalPhoneNumber", "") or ""
+            review_count = place.get("userRatingCount") or 0
+            # Drop dead-end listings: no phone AND no reviews. Either signal alone is enough to keep.
+            if not phone and review_count == 0:
+                skipped_no_contact += 1
                 continue
             geo = place.get("location", {})
             leads.append(
@@ -857,7 +864,7 @@ async def search_leads(
                     "maps_url": place.get("googleMapsUri", ""),
                     "lat": geo.get("latitude"),
                     "lng": geo.get("longitude"),
-                    "phone": place.get("nationalPhoneNumber", ""),
+                    "phone": phone,
                     "rating": place.get("rating"),
                     "reviews": place.get("userRatingCount"),
                 }
@@ -883,6 +890,7 @@ async def search_leads(
         "leads": leads,
         "total_found": len(all_places),
         "skipped_has_website": skipped_has_website,
+        "skipped_no_contact": skipped_no_contact,
         "usage": usage_info(user),
         "limit_reached": limit_reached,
     }
