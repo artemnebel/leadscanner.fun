@@ -38,18 +38,6 @@
   </url>
 
   <url>
-    <loc>https://leadscanner.fun/login</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://leadscanner.fun/signup</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <url>
     <loc>https://leadscanner.fun/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
