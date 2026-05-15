@@ -254,19 +254,19 @@ async def serve_terms(request: Request):
 async def serve_admin(request: Request):
     return templates.TemplateResponse("admin.html", _ctx(request))
 
-@app.get("/sitemap.xml")
+@app.api_route("/sitemap.xml", methods=["GET", "HEAD"])
 async def serve_sitemap():
     return FileResponse("static/sitemap.xml", media_type="application/xml")
 
-@app.get("/favicon.ico")
+@app.api_route("/favicon.ico", methods=["GET", "HEAD"])
 async def serve_favicon():
     return FileResponse("static/favicon-48.png", media_type="image/png")
 
-@app.get("/robots.txt")
+@app.api_route("/robots.txt", methods=["GET", "HEAD"])
 async def serve_robots():
     return FileResponse("static/robots.txt", media_type="text/plain")
 
-@app.get("/llms.txt")
+@app.api_route("/llms.txt", methods=["GET", "HEAD"])
 async def serve_llms_txt():
     return FileResponse("static/llms.txt", media_type="text/plain")
 
