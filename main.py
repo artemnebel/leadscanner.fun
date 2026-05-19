@@ -64,7 +64,7 @@ PACK_CREDITS = {
 }
 PACK_CREDITS = {pid: credits for pid, credits in PACK_CREDITS.items() if pid}
 
-FREE_MONTHLY_LEADS = 100
+FREE_MONTHLY_LEADS = 500
 
 # Legacy monthly caps for grandfathered subscribers. None = uncapped.
 LEGACY_TIER_LIMITS = {
