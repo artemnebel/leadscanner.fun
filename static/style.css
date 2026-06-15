@@ -542,12 +542,29 @@ body {
 
 .name-link {
     color: var(--green);
+    text-decoration: underline dotted;
+    text-decoration-color: var(--muted);
+    text-underline-offset: 3px;
+    text-shadow: var(--glow-sm);
+    transition: color 0.15s, text-decoration-color 0.15s;
+}
+
+.name-link:hover {
+    color: var(--amber);
+    text-decoration-color: var(--amber);
+    text-shadow: var(--amber-glow);
+}
+
+/* Phone is a tel: link — keep it the same green as the rest of the table,
+   not the browser-default blue. */
+.phone-link {
+    color: var(--green);
     text-decoration: none;
     text-shadow: var(--glow-sm);
     transition: color 0.15s;
 }
 
-.name-link:hover {
+.phone-link:hover {
     color: var(--amber);
     text-shadow: var(--amber-glow);
 }
