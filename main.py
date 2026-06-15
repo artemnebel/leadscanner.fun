@@ -231,7 +231,8 @@ async def serve_coffee(request: Request):
 @app.get("/pricing")
 async def serve_pricing():
     # Lead Scanner is now free & unlimited — the old pricing page is just the tip jar.
-    return RedirectResponse("/coffee")
+    # 301 (permanent) so Google transfers /pricing's ranking signals to /coffee.
+    return RedirectResponse("/coffee", status_code=301)
 
 @app.get("/dashboard")
 async def serve_dashboard(request: Request):
