@@ -255,50 +255,6 @@
             </div>
         </section>
 
-        <!-- ROI CALCULATOR -->
-        <section class="land-section land-roi-section">
-            <div class="land-section-label">&gt; ROI_CALCULATOR.EXE</div>
-            <div class="roi-wrap">
-                <p class="roi-intro">The leads cost you nothing. Every closed deal is pure profit. See the math.</p>
-                <div class="roi-terminal">
-                    <div class="roi-term-bar">+--- ROI::CALC ---+</div>
-                    <div class="roi-term-body">
-                        <div class="roi-row">
-                            <span class="roi-label">&gt; website_price</span>
-                            <span class="roi-eq">=</span>
-                            <span class="roi-val roi-amber" id="roi-price-val">$1,000</span>
-                        </div>
-                        <div class="roi-slider-wrap">
-                            <span class="roi-range-label">$100</span>
-                            <input type="range" id="roi-slider" min="100" max="2500" step="50" value="1000" class="roi-slider"/>
-                            <span class="roi-range-label">$2,500</span>
-                        </div>
-                        <div class="roi-divider">────────────────────────────────</div>
-                        <div class="roi-row">
-                            <span class="roi-label">&gt; cost_per_lead</span>
-                            <span class="roi-eq">=</span>
-                            <span class="roi-val roi-green">$0.00 <span class="roi-muted">(free, unlimited)</span></span>
-                        </div>
-                        <div class="roi-row">
-                            <span class="roi-label">&gt; tool_cost</span>
-                            <span class="roi-eq">=</span>
-                            <span class="roi-val roi-green">$0.00 <span class="roi-muted">(optional $10 coffee)</span></span>
-                        </div>
-                        <div class="roi-row">
-                            <span class="roi-label">&gt; net_profit</span>
-                            <span class="roi-eq">=</span>
-                            <span class="roi-val roi-green" id="roi-months">$1,000</span>
-                        </div>
-                        <div class="roi-divider">────────────────────────────────</div>
-                        <div class="roi-verdict" id="roi-verdict">
-                            &gt; <span class="roi-green">One closed deal = $1,000 of pure profit.</span><span class="roi-cursor">_</span>
-                        </div>
-                    </div>
-                </div>
-                <p class="roi-foot" id="roi-foot"></p>
-            </div>
-        </section>
-
         <!-- FAQ -->
         <section class="land-section">
             <div class="land-section-label">&gt; FAQ.TXT</div>
@@ -343,24 +299,6 @@
 
     </div>
     <!-- ===== END LANDING OVERLAY ===== -->
-    <script>
-        (function() {
-            const slider = document.getElementById('roi-slider');
-            function update() {
-                const price = parseInt(slider.value);
-                const profit = '$' + price.toLocaleString();
-                document.getElementById('roi-price-val').textContent = profit;
-                document.getElementById('roi-months').textContent = profit;
-                document.getElementById('roi-verdict').innerHTML =
-                    '&gt; <span class="roi-green">One closed deal = ' + profit + ' of pure profit.</span><span class="roi-cursor">_</span>';
-                document.getElementById('roi-foot').textContent =
-                    'The leads are free and unlimited, so every ' + profit + ' deal you close is yours to keep. Land one and maybe buy me a coffee.';
-            }
-            update();
-            slider.addEventListener('input', update);
-        })();
-    </script>
-
     <div id="crt-overlay"></div>
 
     <header id="top-bar">
