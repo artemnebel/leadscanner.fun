@@ -118,7 +118,7 @@
                     <li><span class="land-bi">[+]</span> Export as CSV, JSON, or XLSX</li>
                     <li><span class="land-bi">[+]</span> Multi-zone bulk scanning</li>
                 </ul>
-                <a href="/signup" class="land-free-cta" id="land-start-btn">[ START FOR FREE ]</a>
+                <a href="/signup" class="land-free-cta" id="land-start-btn">[ START ]</a>
             </div>
             <div class="land-hero-right">
                 <div class="land-cube-wrap">
@@ -132,7 +132,6 @@
                             <div class="cube-face face-bottom">+--+</div>
                         </div>
                     </div>
-                    <div class="land-cube-hint">[ CLICK TO LAUNCH ]</div>
                 </div>
             </div>
             <div class="land-scroll-hint">
@@ -456,25 +455,18 @@
         document.getElementById('logo-text').addEventListener('click', showLanding);
         document.getElementById('logo-blink').addEventListener('click', showLanding);
 
-        // Mouse-controlled cube rotation
+        // Continuous 360-degree auto-rotation
         (function() {
             const cube = document.getElementById('land-cube');
-            let rotX = 20, rotY = 30;
-            let targetX = rotX, targetY = rotY;
+            let rotY = 30;
+            const rotX = 20;
 
             function tick() {
-                rotX += (targetX - rotX) * 0.08;
-                rotY += (targetY - rotY) * 0.08;
+                rotY += 0.4;
                 cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
                 requestAnimationFrame(tick);
             }
             requestAnimationFrame(tick);
-
-            document.getElementById('landing-overlay').addEventListener('mousemove', function(e) {
-                const vw = window.innerWidth, vh = window.innerHeight;
-                targetY = 30 + ((e.clientX / vw) - 0.5) * 80;
-                targetX = 20 - ((e.clientY / vh) - 0.5) * 50;
-            });
         })();
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
