@@ -2186,13 +2186,3 @@ body.page #top-bar {
 }
 
 .coffee-btn:disabled { opacity: 0.6; cursor: default; }
-
-.coffee-perks {
-    list-style: none;
-    padding: 0;
-    margin: 1.8rem 0 0;
-    text-align: left;
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 2.1;
-}
