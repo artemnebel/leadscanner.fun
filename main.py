@@ -150,10 +150,8 @@ def reset_usage_if_needed(user: User, db: Session):
         db.commit()
 
 def monthly_allotment(user: User) -> int | None:
-    """Free leads available each month. None = uncapped (admin or legacy 'unlimited')."""
-    if user.email == ADMIN_EMAIL:
-        return None
-    return LEGACY_TIER_LIMITS.get(user.tier, FREE_MONTHLY_LEADS)
+    """Lead scanning is now free and unlimited for everyone. None = uncapped."""
+    return None
 
 def available_leads(user: User) -> int | None:
     """Total leads the user can still scan right now. None = uncapped."""
@@ -226,9 +224,14 @@ async def serve_login(request: Request):
 async def serve_signup(request: Request):
     return templates.TemplateResponse("signup.html", _ctx(request))
 
+@app.get("/coffee")
+async def serve_coffee(request: Request):
+    return templates.TemplateResponse("coffee.html", _ctx(request))
+
 @app.get("/pricing")
-async def serve_pricing(request: Request):
-    return templates.TemplateResponse("pricing.html", _ctx(request))
+async def serve_pricing():
+    # Lead Scanner is now free & unlimited — the old pricing page is just the tip jar.
+    return RedirectResponse("/coffee")
 
 @app.get("/dashboard")
 async def serve_dashboard(request: Request):
@@ -539,6 +542,42 @@ async def create_checkout(
         success_url=f"{BASE_URL}/dashboard?credits_added=1",
         cancel_url=f"{BASE_URL}/pricing",
         metadata={"user_id": user.id, "pack": pack_name},
+    )
+    return {"url": session.url}
+
+@app.post("/api/billing/coffee")
+async def buy_coffee(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """One-time $10 tip — 'Buy Artem a coffee'. Pure support, grants nothing
+    (scanning is already free and unlimited). Uses an inline price so no
+    pre-configured Stripe price ID is required."""
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="Payments not configured.")
+
+    if not user.stripe_customer_id:
+        customer = stripe.Customer.create(email=user.email)
+        user.stripe_customer_id = customer.id
+        db.commit()
+
+    session = stripe.checkout.Session.create(
+        customer=user.stripe_customer_id,
+        payment_method_types=["card"],
+        line_items=[{
+            "price_data": {
+                "currency": "usd",
+                "product_data": {
+                    "name": "Coffee for Artem ☕",
+                    "description": "A small thank-you for building Lead Scanner.",
+                },
+                "unit_amount": 1000,  # $10.00
+            },
+            "quantity": 1,
+        }],
+        mode="payment",
+        success_url=f"{BASE_URL}/dashboard?coffee=1",
+        cancel_url=f"{BASE_URL}/coffee",
+        metadata={"user_id": user.id, "kind": "coffee"},
     )
     return {"url": session.url}
 

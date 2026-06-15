@@ -2027,3 +2027,172 @@ body.page #top-bar {
 .faq-item[open] .faq-q { color: #fff; }
 .faq-q::-webkit-details-marker { display: none; }
 .faq-a { padding: 0 22px 18px; font-size: 0.85rem; color: var(--muted); line-height: 1.7; margin: 0; }
+
+/* ===== BUY ME A COFFEE ===== */
+.coffee-wrap {
+    max-width: 480px;
+    margin: 2.5rem auto 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.coffee-cup-scene {
+    position: relative;
+    width: 160px;
+    height: 170px;
+    margin-bottom: 1.5rem;
+}
+
+/* Saucer */
+.coffee-saucer {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 14px;
+    border: 2px solid var(--green);
+    border-radius: 0 0 50% 50% / 0 0 100% 100%;
+    box-shadow: var(--glow-sm);
+    background: rgba(51, 255, 0, 0.04);
+}
+
+/* Cup */
+.coffee-cup {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 96px;
+    height: 84px;
+}
+
+.coffee-cup-body {
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--green);
+    border-radius: 8px 8px 28px 28px;
+    box-shadow: var(--glow-sm), inset 0 0 10px rgba(51, 255, 0, 0.08);
+    overflow: hidden;
+    background: rgba(51, 255, 0, 0.03);
+}
+
+.coffee-liquid {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 60%;
+    background: linear-gradient(180deg, var(--amber), #7a5400);
+    box-shadow: 0 0 8px rgba(255, 176, 0, 0.5);
+    animation: coffee-slosh 4s ease-in-out infinite;
+}
+
+.coffee-liquid::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: rgba(255, 200, 80, 0.7);
+    border-radius: 50%;
+    animation: coffee-slosh 4s ease-in-out infinite;
+}
+
+@keyframes coffee-slosh {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-2px) rotate(0.5deg); }
+}
+
+/* Handle */
+.coffee-handle {
+    position: absolute;
+    right: -22px;
+    top: 18px;
+    width: 26px;
+    height: 40px;
+    border: 2px solid var(--green);
+    border-left: none;
+    border-radius: 0 16px 16px 0;
+    box-shadow: var(--glow-sm);
+}
+
+/* Steam */
+.steam {
+    position: absolute;
+    bottom: 96px;
+    width: 7px;
+    height: 34px;
+    background: linear-gradient(180deg, rgba(51, 255, 0, 0) 0%, rgba(51, 255, 0, 0.55) 60%, rgba(51, 255, 0, 0) 100%);
+    border-radius: 50%;
+    filter: blur(1px);
+    opacity: 0;
+    transform-origin: bottom center;
+}
+
+.steam-1 { left: 56px;  animation: steam-rise 3s ease-in-out infinite; }
+.steam-2 { left: 78px;  animation: steam-rise 3s ease-in-out 0.6s infinite; }
+.steam-3 { left: 100px; animation: steam-rise 3s ease-in-out 1.2s infinite; }
+
+@keyframes steam-rise {
+    0%   { opacity: 0;   transform: translateY(8px) scaleY(0.6) translateX(0); }
+    25%  { opacity: 0.7; }
+    60%  { opacity: 0.5; transform: translateY(-14px) scaleY(1) translateX(-4px); }
+    100% { opacity: 0;   transform: translateY(-30px) scaleY(1.2) translateX(4px); }
+}
+
+.coffee-amount {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--amber);
+    text-shadow: var(--amber-glow);
+    line-height: 1;
+}
+
+.coffee-amount-note {
+    display: block;
+    margin-top: 0.4rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-shadow: none;
+}
+
+.coffee-btn {
+    margin-top: 1.6rem;
+    width: 100%;
+    max-width: 360px;
+    padding: 0.85rem 1rem;
+    background: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+    text-shadow: var(--glow-sm);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.coffee-btn:hover:not(:disabled) {
+    background: var(--green);
+    color: var(--bg);
+    text-shadow: none;
+    box-shadow: 0 0 14px rgba(51, 255, 0, 0.45);
+}
+
+.coffee-btn:disabled { opacity: 0.6; cursor: default; }
+
+.coffee-perks {
+    list-style: none;
+    padding: 0;
+    margin: 1.8rem 0 0;
+    text-align: left;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 2.1;
+}
