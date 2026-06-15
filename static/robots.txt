@@ -1,72 +1,41 @@
 # Lead Scanner - https://leadscanner.fun
 
+# ── All crawlers (Googlebot, Bingbot, etc.) ───────────────────────────
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /api/
+Disallow: /reset-password
+Disallow: /forgot-password
 
-# ── AI / LLM crawlers (explicitly allowed) ────────────────────────────
-# Allowing these lets AI assistants index and cite Lead Scanner when
-# users ask things like "how do I find local businesses without a website".
-
-# OpenAI (ChatGPT training + ChatGPT search citations)
-User-agent: GPTBot
-Allow: /
-
-User-agent: OAI-SearchBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-# Anthropic (Claude)
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: Claude-Web
-Allow: /
-
-User-agent: anthropic-ai
-Allow: /
-
-# Google Gemini (separate opt-in from regular Googlebot)
-User-agent: Google-Extended
-Allow: /
-
-# Perplexity
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: Perplexity-User
-Allow: /
-
-# Common Crawl (feeds many open models including DeepSeek, Mistral, etc.)
-User-agent: CCBot
-Allow: /
-
-# Apple Intelligence
-User-agent: Applebot-Extended
-Allow: /
-
-# You.com
-User-agent: YouBot
-Allow: /
-
-# Meta AI
-User-agent: Meta-ExternalAgent
-Allow: /
-
-User-agent: FacebookBot
-Allow: /
-
-# Mistral
-User-agent: MistralAI-User
-Allow: /
-
+# ── AI / LLM crawlers ─────────────────────────────────────────────────
+# Explicitly welcomed so AI assistants can index and cite Lead Scanner
+# when users ask things like "how do I find local businesses without a
+# website". Each AI bot obeys ONLY its own group and ignores the
+# "User-agent: *" block, so the Disallow rules are repeated here to keep
+# sensitive routes private from them too.
+#
+# OpenAI (ChatGPT) - Anthropic (Claude) - Google Gemini - Perplexity -
+# Common Crawl - Apple Intelligence - You.com - Meta AI - Mistral -
 # Bytespider (TikTok/Doubao)
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-Web
+User-agent: anthropic-ai
+User-agent: Google-Extended
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: CCBot
+User-agent: Applebot-Extended
+User-agent: YouBot
+User-agent: Meta-ExternalAgent
+User-agent: FacebookBot
+User-agent: MistralAI-User
 User-agent: Bytespider
 Allow: /
-
-# Disallow sensitive routes for all crawlers
-User-agent: *
 Disallow: /admin
 Disallow: /dashboard
 Disallow: /api/
