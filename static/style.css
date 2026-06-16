@@ -1446,6 +1446,18 @@ body.page #top-bar {
     letter-spacing: -0.01em;
 }
 
+.land-headline-kw {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(0.95rem, 1.7vw, 1.15rem);
+    font-weight: 500;
+    color: #7ac87a;
+    text-shadow: none;
+    letter-spacing: 0;
+    line-height: 1.4;
+    margin-top: 0.65rem;
+}
+
 .land-sub {
     font-size: 14px;
     color: #7ac87a;
