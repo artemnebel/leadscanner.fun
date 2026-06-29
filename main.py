@@ -162,10 +162,16 @@ def available_leads(user: User) -> int | None:
     return remaining + (user.lead_credits or 0)
 
 def consume_leads(user: User, count: int) -> None:
-    """Deduct N leads: monthly allotment first (resets monthly), then credits (never reset)."""
+    """Record N scanned leads against the user.
+
+    Scanning is free & unlimited, so for everyone we simply increment leads_used
+    for analytics (this is what the admin dashboard reports). The credit logic
+    below is legacy — it only runs for grandfathered capped tiers, which no
+    longer exist now that monthly_allotment() always returns None."""
     allotment = monthly_allotment(user)
     if allotment is None:
-        return  # uncapped
+        user.leads_used = (user.leads_used or 0) + count  # uncapped — tracked for analytics
+        return
     remaining_allotment = max(0, allotment - (user.leads_used or 0))
     from_allotment = min(count, remaining_allotment)
     from_credits = count - from_allotment
@@ -440,6 +446,7 @@ async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_
             "email": u.email,
             "tier": u.tier,
             "leads_used": u.leads_used,
+            "scans_used": u.scans_used or 0,
             "lead_credits": u.lead_credits or 0,
             "usage_reset": str(u.usage_reset),
             "created_at": str(u.created_at),
@@ -922,6 +929,7 @@ async def search_leads(
             leads_count = available_now
             limit_reached = True
 
+    user.scans_used = (user.scans_used or 0) + 1  # one /api/search call = one scan (analytics)
     consume_leads(user, leads_count)
     db.commit()
 

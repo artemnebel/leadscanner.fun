@@ -144,6 +144,7 @@
                                 <th>#</th>
                                 <th>EMAIL</th>
                                 <th>TIER</th>
+                                <th>SCANS</th>
                                 <th>LEADS USED</th>
                                 <th>RESET DATE</th>
                                 <th>JOINED</th>
@@ -209,6 +210,7 @@
                     { text: String(i + 1), style: 'color:var(--muted)' },
                     { text: u.email },
                     { text: u.tier.toUpperCase(), cls: tierClass },
+                    { text: String(u.scans_used ?? 0) },
                     { text: String(u.leads_used) },
                     { text: reset, style: 'color:var(--muted)' },
                     { text: joined, style: 'color:var(--muted)' },
