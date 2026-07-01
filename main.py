@@ -25,7 +25,7 @@ import bcrypt
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from database import User, PlacesCache, get_db, init_db
+from database import User, PlacesCache, SearchLog, get_db, init_db
 
 load_dotenv()
 load_dotenv(".env.local", override=True)  # local overrides — not committed
@@ -456,6 +456,24 @@ async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_
             "google": bool(u.google_id),
         }
         for u in users
+    ]
+
+@app.get("/api/admin/searches")
+async def admin_searches(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if not user or user.email != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    rows = db.query(SearchLog).order_by(SearchLog.created_at.desc()).limit(300).all()
+    return [
+        {
+            "email": r.user_email,
+            "category": r.category,
+            "lat": r.lat,
+            "lng": r.lng,
+            "radius_meters": r.radius_meters,
+            "results": r.results,
+            "created_at": str(r.created_at),
+        }
+        for r in rows
     ]
 
 @app.get("/api/auth/google")
@@ -932,6 +950,18 @@ async def search_leads(
 
     user.scans_used = (user.scans_used or 0) + 1  # one /api/search call = one scan (analytics)
     consume_leads(user, leads_count)
+    # Log the query for the admin panel. Analytics only — never fail a search over it.
+    try:
+        db.add(SearchLog(
+            user_email=user.email,
+            category=req.category,
+            lat=req.lat,
+            lng=req.lng,
+            radius_meters=req.radius_meters,
+            results=leads_count,
+        ))
+    except Exception:
+        pass
     db.commit()
 
     return {

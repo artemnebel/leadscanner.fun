@@ -157,6 +157,41 @@
                 </div>
             </div>
 
+            <div class="page-section">
+                <h2>&gt; TOP CATEGORIES</h2>
+                <div style="overflow-x:auto">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>CATEGORY</th>
+                                <th>SEARCHES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-cat-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="page-section">
+                <h2>&gt; RECENT SEARCHES</h2>
+                <div style="overflow-x:auto">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>WHEN</th>
+                                <th>EMAIL</th>
+                                <th>CATEGORY</th>
+                                <th>RADIUS</th>
+                                <th>RESULTS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="search-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -229,6 +264,66 @@
                 stripeTd.innerHTML = stripe;
                 tr.append(authTd, stripeTd);
                 tbody.appendChild(tr);
+            });
+
+            // ── Searches ──────────────────────────────────────────────────────
+            let searches = [];
+            try {
+                const sres = await fetch('/api/admin/searches', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (sres.ok) searches = await sres.json();
+            } catch (e) { /* leave searches empty on error */ }
+
+            // Top categories (case-insensitive count, top 10)
+            const catCounts = {};
+            searches.forEach(s => {
+                const c = (s.category || '').trim();
+                if (!c) return;
+                const key = c.toLowerCase();
+                if (!catCounts[key]) catCounts[key] = { label: c, count: 0 };
+                catCounts[key].count++;
+            });
+            const topCats = Object.values(catCounts)
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
+            const catBody = document.getElementById('top-cat-body');
+            topCats.forEach((c, i) => {
+                const tr = document.createElement('tr');
+                [
+                    { text: String(i + 1), style: 'color:var(--muted)' },
+                    { text: c.label },
+                    { text: String(c.count) },
+                ].forEach(({ text, style }) => {
+                    const td = document.createElement('td');
+                    td.textContent = text;
+                    if (style) td.setAttribute('style', style);
+                    tr.appendChild(td);
+                });
+                catBody.appendChild(tr);
+            });
+
+            // Recent searches log
+            const sBody = document.getElementById('search-table-body');
+            searches.forEach((s, i) => {
+                const when = s.created_at ? s.created_at.slice(0, 16).replace('T', ' ') : '-';
+                const radius = s.radius_meters
+                    ? (s.radius_meters / 1000).toFixed(0) + 'km' : '-';
+                const tr = document.createElement('tr');
+                [
+                    { text: String(i + 1), style: 'color:var(--muted)' },
+                    { text: when, style: 'color:var(--muted)' },
+                    { text: s.email || '-' },
+                    { text: s.category || '-' },
+                    { text: radius, style: 'color:var(--muted)' },
+                    { text: String(s.results ?? 0) },
+                ].forEach(({ text, style }) => {
+                    const td = document.createElement('td');
+                    td.textContent = text;   // user-controlled — textContent avoids XSS
+                    if (style) td.setAttribute('style', style);
+                    tr.appendChild(td);
+                });
+                sBody.appendChild(tr);
             });
         })();
     </script>

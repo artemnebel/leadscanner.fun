@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import date, datetime
-from sqlalchemy import create_engine, Column, String, Integer, Date, DateTime, Boolean, Text, text
+from sqlalchemy import create_engine, Column, String, Integer, Float, Date, DateTime, Boolean, Text, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./leads.db")
@@ -43,6 +43,19 @@ class PlacesCache(Base):
     key = Column(String, primary_key=True)              # hash of query params
     payload = Column(Text)                               # JSON of the Places Text Search result list
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class SearchLog(Base):
+    __tablename__ = "search_logs"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_email = Column(String, index=True)             # who ran the search (admin-only view)
+    category = Column(String)                           # the query text — what users search for
+    lat = Column(Float)
+    lng = Column(Float)
+    radius_meters = Column(Integer)
+    results = Column(Integer)                           # leads returned
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
 
 def init_db():
