@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import date, datetime
-from sqlalchemy import create_engine, Column, String, Integer, Date, DateTime, Boolean, text
+from sqlalchemy import create_engine, Column, String, Integer, Date, DateTime, Boolean, Text, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./leads.db")
@@ -35,6 +35,14 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     reset_token = Column(String, nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
+
+
+class PlacesCache(Base):
+    __tablename__ = "places_cache"
+
+    key = Column(String, primary_key=True)              # hash of query params
+    payload = Column(Text)                               # JSON of the Places Text Search result list
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 def init_db():

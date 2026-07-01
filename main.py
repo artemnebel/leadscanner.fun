@@ -4,6 +4,8 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import math
 import subprocess
+import json
+import hashlib
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -23,7 +25,7 @@ import bcrypt
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from database import User, get_db, init_db
+from database import User, PlacesCache, get_db, init_db
 
 load_dotenv()
 load_dotenv(".env.local", override=True)  # local overrides — not committed
@@ -686,17 +688,6 @@ async def billing_portal(user=Depends(get_current_user)):
     )
     return {"url": session.url}
 
-# ── Place Details fallback (definitive website check) ────────────────────────
-# Text Search returns websiteUri for most businesses, but occasionally misses
-# some. For those, call Place Details with ONLY websiteUri to get a definitive
-# answer before including the business as a lead.
-# Cost: Enterprise tier ($20/1K), only called for businesses without websiteUri
-# from the Text Search response.
-
-PLACES_DETAIL_URL = "https://places.googleapis.com/v1/places/{place_id}"
-_DETAIL_SEM = asyncio.Semaphore(10)
-
-
 def _generate_sub_circles(lat: float, lng: float, total_radius_m: float) -> list[tuple[float, float]]:
     """
     Tile the search area with a hexagonal grid of sub-circles so every part of
@@ -733,25 +724,6 @@ def _generate_sub_circles(lat: float, lng: float, total_radius_m: float) -> list
     return centers
 
 
-async def _confirm_no_website(client: httpx.AsyncClient, place_id: str) -> bool:
-    """Return True if the business definitely has no website (safe to include as lead)."""
-    async with _DETAIL_SEM:
-        try:
-            r = await client.get(
-                PLACES_DETAIL_URL.format(place_id=place_id),
-                headers={
-                    "X-Goog-Api-Key": API_KEY,
-                    "X-Goog-FieldMask": "websiteUri",
-                },
-                timeout=10.0,
-            )
-            if r.status_code != 200:
-                return True  # Text Search already said no website; keep the lead on API error
-            return not r.json().get("websiteUri")
-        except Exception:
-            return True  # Text Search already said no website; keep the lead on error
-
-
 # ── Search ─────────────────────────────────────────────────────────────────────
 
 class SearchRequest(BaseModel):
@@ -762,14 +734,55 @@ class SearchRequest(BaseModel):
 
 
 
+# ── Text Search cache ────────────────────────────────────────────────────────
+# Cache Google Text Search results so repeat / overlapping scans don't re-pay.
+# Business website status changes slowly, so a long TTL is safe.
+CACHE_TTL = timedelta(days=30)
+
+
+def _cache_key(lat: float, lng: float, radius: int, category: str, max_pages: int) -> str:
+    # Round coords to ~110 m so near-identical scans share an entry.
+    raw = f"{category.strip().lower()}|{round(lat, 3)}|{round(lng, 3)}|{radius}|{max_pages}"
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def _cache_get(db: Session, key: str):
+    row = db.query(PlacesCache).filter(PlacesCache.key == key).first()
+    if row and row.created_at and (datetime.utcnow() - row.created_at) < CACHE_TTL:
+        try:
+            return json.loads(row.payload)
+        except Exception:
+            return None
+    return None
+
+
+def _cache_put(db: Session, key: str, places: list) -> None:
+    try:
+        row = db.query(PlacesCache).filter(PlacesCache.key == key).first()
+        if row:
+            row.payload = json.dumps(places)
+            row.created_at = datetime.utcnow()
+        else:
+            db.add(PlacesCache(key=key, payload=json.dumps(places), created_at=datetime.utcnow()))
+        db.commit()
+    except Exception:
+        db.rollback()
+
+
 async def get_nearby_places(
     client: httpx.AsyncClient,
+    db: Session,
     lat: float,
     lng: float,
     radius: int,
     category: str,
     max_pages: int = 3,
 ) -> list:
+    key = _cache_key(lat, lng, radius, category, max_pages)
+    cached = _cache_get(db, key)
+    if cached is not None:
+        return cached
+
     places = []
     page_token = None
 
@@ -818,6 +831,7 @@ async def get_nearby_places(
         if page_num < max_pages - 1:
             await asyncio.sleep(2)
 
+    _cache_put(db, key, places)
     return places
 
 
@@ -857,7 +871,7 @@ async def search_leads(
             async with _search_sem:
                 try:
                     return await get_nearby_places(
-                        client, slat, slng, sub_radius, req.category, max_pages=sub_pages
+                        client, db, slat, slng, sub_radius, req.category, max_pages=sub_pages
                     )
                 except Exception:
                     return []
@@ -873,28 +887,15 @@ async def search_leads(
                     seen_ids.add(pid)
                     all_places.append(place)
 
-        # Pass 1: filter businesses already confirmed to have a website
-        needs_confirmation = []
+        # Filter to businesses without a website. We trust Text Search's websiteUri
+        # field — no per-business Place Details confirmation (that was the dominant cost).
+        leads = []
         skipped_has_website = 0
+        skipped_no_contact = 0
         for place in all_places:
             if place.get("businessStatus") == "CLOSED_PERMANENTLY":
                 continue
             if place.get("websiteUri"):
-                skipped_has_website += 1
-            else:
-                needs_confirmation.append(place)
-
-        # Pass 2: Place Details confirms websiteUri for any business Text Search missed.
-        # On API error, the lead is kept (Text Search already returned no website).
-        confirmed_flags = await asyncio.gather(
-            *[_confirm_no_website(client, p.get("id", "")) for p in needs_confirmation],
-            return_exceptions=True,
-        )
-
-        leads = []
-        skipped_no_contact = 0
-        for place, confirmed in zip(needs_confirmation, confirmed_flags):
-            if confirmed is not True:
                 skipped_has_website += 1
                 continue
             phone = place.get("nationalPhoneNumber", "") or ""
