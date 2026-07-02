@@ -15,6 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
@@ -22,28 +23,64 @@
     <link rel="shortcut icon" href="/favicon.ico"/>
     <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
     <style>
-        .admin-stats {
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
+        /* ── KPI cards ─────────────────────────────────────────────── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.75rem;
             margin-bottom: 1.5rem;
         }
-        .admin-stat-box {
+        .kpi-card {
             border: 1px solid var(--muted);
-            padding: 0.75rem 1.25rem;
-            min-width: 110px;
+            padding: 0.9rem 1rem;
+            background: #060a06;
+            transition: border-color 0.18s ease;
         }
-        .admin-stat-label {
-            font-size: 0.7rem;
+        .kpi-card:hover { border-color: var(--green); }
+        .kpi-label {
+            font-size: 0.62rem;
             color: var(--muted);
-            letter-spacing: 0.1em;
-            margin-bottom: 0.25rem;
+            letter-spacing: 0.12em;
+            margin-bottom: 0.35rem;
         }
-        .admin-stat-val {
-            font-size: 1.4rem;
+        .kpi-val {
+            font-size: 1.6rem;
             font-weight: 700;
             color: var(--green);
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
         }
+        .kpi-val.accent { color: var(--amber); }
+
+        /* ── Toolbar ───────────────────────────────────────────────── */
+        .admin-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+        }
+        .admin-input {
+            background: var(--bg);
+            border: 1px solid var(--muted);
+            color: var(--green);
+            font-family: inherit;
+            font-size: 0.82rem;
+            padding: 7px 10px;
+            min-width: 240px;
+            flex: 1 1 240px;
+            max-width: 360px;
+            caret-color: var(--green);
+        }
+        .admin-input::placeholder { color: var(--muted); }
+        .admin-input:focus {
+            outline: none;
+            border-color: var(--green);
+            box-shadow: 0 0 4px rgba(51,255,0,0.35);
+        }
+        .toolbar-count { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; }
+
+        /* ── Table ─────────────────────────────────────────────────── */
         .admin-table {
             width: 100%;
             border-collapse: collapse;
@@ -51,25 +88,118 @@
         }
         .admin-table th {
             text-align: left;
-            padding: 6px 10px;
+            padding: 8px 10px;
             border-bottom: 1px solid var(--green);
             color: var(--muted);
             letter-spacing: 0.08em;
             font-weight: 700;
+            white-space: nowrap;
         }
         .admin-table td {
-            padding: 6px 10px;
+            padding: 7px 10px;
             border-bottom: 1px solid #111;
             color: var(--green);
+            font-variant-numeric: tabular-nums;
         }
-        .admin-table tr:hover td {
-            background: #0f1f0f;
-        }
-        .tier-free    { color: var(--muted); }
-        .tier-paid    { color: var(--green); font-weight: 700; }
+        th.sortable { cursor: pointer; user-select: none; }
+        th.sortable:hover { color: var(--green); }
+        th.sortable .arrow { color: var(--amber); margin-left: 3px; }
+        tr.user-row { cursor: pointer; transition: background 0.15s ease; }
+        tr.user-row:hover td { background: #0f1f0f; }
+        tr.user-row:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
+        .col-num { text-align: right; }
+
+        .tier-free      { color: var(--muted); }
+        .tier-paid      { color: var(--green); font-weight: 700; }
         .tier-unlimited { color: #fff; font-weight: 700; }
-        .badge-g  { color: #4da6ff; }
-        .badge-pw { color: var(--muted); }
+        .badge-g      { color: #4da6ff; }
+        .badge-pw     { color: var(--muted); }
+        .badge-stripe { color: var(--amber); }
+        .flag-cap     { color: var(--red); font-weight: 700; }
+        .muted        { color: var(--muted); }
+
+        /* ── Drawer ────────────────────────────────────────────────── */
+        .drawer-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.55);
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            z-index: 900;
+        }
+        .drawer-overlay.open { opacity: 1; visibility: visible; }
+        .drawer {
+            position: fixed; top: 0; right: 0; bottom: 0;
+            width: min(480px, 100%);
+            background: var(--bg);
+            border-left: 1px solid var(--green);
+            box-shadow: -4px 0 24px rgba(0,0,0,0.6);
+            transform: translateX(100%);
+            transition: transform 0.22s ease-out;
+            z-index: 950;
+            display: flex; flex-direction: column;
+            overflow-y: auto;
+        }
+        .drawer.open { transform: translateX(0); }
+        .drawer-header {
+            position: sticky; top: 0;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg);
+            border-bottom: 1px solid var(--muted);
+        }
+        .drawer-title { color: var(--amber); font-weight: 700; font-size: 0.9rem; word-break: break-all; }
+        .drawer-close {
+            background: none; border: 1px solid var(--muted); color: var(--green);
+            font-family: inherit; font-size: 0.8rem; padding: 4px 10px; cursor: pointer;
+            flex-shrink: 0;
+        }
+        .drawer-close:hover { border-color: var(--green); color: var(--amber); }
+        .drawer-body { padding: 1rem 1.25rem 2rem; }
+        .drawer-section { margin-bottom: 1.5rem; }
+        .drawer-section h3 {
+            font-size: 0.72rem; color: var(--muted); letter-spacing: 0.12em;
+            border-bottom: 1px solid #111; padding-bottom: 4px; margin-bottom: 0.75rem;
+        }
+        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; }
+        .profile-item .p-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; }
+        .profile-item .p-val { font-size: 0.85rem; color: var(--green); font-variant-numeric: tabular-nums; }
+
+        .cap-control { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .cap-control input {
+            width: 80px; background: var(--bg); border: 1px solid var(--muted);
+            color: var(--green); font-family: inherit; padding: 5px 8px;
+        }
+        .cap-control input:focus { outline: none; border-color: var(--green); }
+
+        .cat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; }
+        .cat-name { flex: 0 0 42%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cat-bar-track { flex: 1; height: 10px; background: #0f1f0f; border: 1px solid var(--muted); }
+        .cat-bar-fill { height: 100%; background: var(--green); }
+        .cat-count { flex: 0 0 auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+        #user-map { height: 200px; width: 100%; border: 1px solid var(--muted); background: #060a06; }
+        .map-empty { font-size: 0.75rem; color: var(--muted); padding: 1rem; text-align: center; border: 1px dashed var(--muted); }
+
+        .search-list { max-height: 320px; overflow-y: auto; border: 1px solid #111; }
+        .search-item {
+            display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px;
+            padding: 6px 10px; border-bottom: 1px solid #111; font-size: 0.76rem;
+            font-variant-numeric: tabular-nums; align-items: baseline;
+        }
+        .search-item:last-child { border-bottom: none; }
+        .search-item .s-when { color: var(--muted); }
+        .search-item .s-cat { color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .search-item .s-res { color: var(--amber); }
+
+        .drawer-loading { padding: 2rem 1.25rem; color: var(--muted); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .drawer, .drawer-overlay, tr.user-row, .kpi-card { transition: none; }
+        }
+        @media (max-width: 560px) {
+            .profile-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body class="page">
@@ -106,37 +236,16 @@
         <div id="admin-content" style="display:none">
 
             <div class="page-section">
-                <h2>&gt; USER STATS</h2>
-                <div class="admin-stats">
-                    <div class="admin-stat-box">
-                        <div class="admin-stat-label">TOTAL</div>
-                        <div class="admin-stat-val" id="stat-total">0</div>
-                    </div>
-                    <div class="admin-stat-box">
-                        <div class="admin-stat-label">FREE</div>
-                        <div class="admin-stat-val" id="stat-free">0</div>
-                    </div>
-                    <div class="admin-stat-box">
-                        <div class="admin-stat-label">STARTER</div>
-                        <div class="admin-stat-val" id="stat-starter">0</div>
-                    </div>
-                    <div class="admin-stat-box">
-                        <div class="admin-stat-label">PRO</div>
-                        <div class="admin-stat-val" id="stat-pro">0</div>
-                    </div>
-                    <div class="admin-stat-box">
-                        <div class="admin-stat-label">BUSINESS</div>
-                        <div class="admin-stat-val" id="stat-business">0</div>
-                    </div>
-                    <div class="admin-stat-box">
-                        <div class="admin-stat-label">UNLIMITED</div>
-                        <div class="admin-stat-val" id="stat-unlimited">0</div>
-                    </div>
-                </div>
+                <h2>&gt; OVERVIEW</h2>
+                <div class="kpi-grid" id="kpi-grid"></div>
             </div>
 
             <div class="page-section">
-                <h2>&gt; REGISTERED USERS</h2>
+                <h2>&gt; USERS</h2>
+                <div class="admin-toolbar">
+                    <input id="user-filter" class="admin-input" type="text" placeholder="filter by email..." autocomplete="off" />
+                    <span class="toolbar-count" id="user-count"></span>
+                </div>
                 <div style="overflow-x:auto">
                     <table class="admin-table">
                         <thead>
@@ -144,13 +253,12 @@
                                 <th>#</th>
                                 <th>EMAIL</th>
                                 <th>TIER</th>
-                                <th>SCANS</th>
-                                <th>LEADS USED</th>
-                                <th>RESET DATE</th>
-                                <th>JOINED</th>
-                                <th>AUTH</th>
-                                <th>STRIPE</th>
-                                <th>SCAN CAP</th>
+                                <th class="sortable col-num" data-sort="total_scans">SCANS</th>
+                                <th class="sortable col-num" data-sort="leads_found">LEADS</th>
+                                <th class="sortable col-num" data-sort="search_count">SEARCHES</th>
+                                <th class="sortable" data-sort="last_active">LAST ACTIVE</th>
+                                <th class="sortable" data-sort="created_at">JOINED</th>
+                                <th>FLAGS</th>
                             </tr>
                         </thead>
                         <tbody id="user-table-body"></tbody>
@@ -163,11 +271,7 @@
                 <div style="overflow-x:auto">
                     <table class="admin-table">
                         <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>CATEGORY</th>
-                                <th>SEARCHES</th>
-                            </tr>
+                            <tr><th>#</th><th>CATEGORY</th><th class="col-num">SEARCHES</th></tr>
                         </thead>
                         <tbody id="top-cat-body"></tbody>
                     </table>
@@ -180,12 +284,8 @@
                     <table class="admin-table">
                         <thead>
                             <tr>
-                                <th>#</th>
-                                <th>WHEN</th>
-                                <th>EMAIL</th>
-                                <th>CATEGORY</th>
-                                <th>RADIUS</th>
-                                <th>RESULTS</th>
+                                <th>#</th><th>WHEN</th><th>EMAIL</th>
+                                <th>CATEGORY</th><th>RADIUS</th><th class="col-num">RESULTS</th>
                             </tr>
                         </thead>
                         <tbody id="search-table-body"></tbody>
@@ -196,173 +296,389 @@
         </div>
     </main>
 
+    <!-- User detail drawer -->
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="User profile" tabindex="-1">
+        <div class="drawer-header">
+            <span class="drawer-title" id="drawer-title">&gt; USER</span>
+            <button class="drawer-close" id="drawer-close">[ CLOSE ]</button>
+        </div>
+        <div class="drawer-body" id="drawer-body"></div>
+    </aside>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="/static/auth.js?v={{ version }}"></script>
     <script>
-        (async function() {
-            const token = getToken();
-            if (!token) { window.location.href = '/login'; return; }
+    (async function() {
+        const token = getToken();
+        if (!token) { window.location.href = '/login'; return; }
 
-            let users;
-            try {
-                const res = await fetch('/api/admin/users', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (res.status === 401 || res.status === 403) {
-                    window.location.href = '/login';
-                    return;
-                }
-                users = await res.json();
-            } catch (e) {
-                document.getElementById('admin-loading').textContent = 'ERROR: Could not load users.';
-                return;
+        // ── Fetch users ────────────────────────────────────────────
+        let users;
+        try {
+            const res = await fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.status === 401 || res.status === 403) { window.location.href = '/login'; return; }
+            users = await res.json();
+        } catch (e) {
+            document.getElementById('admin-loading').textContent = 'ERROR: Could not load users.';
+            return;
+        }
+
+        document.getElementById('admin-loading').style.display = 'none';
+        document.getElementById('admin-content').style.display = 'block';
+
+        // ── Helpers ────────────────────────────────────────────────
+        const parseDate = (s) => s ? new Date(s.replace(' ', 'T')) : null;
+        const DAY = 86400000;
+        const now = Date.now();
+        const fmtDate = (s) => s ? s.slice(0, 10) : '-';
+        const fmtDateTime = (s) => s ? s.slice(0, 16).replace('T', ' ') : '-';
+        const relDays = (s) => {
+            const d = parseDate(s); if (!d) return '-';
+            const days = Math.floor((now - d.getTime()) / DAY);
+            return days <= 0 ? 'today' : days === 1 ? '1d ago' : days + 'd ago';
+        };
+
+        // ── KPI cards ──────────────────────────────────────────────
+        const sum = (arr, f) => arr.reduce((a, u) => a + (f(u) || 0), 0);
+        const within7 = (s) => { const d = parseDate(s); return d && (now - d.getTime()) <= 7 * DAY; };
+        const kpis = [
+            { label: 'TOTAL USERS', val: users.length },
+            { label: 'NEW (7D)', val: users.filter(u => within7(u.created_at)).length },
+            { label: 'ACTIVE (7D)', val: users.filter(u => within7(u.last_active)).length },
+            { label: 'TOTAL SCANS', val: sum(users, u => u.total_scans) },
+            { label: 'LEADS PULLED', val: sum(users, u => u.leads_found), accent: true },
+            { label: 'PAID USERS', val: users.filter(u => u.has_stripe).length },
+        ];
+        document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
+            `<div class="kpi-card"><div class="kpi-label">${k.label}</div>` +
+            `<div class="kpi-val${k.accent ? ' accent' : ''}">${k.val.toLocaleString()}</div></div>`
+        ).join('');
+
+        // ── Users table (filter + sort + render) ───────────────────
+        const tbody = document.getElementById('user-table-body');
+        const countEl = document.getElementById('user-count');
+        let filterText = '';
+        let sortKey = 'created_at';
+        let sortDir = 'desc';
+
+        function sortVal(u, key) {
+            if (key === 'last_active' || key === 'created_at') {
+                const d = parseDate(u[key]); return d ? d.getTime() : 0;
             }
+            return u[key] || 0;
+        }
 
-            document.getElementById('admin-loading').style.display = 'none';
-            document.getElementById('admin-content').style.display = 'block';
+        function render() {
+            const rows = users
+                .filter(u => u.email.toLowerCase().includes(filterText))
+                .sort((a, b) => {
+                    const av = sortVal(a, sortKey), bv = sortVal(b, sortKey);
+                    const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+                    return sortDir === 'asc' ? cmp : -cmp;
+                });
 
-            // Stats
-            const counts = { free: 0, starter: 0, pro: 0, business: 0, unlimited: 0 };
-            users.forEach(u => { if (counts[u.tier] !== undefined) counts[u.tier]++; });
-            document.getElementById('stat-total').textContent = users.length;
-            Object.keys(counts).forEach(t => {
-                document.getElementById('stat-' + t).textContent = counts[t];
-            });
+            countEl.textContent = `[ ${rows.length} / ${users.length} ]`;
+            tbody.innerHTML = '';
 
-            // Table
-            const tbody = document.getElementById('user-table-body');
-            users.forEach((u, i) => {
+            rows.forEach((u, i) => {
                 const tierClass = u.tier === 'free' ? 'tier-free'
-                    : u.tier === 'unlimited' ? 'tier-unlimited'
-                    : 'tier-paid';
-                const joined = u.created_at ? u.created_at.slice(0, 10) : '-';
-                const reset  = u.usage_reset ? u.usage_reset.slice(0, 10) : '-';
-                const auth   = u.google
-                    ? '<span class="badge-g">[ G ]</span>'
-                    : '<span class="badge-pw">[ PW ]</span>';
-                const stripe = u.has_stripe ? '[ YES ]' : '<span style="color:var(--muted)">[ NO ]</span>';
+                    : u.tier === 'unlimited' ? 'tier-unlimited' : 'tier-paid';
+                const capped = (u.total_scans || 0) >= (u.scan_limit ?? 50);
 
                 const tr = document.createElement('tr');
-                const cells = [
-                    { text: String(i + 1), style: 'color:var(--muted)' },
-                    { text: u.email },
-                    { text: u.tier.toUpperCase(), cls: tierClass },
-                    { text: String(u.scans_used ?? 0) },
-                    { text: String(u.leads_used) },
-                    { text: reset, style: 'color:var(--muted)' },
-                    { text: joined, style: 'color:var(--muted)' },
-                ];
-                cells.forEach(({ text, style, cls }) => {
-                    const td = document.createElement('td');
-                    td.textContent = text;
-                    if (style) td.setAttribute('style', style);
-                    if (cls) td.className = cls;
-                    tr.appendChild(td);
+                tr.className = 'user-row';
+                tr.tabIndex = 0;
+                tr.dataset.email = u.email;
+
+                const num = document.createElement('td'); num.className = 'muted'; num.textContent = i + 1;
+                const email = document.createElement('td'); email.textContent = u.email;
+                const tier = document.createElement('td'); tier.className = tierClass; tier.textContent = u.tier.toUpperCase();
+                const scans = document.createElement('td'); scans.className = 'col-num' + (capped ? ' flag-cap' : '');
+                scans.textContent = (u.total_scans || 0) + ' / ' + (u.scan_limit ?? 50);
+                const leads = document.createElement('td'); leads.className = 'col-num'; leads.textContent = (u.leads_found || 0).toLocaleString();
+                const searches = document.createElement('td'); searches.className = 'col-num'; searches.textContent = u.search_count || 0;
+                const active = document.createElement('td'); active.className = 'muted'; active.textContent = relDays(u.last_active);
+                const joined = document.createElement('td'); joined.className = 'muted'; joined.textContent = fmtDate(u.created_at);
+
+                const flags = document.createElement('td');
+                const parts = [];
+                parts.push(u.google ? '<span class="badge-g">[G]</span>' : '<span class="badge-pw">[PW]</span>');
+                if (u.has_stripe) parts.push('<span class="badge-stripe">[$]</span>');
+                if (capped) parts.push('<span class="flag-cap">[CAP]</span>');
+                flags.innerHTML = parts.join(' ');  // trusted static strings
+
+                tr.append(num, email, tier, scans, leads, searches, active, joined, flags);
+                tr.addEventListener('click', () => openDrawer(u.email));
+                tr.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(u.email); }
                 });
-                // auth and stripe are trusted static HTML strings, safe to use innerHTML
-                const authTd = document.createElement('td');
-                authTd.innerHTML = auth;
-                const stripeTd = document.createElement('td');
-                stripeTd.innerHTML = stripe;
-
-                // Scan cap: lifetime scans / editable limit
-                const capTd = document.createElement('td');
-                capTd.style.whiteSpace = 'nowrap';
-                const used = document.createElement('span');
-                used.textContent = (u.total_scans ?? 0) + ' / ';
-                used.style.color = 'var(--muted)';
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.min = '0';
-                input.value = u.scan_limit ?? 50;
-                input.style.width = '64px';
-                input.style.marginRight = '6px';
-                const setBtn = document.createElement('button');
-                setBtn.className = 'btn-term';
-                setBtn.textContent = '[ SET ]';
-                setBtn.onclick = async () => {
-                    setBtn.disabled = true;
-                    setBtn.textContent = '[ ... ]';
-                    try {
-                        const r = await fetch('/api/admin/set-scan-limit', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                            body: JSON.stringify({ email: u.email, scan_limit: parseInt(input.value, 10) }),
-                        });
-                        if (!r.ok) throw new Error();
-                        setBtn.textContent = '[ SAVED ]';
-                    } catch {
-                        setBtn.textContent = '[ ERROR ]';
-                    } finally {
-                        setBtn.disabled = false;
-                        setTimeout(() => { setBtn.textContent = '[ SET ]'; }, 1500);
-                    }
-                };
-                capTd.append(used, input, setBtn);
-
-                tr.append(authTd, stripeTd, capTd);
                 tbody.appendChild(tr);
             });
 
-            // ── Searches ──────────────────────────────────────────────────────
-            let searches = [];
+            document.querySelectorAll('th.sortable').forEach(th => {
+                const arrow = th.dataset.sort === sortKey ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+                th.setAttribute('aria-sort', th.dataset.sort === sortKey ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none');
+                th.querySelector('.arrow')?.remove();
+                if (arrow) { const s = document.createElement('span'); s.className = 'arrow'; s.textContent = arrow; th.appendChild(s); }
+            });
+        }
+
+        document.querySelectorAll('th.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                const key = th.dataset.sort;
+                if (sortKey === key) { sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
+                else { sortKey = key; sortDir = 'desc'; }
+                render();
+            });
+        });
+
+        let filterTimer;
+        document.getElementById('user-filter').addEventListener('input', (e) => {
+            clearTimeout(filterTimer);
+            filterTimer = setTimeout(() => { filterText = e.target.value.trim().toLowerCase(); render(); }, 150);
+        });
+
+        render();
+
+        // ── Drawer ─────────────────────────────────────────────────
+        const overlay = document.getElementById('drawer-overlay');
+        const drawer = document.getElementById('drawer');
+        const drawerBody = document.getElementById('drawer-body');
+        const drawerTitle = document.getElementById('drawer-title');
+        let drawerMap = null, mapLayer = null;
+
+        function closeDrawer() {
+            drawer.classList.remove('open');
+            overlay.classList.remove('open');
+        }
+        overlay.addEventListener('click', closeDrawer);
+        document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+
+        function el(tag, cls, text) {
+            const n = document.createElement(tag);
+            if (cls) n.className = cls;
+            if (text != null) n.textContent = text;
+            return n;
+        }
+
+        async function openDrawer(email) {
+            drawerTitle.textContent = '> ' + email;
+            drawerBody.innerHTML = '<div class="drawer-loading">LOADING...</div>';
+            drawer.classList.add('open');
+            overlay.classList.add('open');
+            drawer.focus();
+
+            let data;
             try {
-                const sres = await fetch('/api/admin/searches', {
+                const res = await fetch('/api/admin/user-detail?email=' + encodeURIComponent(email), {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
-                if (sres.ok) searches = await sres.json();
-            } catch (e) { /* leave searches empty on error */ }
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                data = await res.json();
+            } catch (err) {
+                drawerBody.innerHTML = '<div class="drawer-loading">ERROR: could not load profile.</div>';
+                return;
+            }
+            renderDrawer(data);
+        }
 
-            // Top categories (case-insensitive count, top 10)
-            const catCounts = {};
-            searches.forEach(s => {
-                const c = (s.category || '').trim();
-                if (!c) return;
-                const key = c.toLowerCase();
-                if (!catCounts[key]) catCounts[key] = { label: c, count: 0 };
-                catCounts[key].count++;
-            });
-            const topCats = Object.values(catCounts)
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 10);
-            const catBody = document.getElementById('top-cat-body');
-            topCats.forEach((c, i) => {
-                const tr = document.createElement('tr');
-                [
-                    { text: String(i + 1), style: 'color:var(--muted)' },
-                    { text: c.label },
-                    { text: String(c.count) },
-                ].forEach(({ text, style }) => {
-                    const td = document.createElement('td');
-                    td.textContent = text;
-                    if (style) td.setAttribute('style', style);
-                    tr.appendChild(td);
-                });
-                catBody.appendChild(tr);
-            });
+        function renderDrawer(data) {
+            const { user: u, stats, searches } = data;
+            drawerBody.innerHTML = '';
 
-            // Recent searches log
-            const sBody = document.getElementById('search-table-body');
-            searches.forEach((s, i) => {
-                const when = s.created_at ? s.created_at.slice(0, 16).replace('T', ' ') : '-';
-                const radius = s.radius_meters
-                    ? (s.radius_meters / 1000).toFixed(0) + 'km' : '-';
-                const tr = document.createElement('tr');
-                [
-                    { text: String(i + 1), style: 'color:var(--muted)' },
-                    { text: when, style: 'color:var(--muted)' },
-                    { text: s.email || '-' },
-                    { text: s.category || '-' },
-                    { text: radius, style: 'color:var(--muted)' },
-                    { text: String(s.results ?? 0) },
-                ].forEach(({ text, style }) => {
-                    const td = document.createElement('td');
-                    td.textContent = text;   // user-controlled — textContent avoids XSS
-                    if (style) td.setAttribute('style', style);
-                    tr.appendChild(td);
-                });
-                sBody.appendChild(tr);
+            // Profile summary
+            const profSec = el('div', 'drawer-section');
+            profSec.appendChild(el('h3', null, 'PROFILE'));
+            const grid = el('div', 'profile-grid');
+            const items = [
+                ['JOINED', fmtDate(u.created_at)],
+                ['FIRST SEEN', fmtDate(stats.first_seen)],
+                ['LAST ACTIVE', stats.last_active ? relDays(stats.last_active) : '-'],
+                ['ACTIVE DAYS', String(stats.active_days)],
+                ['AUTH', u.google ? 'Google' : 'Password'],
+                ['TIER', (u.tier || '').toUpperCase()],
+                ['CREDITS', String(u.lead_credits)],
+                ['STRIPE', u.has_stripe ? 'Yes' : 'No'],
+            ];
+            items.forEach(([label, val]) => {
+                const item = el('div', 'profile-item');
+                item.appendChild(el('div', 'p-label', label));
+                item.appendChild(el('div', 'p-val', val));
+                grid.appendChild(item);
             });
-        })();
+            profSec.appendChild(grid);
+            drawerBody.appendChild(profSec);
+
+            // Scan cap control
+            const capSec = el('div', 'drawer-section');
+            capSec.appendChild(el('h3', null, 'SCAN CAP'));
+            const capCtl = el('div', 'cap-control');
+            capCtl.appendChild(el('span', null, (u.total_scans || 0) + ' scans /'));
+            const input = document.createElement('input');
+            input.type = 'number'; input.min = '0'; input.value = u.scan_limit ?? 50;
+            const setBtn = el('button', 'drawer-close', '[ SET ]');
+            const capStatus = el('span', 'muted', '');
+            setBtn.addEventListener('click', async () => {
+                setBtn.disabled = true; setBtn.textContent = '[ ... ]';
+                try {
+                    const r = await fetch('/api/admin/set-scan-limit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ email: u.email, scan_limit: parseInt(input.value, 10) }),
+                    });
+                    if (!r.ok) throw new Error();
+                    setBtn.textContent = '[ SAVED ]';
+                    // reflect in the in-memory list + table
+                    const row = users.find(x => x.email === u.email);
+                    if (row) row.scan_limit = parseInt(input.value, 10);
+                    render();
+                } catch { setBtn.textContent = '[ ERROR ]'; }
+                finally {
+                    setBtn.disabled = false;
+                    setTimeout(() => { setBtn.textContent = '[ SET ]'; }, 1500);
+                }
+            });
+            capCtl.append(input, setBtn, capStatus);
+            capSec.appendChild(capCtl);
+            drawerBody.appendChild(capSec);
+
+            // Activity stats
+            const actSec = el('div', 'drawer-section');
+            actSec.appendChild(el('h3', null, 'ACTIVITY'));
+            const actGrid = el('div', 'profile-grid');
+            [
+                ['TOTAL SEARCHES', String(stats.total_searches)],
+                ['LEADS PULLED', (stats.total_results || 0).toLocaleString()],
+            ].forEach(([label, val]) => {
+                const item = el('div', 'profile-item');
+                item.appendChild(el('div', 'p-label', label));
+                item.appendChild(el('div', 'p-val', val));
+                actGrid.appendChild(item);
+            });
+            actSec.appendChild(actGrid);
+            drawerBody.appendChild(actSec);
+
+            // Favorite categories
+            const catSec = el('div', 'drawer-section');
+            catSec.appendChild(el('h3', null, 'FAVORITE CATEGORIES'));
+            const cats = (stats.top_categories || []).slice(0, 10);
+            if (cats.length === 0) {
+                catSec.appendChild(el('div', 'muted', 'No searches yet.'));
+            } else {
+                const max = cats[0].count || 1;
+                cats.forEach(c => {
+                    const row = el('div', 'cat-row');
+                    row.appendChild(el('span', 'cat-name', c.category));
+                    const track = el('div', 'cat-bar-track');
+                    const fill = el('div', 'cat-bar-fill');
+                    fill.style.width = Math.max(4, Math.round((c.count / max) * 100)) + '%';
+                    track.appendChild(fill);
+                    row.appendChild(track);
+                    row.appendChild(el('span', 'cat-count', '×' + c.count));
+                    catSec.appendChild(row);
+                });
+            }
+            drawerBody.appendChild(catSec);
+
+            // Search locations map
+            const mapSec = el('div', 'drawer-section');
+            mapSec.appendChild(el('h3', null, 'SEARCH LOCATIONS'));
+            const geo = searches.filter(s => typeof s.lat === 'number' && typeof s.lng === 'number');
+            if (geo.length === 0) {
+                mapSec.appendChild(el('div', 'map-empty', 'No location data for this user.'));
+                drawerBody.appendChild(mapSec);
+            } else {
+                const mapDiv = document.createElement('div'); mapDiv.id = 'user-map';
+                mapSec.appendChild(mapDiv);
+                drawerBody.appendChild(mapSec);
+                setTimeout(() => renderMap(geo), 260); // after drawer transition
+            }
+
+            // Full search history
+            const histSec = el('div', 'drawer-section');
+            histSec.appendChild(el('h3', null, `SEARCH HISTORY (${searches.length})`));
+            if (searches.length === 0) {
+                histSec.appendChild(el('div', 'muted', 'No searches yet.'));
+            } else {
+                const list = el('div', 'search-list');
+                searches.forEach(s => {
+                    const item = el('div', 'search-item');
+                    item.appendChild(el('span', 's-when', fmtDateTime(s.created_at)));
+                    item.appendChild(el('span', 's-cat', s.category || '-'));
+                    item.appendChild(el('span', 'muted', s.radius_meters ? (s.radius_meters / 1000).toFixed(0) + 'km' : '-'));
+                    item.appendChild(el('span', 's-res', String(s.results ?? 0)));
+                    list.appendChild(item);
+                });
+                histSec.appendChild(list);
+            }
+            drawerBody.appendChild(histSec);
+        }
+
+        function renderMap(geo) {
+            const mapDiv = document.getElementById('user-map');
+            if (!mapDiv) return;
+            if (!drawerMap) {
+                drawerMap = L.map('user-map', { attributionControl: false, zoomControl: true });
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19,
+                }).addTo(drawerMap);
+            }
+            if (mapLayer) { mapLayer.remove(); }
+            mapLayer = L.layerGroup().addTo(drawerMap);
+            const pts = [];
+            geo.forEach(s => {
+                const m = L.circleMarker([s.lat, s.lng], {
+                    radius: 5, color: '#33ff00', weight: 1, fillColor: '#33ff00', fillOpacity: 0.5,
+                });
+                m.bindPopup(`${s.category || '?'} — ${s.results ?? 0} leads`);
+                m.addTo(mapLayer);
+                pts.push([s.lat, s.lng]);
+            });
+            drawerMap.invalidateSize();
+            if (pts.length === 1) drawerMap.setView(pts[0], 11);
+            else drawerMap.fitBounds(pts, { padding: [24, 24] });
+        }
+
+        // ── Global sections: top categories + recent searches ──────
+        let searches = [];
+        try {
+            const sres = await fetch('/api/admin/searches', { headers: { 'Authorization': 'Bearer ' + token } });
+            if (sres.ok) searches = await sres.json();
+        } catch (e) { /* leave empty */ }
+
+        const catCounts = {};
+        searches.forEach(s => {
+            const c = (s.category || '').trim(); if (!c) return;
+            const key = c.toLowerCase();
+            if (!catCounts[key]) catCounts[key] = { label: c, count: 0 };
+            catCounts[key].count++;
+        });
+        const topCats = Object.values(catCounts).sort((a, b) => b.count - a.count).slice(0, 10);
+        const catBody = document.getElementById('top-cat-body');
+        topCats.forEach((c, i) => {
+            const tr = document.createElement('tr');
+            const a = el('td', 'muted', String(i + 1));
+            const b = el('td', null, c.label);
+            const d = el('td', 'col-num', String(c.count));
+            tr.append(a, b, d); catBody.appendChild(tr);
+        });
+
+        const sBody = document.getElementById('search-table-body');
+        searches.forEach((s, i) => {
+            const tr = document.createElement('tr');
+            tr.append(
+                el('td', 'muted', String(i + 1)),
+                el('td', 'muted', fmtDateTime(s.created_at)),
+                el('td', null, s.email || '-'),
+                el('td', null, s.category || '-'),
+                el('td', 'muted', s.radius_meters ? (s.radius_meters / 1000).toFixed(0) + 'km' : '-'),
+                el('td', 'col-num', String(s.results ?? 0)),
+            );
+            sBody.appendChild(tr);
+        });
+    })();
     </script>
 </body>
 </html>

@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 from jose import JWTError, jwt
 import bcrypt
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, func
 
 from database import User, PlacesCache, SearchLog, get_db, init_db
 
@@ -444,6 +444,20 @@ async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_
     if not user or user.email != ADMIN_EMAIL:
         raise HTTPException(status_code=403, detail="Forbidden.")
     users = db.query(User).order_by(User.created_at.desc()).all()
+    # One aggregate over the search log gives per-user engagement signals for the table.
+    agg = {
+        email: {
+            "search_count": cnt or 0,
+            "last_active": str(last) if last else None,
+            "leads_found": int(total or 0),
+        }
+        for email, cnt, last, total in db.query(
+            SearchLog.user_email,
+            func.count(SearchLog.id),
+            func.max(SearchLog.created_at),
+            func.sum(SearchLog.results),
+        ).group_by(SearchLog.user_email).all()
+    }
     return [
         {
             "email": u.email,
@@ -457,9 +471,81 @@ async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_
             "created_at": str(u.created_at),
             "has_stripe": bool(u.stripe_customer_id),
             "google": bool(u.google_id),
+            "search_count": agg.get(u.email, {}).get("search_count", 0),
+            "last_active": agg.get(u.email, {}).get("last_active"),
+            "leads_found": agg.get(u.email, {}).get("leads_found", 0),
         }
         for u in users
     ]
+
+@app.get("/api/admin/user-detail")
+async def admin_user_detail(email: str, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if not user or user.email != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    target = db.query(User).filter(User.email == email).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    rows = (
+        db.query(SearchLog)
+        .filter(SearchLog.user_email == email)
+        .order_by(SearchLog.created_at.desc())
+        .limit(1000)
+        .all()
+    )
+
+    # Favorite categories (case-insensitive) + distinct active days.
+    cat_counts: dict[str, dict] = {}
+    active_days: set[str] = set()
+    total_results = 0
+    for r in rows:
+        total_results += r.results or 0
+        if r.created_at:
+            active_days.add(str(r.created_at)[:10])
+        c = (r.category or "").strip()
+        if c:
+            key = c.lower()
+            if key not in cat_counts:
+                cat_counts[key] = {"category": c, "count": 0}
+            cat_counts[key]["count"] += 1
+    top_categories = sorted(cat_counts.values(), key=lambda x: x["count"], reverse=True)
+
+    dates = [r.created_at for r in rows if r.created_at]
+
+    return {
+        "user": {
+            "email": target.email,
+            "tier": target.tier,
+            "scans_used": target.scans_used or 0,
+            "total_scans": target.total_scans or 0,
+            "scan_limit": target.scan_limit if target.scan_limit is not None else DEFAULT_SCAN_CAP,
+            "leads_used": target.leads_used or 0,
+            "lead_credits": target.lead_credits or 0,
+            "usage_reset": str(target.usage_reset),
+            "created_at": str(target.created_at),
+            "google": bool(target.google_id),
+            "has_stripe": bool(target.stripe_customer_id),
+        },
+        "stats": {
+            "total_searches": len(rows),
+            "first_seen": str(min(dates)) if dates else None,
+            "last_active": str(max(dates)) if dates else None,
+            "active_days": len(active_days),
+            "total_results": total_results,
+            "top_categories": top_categories,
+        },
+        "searches": [
+            {
+                "category": r.category,
+                "radius_meters": r.radius_meters,
+                "results": r.results,
+                "lat": r.lat,
+                "lng": r.lng,
+                "created_at": str(r.created_at),
+            }
+            for r in rows
+        ],
+    }
 
 @app.post("/api/admin/set-scan-limit")
 async def admin_set_scan_limit(
