@@ -570,6 +570,27 @@ async def admin_set_scan_limit(
     db.commit()
     return {"ok": True, "email": target.email, "scan_limit": target.scan_limit}
 
+@app.get("/api/admin/stats")
+async def admin_stats(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if not user or user.email != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    days = 30
+    start = date.today() - timedelta(days=days - 1)
+
+    def daily(rows):
+        by_day = {str(d)[:10]: int(c or 0) for d, c in rows}
+        return [
+            {"date": str(start + timedelta(days=i)), "count": by_day.get(str(start + timedelta(days=i)), 0)}
+            for i in range(days)
+        ]
+
+    signups = db.query(func.date(User.created_at), func.count(User.id)) \
+        .filter(User.created_at >= start).group_by(func.date(User.created_at)).all()
+    searches = db.query(func.date(SearchLog.created_at), func.count(SearchLog.id)) \
+        .filter(SearchLog.created_at >= start).group_by(func.date(SearchLog.created_at)).all()
+
+    return {"signups_by_day": daily(signups), "searches_by_day": daily(searches)}
+
 @app.get("/api/admin/searches")
 async def admin_searches(user=Depends(get_current_user), db: Session = Depends(get_db)):
     if not user or user.email != ADMIN_EMAIL:

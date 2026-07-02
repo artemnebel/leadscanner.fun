@@ -26,10 +26,12 @@
         /* ── KPI cards ─────────────────────────────────────────────── */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(6, minmax(0, 1fr));
             gap: 0.75rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
+        @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (max-width: 560px)  { .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .kpi-card {
             border: 1px solid var(--muted);
             padding: 0.9rem 1rem;
@@ -80,7 +82,26 @@
         }
         .toolbar-count { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; }
 
+        /* ── Charts ────────────────────────────────────────────────── */
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 720px) { .chart-row { grid-template-columns: 1fr; } }
+        .chart-panel { border: 1px solid var(--muted); padding: 0.9rem 1rem; background: #060a06; }
+        .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.6rem; }
+        .chart-title { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.12em; }
+        .chart-total { font-size: 0.7rem; color: var(--green); font-variant-numeric: tabular-nums; }
+        .bars { display: flex; align-items: flex-end; gap: 2px; height: 64px; }
+        .bar { flex: 1 1 0; min-width: 2px; background: var(--muted); transition: background 0.15s ease; }
+        .bar:hover { background: var(--amber); }
+        .bar.hot { background: var(--green); }
+        .chart-axis { display: flex; justify-content: space-between; font-size: 0.55rem; color: var(--muted); margin-top: 4px; }
+
         /* ── Table ─────────────────────────────────────────────────── */
+        .table-scroll { max-height: 460px; overflow-y: auto; overflow-x: auto; border: 1px solid #111; }
         .admin-table {
             width: 100%;
             border-collapse: collapse;
@@ -94,13 +115,19 @@
             letter-spacing: 0.08em;
             font-weight: 700;
             white-space: nowrap;
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 2;
         }
         .admin-table td {
             padding: 7px 10px;
             border-bottom: 1px solid #111;
             color: var(--green);
             font-variant-numeric: tabular-nums;
+            white-space: nowrap;
         }
+        .admin-table tbody tr:nth-child(even) td { background: #070c07; }
         th.sortable { cursor: pointer; user-select: none; }
         th.sortable:hover { color: var(--green); }
         th.sortable .arrow { color: var(--amber); margin-left: 3px; }
@@ -108,6 +135,7 @@
         tr.user-row:hover td { background: #0f1f0f; }
         tr.user-row:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
         .col-num { text-align: right; }
+        td.cell-email { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
 
         .tier-free      { color: var(--muted); }
         .tier-paid      { color: var(--green); font-weight: 700; }
@@ -238,6 +266,24 @@
             <div class="page-section">
                 <h2>&gt; OVERVIEW</h2>
                 <div class="kpi-grid" id="kpi-grid"></div>
+                <div class="chart-row">
+                    <div class="chart-panel">
+                        <div class="chart-head">
+                            <span class="chart-title">SIGNUPS (30D)</span>
+                            <span class="chart-total" id="chart-signups-total"></span>
+                        </div>
+                        <div class="bars" id="chart-signups"></div>
+                        <div class="chart-axis"><span id="chart-signups-start"></span><span>today</span></div>
+                    </div>
+                    <div class="chart-panel">
+                        <div class="chart-head">
+                            <span class="chart-title">SCANS (30D)</span>
+                            <span class="chart-total" id="chart-scans-total"></span>
+                        </div>
+                        <div class="bars" id="chart-scans"></div>
+                        <div class="chart-axis"><span id="chart-scans-start"></span><span>today</span></div>
+                    </div>
+                </div>
             </div>
 
             <div class="page-section">
@@ -246,7 +292,7 @@
                     <input id="user-filter" class="admin-input" type="text" placeholder="filter by email..." autocomplete="off" />
                     <span class="toolbar-count" id="user-count"></span>
                 </div>
-                <div style="overflow-x:auto">
+                <div class="table-scroll">
                     <table class="admin-table">
                         <thead>
                             <tr>
@@ -280,7 +326,7 @@
 
             <div class="page-section">
                 <h2>&gt; RECENT SEARCHES</h2>
-                <div style="overflow-x:auto">
+                <div class="table-scroll">
                     <table class="admin-table">
                         <thead>
                             <tr>
@@ -355,6 +401,33 @@
             `<div class="kpi-val${k.accent ? ' accent' : ''}">${k.val.toLocaleString()}</div></div>`
         ).join('');
 
+        // ── Activity charts (30-day signups + scans) ───────────────
+        function renderBars(containerId, totalId, startId, series) {
+            const box = document.getElementById(containerId);
+            if (!box || !series || !series.length) return;
+            const max = Math.max(1, ...series.map(d => d.count));
+            const total = series.reduce((a, d) => a + d.count, 0);
+            box.innerHTML = '';
+            series.forEach(d => {
+                const bar = document.createElement('div');
+                bar.className = 'bar' + (d.count === max && max > 0 ? ' hot' : '');
+                bar.style.height = Math.max(2, Math.round((d.count / max) * 100)) + '%';
+                bar.title = d.date + ' — ' + d.count;
+                box.appendChild(bar);
+            });
+            document.getElementById(totalId).textContent = total.toLocaleString() + ' total';
+            document.getElementById(startId).textContent = series[0].date.slice(5);
+        }
+        (async function loadCharts() {
+            try {
+                const r = await fetch('/api/admin/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (!r.ok) return;
+                const s = await r.json();
+                renderBars('chart-signups', 'chart-signups-total', 'chart-signups-start', s.signups_by_day);
+                renderBars('chart-scans', 'chart-scans-total', 'chart-scans-start', s.searches_by_day);
+            } catch (e) { /* charts optional */ }
+        })();
+
         // ── Users table (filter + sort + render) ───────────────────
         const tbody = document.getElementById('user-table-body');
         const countEl = document.getElementById('user-count');
@@ -392,7 +465,7 @@
                 tr.dataset.email = u.email;
 
                 const num = document.createElement('td'); num.className = 'muted'; num.textContent = i + 1;
-                const email = document.createElement('td'); email.textContent = u.email;
+                const email = document.createElement('td'); email.className = 'cell-email'; email.textContent = u.email; email.title = u.email;
                 const tier = document.createElement('td'); tier.className = tierClass; tier.textContent = u.tier.toUpperCase();
                 const scans = document.createElement('td'); scans.className = 'col-num' + (capped ? ' flag-cap' : '');
                 scans.textContent = (u.total_scans || 0) + ' / ' + (u.scan_limit ?? 50);
