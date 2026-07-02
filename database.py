@@ -27,6 +27,8 @@ class User(Base):
     google_id = Column(String, nullable=True, unique=True)
     tier = Column(String, default="free")           # legacy: free | starter | pro | business | unlimited (grandfathered subs)
     scans_used = Column(Integer, default=0)         # legacy, unused for new pricing
+    total_scans = Column(Integer, default=0)        # lifetime scan count — never resets; backs the hidden scan cap
+    scan_limit = Column(Integer, default=50)        # hidden per-user lifetime scan cap; raise to grant more
     leads_used = Column(Integer, default=0)         # counts Free-tier monthly allotment usage; resets monthly
     lead_credits = Column(Integer, default=0)       # paid credit balance from one-time pack purchases; never resets
     usage_reset = Column(Date, default=date.today)  # reset on 1st of each month (Free allotment only)
@@ -69,6 +71,8 @@ def init_db():
     migrations = [
         ("leads_used", "INTEGER DEFAULT 0"),
         ("scans_used", "INTEGER DEFAULT 0"),
+        ("total_scans", "INTEGER DEFAULT 0"),
+        ("scan_limit", "INTEGER DEFAULT 50"),
         ("lead_credits", "INTEGER DEFAULT 0"),
         ("reset_token", "VARCHAR"),
         ("reset_token_expires", "DATETIME"),

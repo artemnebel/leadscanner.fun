@@ -286,6 +286,29 @@ function showPaywallModal(message) {
     document.body.appendChild(modal);
 }
 
+/* ===== SCAN CAP MODAL (blocking, no dismiss) ===== */
+function showScanCapModal() {
+    let modal = document.getElementById('paywall-modal');
+    if (modal) modal.remove();
+    modal = document.createElement('div');
+    modal.id = 'paywall-modal';
+    const box = document.createElement('div');
+    box.className = 'paywall-box';
+    const title = document.createElement('div');
+    title.className = 'paywall-title';
+    title.textContent = '> SCAN LIMIT REACHED';
+    const msg = document.createElement('p');
+    msg.className = 'paywall-msg';
+    msg.textContent = "You've reached your scan limit. Message our support team to request more scans and we'll get you back up and running.";
+    const contactBtn = document.createElement('a');
+    contactBtn.href = '/contact?reason=scan-limit';
+    contactBtn.className = 'auth-btn paywall-upgrade-btn';
+    contactBtn.textContent = '[ REQUEST MORE SCANS ]';
+    box.append(title, msg, contactBtn);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+}
+
 /* ===== SEARCH HANDLER ===== */
 async function handleSearch() {
     const category = document.getElementById('category-input').value.trim();
@@ -322,6 +345,13 @@ async function handleSearch() {
                 });
                 const data = await resp.json();
                 if (resp.status === 401) { window.location.href = '/login'; return; }
+                if (resp.status === 403 && data.detail === 'SCAN_CAP_REACHED') {
+                    showScanCapModal();
+                    setLoading(false);
+                    applyFilterAndRender();
+                    showLeadsUI();
+                    return;
+                }
                 if (resp.status === 429) {
                     showPaywallModal('You\'ve reached your monthly limit. Upgrade to keep scanning.');
                     setLoading(false);
@@ -375,6 +405,11 @@ async function handleSearch() {
 
         if (resp.status === 401) {
             window.location.href = '/login';
+            return;
+        }
+
+        if (resp.status === 403 && data.detail === 'SCAN_CAP_REACHED') {
+            showScanCapModal();
             return;
         }
 

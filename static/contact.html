@@ -55,6 +55,10 @@
             <h2>&gt; SEND_A_MESSAGE</h2>
             <p>Have feedback, found a bug, or want to suggest a feature? Send a message below.</p>
 
+            <div id="scan-limit-note" style="display:none;margin-bottom:16px;padding:12px;border:1px solid #ffb000;color:#ffb000;font-size:12px;">
+                &gt; You've reached your scan limit. Send us a message below to request more scans and we'll get you sorted.
+            </div>
+
             <form class="contact-form" id="contact-form">
                 <div class="form-group">
                     <label>// NAME</label>
@@ -85,6 +89,25 @@
         const form = document.getElementById('contact-form');
         const submitBtn = document.getElementById('submit-btn');
         const statusEl = document.getElementById('form-status');
+
+        // Prefill when the user arrives here after hitting their scan limit.
+        (function prefillScanLimit() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('reason') !== 'scan-limit') return;
+            const note = document.getElementById('scan-limit-note');
+            if (note) note.style.display = 'block';
+            let email = '';
+            try {
+                const cached = localStorage.getItem('ls_user');
+                if (cached) email = JSON.parse(cached).email || '';
+            } catch {}
+            if (email && !form.email.value) form.email.value = email;
+            if (!form.subject.value) form.subject.value = 'Request more scans';
+            if (!form.message.value) {
+                form.message.value = "I've reached my scan limit and would like to request more scans."
+                    + (email ? "\n\nMy account email: " + email : "");
+            }
+        })();
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();

@@ -40,6 +40,7 @@ STRIPE_SECRET_KEY     = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 BASE_URL              = os.getenv("BASE_URL", "http://localhost:8000")
 ADMIN_EMAIL           = os.getenv("ADMIN_EMAIL", "artem.nebel07@gmail.com")
+DEFAULT_SCAN_CAP      = int(os.getenv("DEFAULT_SCAN_CAP", "50"))  # hidden lifetime scan cap per user
 
 # Legacy subscription price IDs — kept so existing subscribers stay grandfathered.
 PRICE_IDS = {
@@ -449,6 +450,8 @@ async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_
             "tier": u.tier,
             "leads_used": u.leads_used,
             "scans_used": u.scans_used or 0,
+            "total_scans": u.total_scans or 0,
+            "scan_limit": u.scan_limit if u.scan_limit is not None else DEFAULT_SCAN_CAP,
             "lead_credits": u.lead_credits or 0,
             "usage_reset": str(u.usage_reset),
             "created_at": str(u.created_at),
@@ -457,6 +460,29 @@ async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_
         }
         for u in users
     ]
+
+@app.post("/api/admin/set-scan-limit")
+async def admin_set_scan_limit(
+    request: Request,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not user or user.email != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    body = await request.json()
+    email = (body.get("email") or "").strip()
+    try:
+        scan_limit = int(body.get("scan_limit"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="scan_limit must be an integer.")
+    if scan_limit < 0:
+        raise HTTPException(status_code=400, detail="scan_limit must be >= 0.")
+    target = db.query(User).filter(User.email == email).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found.")
+    target.scan_limit = scan_limit
+    db.commit()
+    return {"ok": True, "email": target.email, "scan_limit": target.scan_limit}
 
 @app.get("/api/admin/searches")
 async def admin_searches(user=Depends(get_current_user), db: Session = Depends(get_db)):
@@ -868,6 +894,12 @@ async def search_leads(
 
     reset_usage_if_needed(user, db)
 
+    # Hidden lifetime scan cap: once a user has run their allotted scans, block further
+    # scanning and steer them to contact support (who can raise scan_limit in /admin).
+    scan_cap = user.scan_limit if user.scan_limit is not None else DEFAULT_SCAN_CAP
+    if (user.total_scans or 0) >= scan_cap:
+        raise HTTPException(status_code=403, detail="SCAN_CAP_REACHED")
+
     # Pre-check: block if user has no leads available (free allotment exhausted AND no credits).
     available_before = available_leads(user)
     if available_before is not None and available_before <= 0:
@@ -949,6 +981,7 @@ async def search_leads(
             limit_reached = True
 
     user.scans_used = (user.scans_used or 0) + 1  # one /api/search call = one scan (analytics)
+    user.total_scans = (user.total_scans or 0) + 1  # lifetime counter — backs the hidden scan cap
     consume_leads(user, leads_count)
     # Log the query for the admin panel. Analytics only — never fail a search over it.
     try:

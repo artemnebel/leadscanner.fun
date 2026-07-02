@@ -150,6 +150,7 @@
                                 <th>JOINED</th>
                                 <th>AUTH</th>
                                 <th>STRIPE</th>
+                                <th>SCAN CAP</th>
                             </tr>
                         </thead>
                         <tbody id="user-table-body"></tbody>
@@ -262,7 +263,43 @@
                 authTd.innerHTML = auth;
                 const stripeTd = document.createElement('td');
                 stripeTd.innerHTML = stripe;
-                tr.append(authTd, stripeTd);
+
+                // Scan cap: lifetime scans / editable limit
+                const capTd = document.createElement('td');
+                capTd.style.whiteSpace = 'nowrap';
+                const used = document.createElement('span');
+                used.textContent = (u.total_scans ?? 0) + ' / ';
+                used.style.color = 'var(--muted)';
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '0';
+                input.value = u.scan_limit ?? 50;
+                input.style.width = '64px';
+                input.style.marginRight = '6px';
+                const setBtn = document.createElement('button');
+                setBtn.className = 'btn-term';
+                setBtn.textContent = '[ SET ]';
+                setBtn.onclick = async () => {
+                    setBtn.disabled = true;
+                    setBtn.textContent = '[ ... ]';
+                    try {
+                        const r = await fetch('/api/admin/set-scan-limit', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                            body: JSON.stringify({ email: u.email, scan_limit: parseInt(input.value, 10) }),
+                        });
+                        if (!r.ok) throw new Error();
+                        setBtn.textContent = '[ SAVED ]';
+                    } catch {
+                        setBtn.textContent = '[ ERROR ]';
+                    } finally {
+                        setBtn.disabled = false;
+                        setTimeout(() => { setBtn.textContent = '[ SET ]'; }, 1500);
+                    }
+                };
+                capTd.append(used, input, setBtn);
+
+                tr.append(authTd, stripeTd, capTd);
                 tbody.appendChild(tr);
             });
 
