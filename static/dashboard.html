@@ -61,7 +61,7 @@
                 <p>Plan: <span id="dash-tier" class="dash-value"></span></p>
             </div>
 
-            <div class="page-section">
+            <div class="page-section" id="dash-leads-card">
                 <h2>&gt; LEADS AVAILABLE</h2>
                 <p style="font-size:1.6rem;margin:0.25rem 0">
                     <span id="dash-available" class="dash-value">∞</span>
@@ -112,15 +112,14 @@
 
             document.getElementById('dash-email').textContent = user.email;
             document.getElementById('dash-tier').textContent =
-                (user.tier && user.tier !== 'free' ? user.tier.toUpperCase() : 'FREE') + ' · UNLIMITED';
+                (user.tier && user.tier !== 'free' ? user.tier.toUpperCase() : 'FREE');
 
             const usage = user.usage || {};
             const tier = usage.tier || user.tier || 'free';
-            const totalUsed = usage.free_used ?? usage.used ?? 0;
 
-            document.getElementById('dash-available').textContent = '∞';
-            document.getElementById('dash-usage-text').textContent =
-                `${totalUsed} leads scanned — unlimited, always free.`;
+            // Hide the "leads available" card for now — no cap to display while
+            // the pricing model is being decided.
+            document.getElementById('dash-leads-card').style.display = 'none';
 
             // Legacy subscribers can still reach the Stripe portal to cancel.
             const hasLegacySub = tier && tier !== 'free' && tier !== 'unlimited';
