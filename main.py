@@ -1000,10 +1000,10 @@ async def search_leads(
         raise HTTPException(status_code=500, detail="GOOGLE_MAPS_API_KEY not set in .env file")
 
     # Hard cap scan radius server-side. A wide scan tiles into many 8km sub-circles,
-    # and each sub-circle is a paid Places call — 25km keeps worst-case cost ~$1/scan
-    # instead of ~$16 at 100km. The UI slider maxes at 25km; this enforces it for
-    # crafted requests that bypass the slider.
-    MAX_RADIUS_M = 25_000
+    # and each sub-circle is a paid Places call — 16km (~10mi) keeps worst-case cost
+    # ~$0.56/scan instead of ~$16 at 100km. The UI slider maxes at 16km; this enforces
+    # it for crafted requests that bypass the slider.
+    MAX_RADIUS_M = 16_000
     if req.radius_meters > MAX_RADIUS_M:
         req.radius_meters = MAX_RADIUS_M
 
