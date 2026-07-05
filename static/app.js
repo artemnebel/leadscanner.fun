@@ -130,15 +130,10 @@ function updateBulkBtn() {
     }
 }
 
-// Multi-scan fires one paid Places call per target, so it's a premium feature.
-// Paid = grandfathered subscriber (tier !== 'free'), admin (reads as 'unlimited'),
-// or anyone holding lead credits.
-function isPaidUser(user) {
-    if (!user) return false;
-    const tier = user.tier || (user.usage && user.usage.tier);
-    if (tier && tier !== 'free') return true;
-    const credits = user.usage ? (user.usage.credits || 0) : 0;
-    return credits > 0;
+// Multi-scan fires one paid Places call per placed target — the most expensive
+// action a user can take. Restricted to the admin account only.
+function isAdmin(user) {
+    return !!(user && user.is_admin);
 }
 
 async function toggleBulkMode() {
@@ -150,9 +145,9 @@ async function toggleBulkMode() {
         if (state.searchCircle) state.searchCircle.setStyle({ opacity: 1, fillOpacity: 0.05 });
         if (state.centerMarker) state.centerMarker.setOpacity(1);
     } else {
-        // Gate: multi-scan is a paid-only feature.
+        // Gate: multi-scan is restricted to the admin account.
         const user = await getUser(true);
-        if (!isPaidUser(user)) {
+        if (!isAdmin(user)) {
             showPremiumFeatureModal();
             return;
         }
@@ -301,7 +296,7 @@ function showPaywallModal(message) {
     document.body.appendChild(modal);
 }
 
-/* ===== PREMIUM FEATURE MODAL (multi-scan lock) ===== */
+/* ===== MULTI-SCAN UNAVAILABLE MODAL ===== */
 function showPremiumFeatureModal() {
     let modal = document.getElementById('paywall-modal');
     if (modal) modal.remove();
@@ -311,19 +306,15 @@ function showPremiumFeatureModal() {
     box.className = 'paywall-box';
     const title = document.createElement('div');
     title.className = 'paywall-title';
-    title.textContent = '> ⊹ MULTI-SCAN IS A PRO FEATURE';
+    title.textContent = '> MULTI-SCAN UNAVAILABLE';
     const msg = document.createElement('p');
     msg.className = 'paywall-msg';
-    msg.textContent = 'Multi-scan sweeps several areas in one run. It\'s available on a paid plan — upgrade to unlock it. Single-area scanning stays free.';
-    const upgradeBtn = document.createElement('a');
-    upgradeBtn.href = '/pricing';
-    upgradeBtn.className = 'auth-btn paywall-upgrade-btn';
-    upgradeBtn.textContent = '[ UNLOCK MULTI-SCAN ]';
+    msg.textContent = 'Multi-scan is currently disabled. Single-area scanning is available as usual — set your radius and hit SCAN.';
     const dismissBtn = document.createElement('button');
     dismissBtn.className = 'paywall-close';
-    dismissBtn.textContent = '[ DISMISS ]';
+    dismissBtn.textContent = '[ GOT IT ]';
     dismissBtn.onclick = () => modal.remove();
-    box.append(title, msg, upgradeBtn, dismissBtn);
+    box.append(title, msg, dismissBtn);
     modal.appendChild(box);
     document.body.appendChild(modal);
 }

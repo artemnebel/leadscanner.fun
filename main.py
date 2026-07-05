@@ -436,8 +436,9 @@ async def healthz(db: Session = Depends(get_db)):
 async def me(user=Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated.")
-    effective_tier = "unlimited" if user.email == ADMIN_EMAIL else user.tier
-    return {"email": user.email, "tier": effective_tier, "usage": usage_info(user)}
+    is_admin = user.email == ADMIN_EMAIL
+    effective_tier = "unlimited" if is_admin else user.tier
+    return {"email": user.email, "tier": effective_tier, "is_admin": is_admin, "usage": usage_info(user)}
 
 @app.get("/api/admin/users")
 async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_db)):
