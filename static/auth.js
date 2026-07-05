@@ -34,9 +34,10 @@ function renderUsage(usage) {
   const el = document.getElementById('usage-display');
   if (!el || !usage) return;
   const { tier, free_used, free_limit, credits, available, used, limit } = usage;
-  // Uncapped (admin / legacy unlimited)
+  // Uncapped (admin / legacy unlimited): show no usage badge at all.
   if (available === null || tier === 'unlimited') {
-    el.textContent = '[ UNLIMITED ]';
+    el.textContent = '';
+    el.style.display = 'none';
     return;
   }
   // New credit-aware shape: show total leads available across free allotment + credits
