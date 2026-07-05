@@ -130,6 +130,17 @@ function updateBulkBtn() {
     }
 }
 
+// Multi-scan fires one paid Places call per target, so it's a premium feature.
+// Paid = grandfathered subscriber (tier !== 'free'), admin (reads as 'unlimited'),
+// or anyone holding lead credits.
+function isPaidUser(user) {
+    if (!user) return false;
+    const tier = user.tier || (user.usage && user.usage.tier);
+    if (tier && tier !== 'free') return true;
+    const credits = user.usage ? (user.usage.credits || 0) : 0;
+    return credits > 0;
+}
+
 async function toggleBulkMode() {
     if (state.bulkMode) {
         // Turn off: clear all targets
@@ -139,8 +150,12 @@ async function toggleBulkMode() {
         if (state.searchCircle) state.searchCircle.setStyle({ opacity: 1, fillOpacity: 0.05 });
         if (state.centerMarker) state.centerMarker.setOpacity(1);
     } else {
-        // Multi-zone is available to everyone now (lead cost is paid per-lead from the credit balance).
-        await getUser(true); // refresh in background
+        // Gate: multi-scan is a paid-only feature.
+        const user = await getUser(true);
+        if (!isPaidUser(user)) {
+            showPremiumFeatureModal();
+            return;
+        }
         state.bulkMode = true;
         // Dim main circle/marker
         if (state.searchCircle) state.searchCircle.setStyle({ opacity: 0.25, fillOpacity: 0.02 });
@@ -277,6 +292,33 @@ function showPaywallModal(message) {
     upgradeBtn.href = '/coffee';
     upgradeBtn.className = 'auth-btn paywall-upgrade-btn';
     upgradeBtn.textContent = '[ ☕ BUY ME A COFFEE ]';
+    const dismissBtn = document.createElement('button');
+    dismissBtn.className = 'paywall-close';
+    dismissBtn.textContent = '[ DISMISS ]';
+    dismissBtn.onclick = () => modal.remove();
+    box.append(title, msg, upgradeBtn, dismissBtn);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+}
+
+/* ===== PREMIUM FEATURE MODAL (multi-scan lock) ===== */
+function showPremiumFeatureModal() {
+    let modal = document.getElementById('paywall-modal');
+    if (modal) modal.remove();
+    modal = document.createElement('div');
+    modal.id = 'paywall-modal';
+    const box = document.createElement('div');
+    box.className = 'paywall-box';
+    const title = document.createElement('div');
+    title.className = 'paywall-title';
+    title.textContent = '> ⊹ MULTI-SCAN IS A PRO FEATURE';
+    const msg = document.createElement('p');
+    msg.className = 'paywall-msg';
+    msg.textContent = 'Multi-scan sweeps several areas in one run. It\'s available on a paid plan — upgrade to unlock it. Single-area scanning stays free.';
+    const upgradeBtn = document.createElement('a');
+    upgradeBtn.href = '/pricing';
+    upgradeBtn.className = 'auth-btn paywall-upgrade-btn';
+    upgradeBtn.textContent = '[ UNLOCK MULTI-SCAN ]';
     const dismissBtn = document.createElement('button');
     dismissBtn.className = 'paywall-close';
     dismissBtn.textContent = '[ DISMISS ]';
