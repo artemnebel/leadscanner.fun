@@ -2,8 +2,9 @@
 function showToast(message, type = 'error') {
     const container = document.getElementById('toast-container');
     const el = document.createElement('div');
-    const prefix = type === 'error' ? '[ERR] ' : '[WARN] ';
-    el.className = `toast toast-${type}`;
+    const prefix = type === 'error' ? '[ERR] ' : type === 'success' ? '[OK] ' : '[WARN] ';
+    const cls = type === 'success' ? 'warn' : type;  // reuse warn styling for success
+    el.className = `toast toast-${cls}`;
     el.textContent = prefix + message;
     container.appendChild(el);
     requestAnimationFrame(() => el.classList.add('toast-show'));
@@ -29,6 +30,9 @@ const state = {
     // multi-scan
     bulkMode: false,
     bulkTargets: [],       // [{latlng, circle, marker}]
+    // plan gating + client portal
+    plan: null,            // { pro, max_radius_m, daily_remaining, ... } from /api/auth/me
+    savedUrls: new Set(),  // maps_urls already saved to My Clients this session
 };
 
 /* ===== CUSTOM ICONS ===== */
@@ -131,9 +135,9 @@ function updateBulkBtn() {
 }
 
 // Multi-scan fires one paid Places call per placed target — the most expensive
-// action a user can take. Restricted to the admin account only.
-function isAdmin(user) {
-    return !!(user && user.is_admin);
+// action a user can take. A Pro-plan perk.
+function isPro(user) {
+    return !!(user && user.plan && user.plan.pro);
 }
 
 async function toggleBulkMode() {
@@ -145,9 +149,10 @@ async function toggleBulkMode() {
         if (state.searchCircle) state.searchCircle.setStyle({ opacity: 1, fillOpacity: 0.05 });
         if (state.centerMarker) state.centerMarker.setOpacity(1);
     } else {
-        // Gate: multi-scan is restricted to the admin account.
+        // Gate: multi-scan is a Pro feature.
         const user = await getUser(true);
-        if (!isAdmin(user)) {
+        state.plan = user && user.plan ? user.plan : state.plan;
+        if (!isPro(user)) {
             showPremiumFeatureModal();
             return;
         }
@@ -296,27 +301,66 @@ function showPaywallModal(message) {
     document.body.appendChild(modal);
 }
 
-/* ===== MULTI-SCAN UNAVAILABLE MODAL ===== */
-function showPremiumFeatureModal() {
+/* ===== GENERIC UPGRADE MODAL ===== */
+function showUpgradeModal(title, message, extraNode) {
     let modal = document.getElementById('paywall-modal');
     if (modal) modal.remove();
     modal = document.createElement('div');
     modal.id = 'paywall-modal';
     const box = document.createElement('div');
     box.className = 'paywall-box';
-    const title = document.createElement('div');
-    title.className = 'paywall-title';
-    title.textContent = '> MULTI-SCAN UNAVAILABLE';
+    const titleEl = document.createElement('div');
+    titleEl.className = 'paywall-title';
+    titleEl.textContent = title;
     const msg = document.createElement('p');
     msg.className = 'paywall-msg';
-    msg.textContent = 'Multi-scan is currently disabled. Single-area scanning is available as usual — set your radius and hit SCAN.';
+    msg.textContent = message;
+    box.append(titleEl, msg);
+    if (extraNode) box.append(extraNode);
+    const upgradeBtn = document.createElement('a');
+    upgradeBtn.href = '/pricing';
+    upgradeBtn.className = 'auth-btn paywall-upgrade-btn';
+    upgradeBtn.textContent = '[ ⚡ UPGRADE TO PRO ]';
     const dismissBtn = document.createElement('button');
     dismissBtn.className = 'paywall-close';
-    dismissBtn.textContent = '[ GOT IT ]';
+    dismissBtn.textContent = '[ DISMISS ]';
     dismissBtn.onclick = () => modal.remove();
-    box.append(title, msg, dismissBtn);
+    box.append(upgradeBtn, dismissBtn);
     modal.appendChild(box);
     document.body.appendChild(modal);
+    return modal;
+}
+
+/* ===== DAILY LIMIT MODAL (free tier — honest copy + live countdown) ===== */
+function showDailyLimitModal(retryAt) {
+    const countdown = document.createElement('p');
+    countdown.className = 'paywall-msg';
+    countdown.style.fontVariantNumeric = 'tabular-nums';
+    const modal = showUpgradeModal(
+        "> YOU'VE USED TODAY'S FREE SCANS",
+        "You've hit the free limit of 10 scans in 24 hours. Upgrade to Pro to remove the wait — plus a 10mi radius, multi-scan, and the client portal.",
+        countdown
+    );
+    if (!retryAt) return;
+    const target = new Date(retryAt).getTime();
+    (function tick() {
+        if (!document.body.contains(modal)) return;
+        const ms = target - Date.now();
+        if (ms <= 0) { countdown.textContent = '> Your free scans have reset — reload to continue.'; return; }
+        const h = Math.floor(ms / 3600000);
+        const m = Math.floor((ms % 3600000) / 60000);
+        const s = Math.floor((ms % 60000) / 1000);
+        countdown.textContent = `> Resets in ${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+        setTimeout(tick, 1000);
+    })();
+}
+
+/* ===== MULTI-SCAN PRO UPSELL ===== */
+function showPremiumFeatureModal() {
+    showUpgradeModal(
+        '> MULTI-SCAN IS A PRO FEATURE',
+        'Multi-scan sweeps several areas in one run. Upgrade to Pro to unlock it — along with a 10mi radius, no daily scan limit, and the client portal.'
+    );
 }
 
 /* ===== SCAN CAP MODAL (blocking, no dismiss) ===== */
@@ -386,15 +430,18 @@ async function handleSearch() {
                     return;
                 }
                 if (resp.status === 429) {
-                    showPaywallModal('You\'ve reached your monthly limit. Upgrade to keep scanning.');
+                    const code = data.detail && data.detail.code;
+                    if (code === 'DAILY_LIMIT_REACHED') showDailyLimitModal(data.detail.retry_at);
+                    else showUpgradeModal('> SCAN LIMIT REACHED', 'You\'ve reached your scan limit. Upgrade to Pro to keep scanning.');
                     setLoading(false);
                     applyFilterAndRender();
                     showLeadsUI();
                     return;
                 }
                 if (!resp.ok) { showToast(`Zone ${i + 1}: ${data.detail || 'Search failed'}`, 'error'); continue; }
-                if (data.usage && typeof renderUsage === 'function') {
-                    renderUsage(data.usage);
+                if (data.plan && typeof renderPlanBadge === 'function') {
+                    renderPlanBadge(data.plan);
+                    state.plan = data.plan;
                     localStorage.removeItem('ls_user');
                 }
                 const newLeads = data.leads.filter(l => !state.seenUrls.has(l.maps_url));
@@ -447,16 +494,19 @@ async function handleSearch() {
         }
 
         if (resp.status === 429) {
-            showPaywallModal('You\'ve reached your monthly limit. Upgrade to keep scanning.');
+            const code = data.detail && data.detail.code;
+            if (code === 'DAILY_LIMIT_REACHED') showDailyLimitModal(data.detail.retry_at);
+            else showUpgradeModal('> SCAN LIMIT REACHED', 'You\'ve reached your scan limit. Upgrade to Pro to keep scanning.');
             return;
         }
 
         if (!resp.ok) {
-            throw new Error(data.detail || 'Search failed');
+            throw new Error(typeof data.detail === 'string' ? data.detail : 'Search failed');
         }
 
-        if (data.usage && typeof renderUsage === 'function') {
-            renderUsage(data.usage);
+        if (data.plan && typeof renderPlanBadge === 'function') {
+            renderPlanBadge(data.plan);
+            state.plan = data.plan;
             localStorage.removeItem('ls_user');
         }
 
@@ -525,7 +575,7 @@ function renderTable() {
     if (state.filteredLeads.length === 0) {
         const tr = document.createElement('tr');
         tr.id = 'empty-row';
-        tr.innerHTML = `<td colspan="4">${
+        tr.innerHTML = `<td colspan="5">${
             state.allLeads.length === 0
                 ? 'No leads found — try a broader search or different category'
                 : 'No matches for that filter'
@@ -548,8 +598,84 @@ function renderTable() {
             <td>${ratingCell}</td>
             <td class="muted" title="${esc(lead.city)}">${esc(lead.city)}</td>
         `;
+        // Save-to-portal action
+        const actionTd = document.createElement('td');
+        actionTd.className = 'save-cell';
+        const btn = document.createElement('button');
+        btn.className = 'save-client-btn btn-term';
+        const already = state.savedUrls.has(lead.maps_url);
+        btn.textContent = already ? '✓ SAVED' : '+ SAVE';
+        btn.disabled = already;
+        btn.title = already ? 'Saved to My Clients' : 'Save to My Clients';
+        btn.addEventListener('click', () => saveLeadToClients(lead, btn));
+        actionTd.appendChild(btn);
+        tr.appendChild(actionTd);
         tbody.appendChild(tr);
     });
+}
+
+/* ===== SAVE LEAD → CLIENT PORTAL ===== */
+async function saveLeadToClients(lead, btn) {
+    const token = typeof getToken === 'function' ? getToken() : null;
+    if (!token) { window.location.href = '/login'; return; }
+    const prev = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '...';
+    try {
+        const resp = await fetch('/api/clients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+                business_name: lead.name,
+                phone: lead.phone || '',
+                city: lead.city || '',
+                maps_url: lead.maps_url || '',
+                rating: lead.rating ?? null,
+                reviews: lead.reviews ?? null,
+            }),
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (resp.status === 401) { window.location.href = '/login'; return; }
+        if (resp.status === 403 && data.detail && data.detail.code === 'PORTAL_LIMIT_REACHED') {
+            btn.disabled = false;
+            btn.textContent = prev;
+            showUpgradeModal(
+                '> CLIENT PORTAL FULL',
+                `Free accounts can save up to ${data.detail.limit} clients. Upgrade to Pro for an unlimited client portal.`
+            );
+            return;
+        }
+        if (!resp.ok) {
+            btn.disabled = false;
+            btn.textContent = prev;
+            showToast('Could not save client', 'error');
+            return;
+        }
+        state.savedUrls.add(lead.maps_url);
+        btn.textContent = '✓ SAVED';
+        btn.title = 'Saved to My Clients';
+        showToast(data.duplicate ? 'Already in My Clients' : 'Saved to My Clients', 'success');
+    } catch (err) {
+        btn.disabled = false;
+        btn.textContent = prev;
+        showToast('Could not save client', 'error');
+    }
+}
+
+/* ===== APPLY PLAN TO UI (radius cap, etc.) ===== */
+async function applyPlanToUI() {
+    const user = typeof getUser === 'function' ? await getUser() : null;
+    state.plan = user && user.plan ? user.plan : null;
+    const slider = document.getElementById('radius-slider');
+    if (!slider || !state.plan) return;
+    // Free plan: cap the slider at the plan's max radius (~5mi) and hint at Pro.
+    if (!state.plan.pro && state.plan.max_radius_m) {
+        const maxM = state.plan.max_radius_m;
+        slider.max = String(maxM);
+        if (parseInt(slider.value, 10) > maxM) slider.value = String(maxM);
+        slider.title = 'Free plan caps at ~5mi — upgrade to Pro for 10mi';
+        slider.dispatchEvent(new Event('input'));
+    }
 }
 
 /* ===== SORT HEADERS ===== */
@@ -829,6 +955,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initRadiusSlider();
     initSortHeaders();
     initLocateBtn();
+    applyPlanToUI();
 
     document.getElementById('search-btn').addEventListener('click', handleSearch);
     document.getElementById('multi-btn').addEventListener('click', toggleBulkMode);

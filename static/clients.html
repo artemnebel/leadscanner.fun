@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1EHSVC4QBJ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-1EHSVC4QBJ');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Clients - Lead Scanner</title>
+    <meta name="robots" content="noindex">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
+    <link rel="icon" href="/favicon.ico"/>
+    <link rel="shortcut icon" href="/favicon.ico"/>
+    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <style>
+        .clients-toolbar { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+        .cap-banner { border:1px solid #33ff00; padding:0.6rem 0.9rem; font-size:0.88rem; }
+        .cap-banner.full { border-color:#ffb000; color:#ffb000; }
+        .client-card { border:1px solid var(--border,#2a2a2a); padding:1rem 1.1rem; margin-bottom:0.85rem; background:rgba(0,0,0,0.2); }
+        .client-head { display:flex; flex-wrap:wrap; gap:0.5rem 1rem; align-items:baseline; justify-content:space-between; }
+        .client-name { font-weight:700; font-size:1.05rem; }
+        .client-name a { color:inherit; text-decoration:none; }
+        .client-name a:hover { text-decoration:underline; }
+        .client-meta { opacity:0.7; font-size:0.85rem; }
+        .client-row { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; margin-top:0.6rem; }
+        .call-link { color:#33ff00; text-decoration:none; border:1px solid #33ff00; padding:0.2rem 0.6rem; font-size:0.85rem; }
+        .call-link:hover { background:rgba(51,255,0,0.1); }
+        .client-status { background:transparent; color:inherit; font-family:inherit; border:1px solid var(--border,#2a2a2a); padding:0.25rem 0.4rem; }
+        .client-status[data-status="won"] { border-color:#33ff00; color:#33ff00; }
+        .client-status[data-status="lost"] { border-color:#ff5555; color:#ff5555; }
+        .client-status[data-status="interested"] { border-color:#ffb000; color:#ffb000; }
+        .client-notes { width:100%; box-sizing:border-box; margin-top:0.6rem; background:rgba(0,0,0,0.3); color:inherit; font-family:inherit; border:1px solid var(--border,#2a2a2a); padding:0.5rem; min-height:52px; resize:vertical; }
+        .client-del { background:transparent; border:1px solid #2a2a2a; color:var(--muted,#888); font-family:inherit; cursor:pointer; padding:0.25rem 0.5rem; margin-left:auto; }
+        .client-del:hover { border-color:#ff5555; color:#ff5555; }
+        .empty-clients { opacity:0.7; text-align:center; padding:2rem 1rem; }
+    </style>
+</head>
+<body class="page">
+    <div id="crt-overlay"></div>
+
+    <header id="top-bar">
+        <div id="logo">
+            <span id="logo-blink">█</span>
+            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <div class="nav-left">
+            <a href="/" class="nav-link">[ HOME ]</a>
+            <a href="/about" class="nav-link">[ ABOUT ]</a>
+            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
+            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
+        </div>
+        <div class="nav-right">
+            <a href="/pricing" class="nav-link">[ PRICING ]</a>
+            <a href="/clients" class="nav-link active" id="nav-clients-link">[ MY_CLIENTS ]</a>
+            <a href="/contact" class="nav-link">[ CONTACT ]</a>
+            <a href="/dashboard" class="nav-link" id="nav-auth-link">[ ACCOUNT ]</a>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <h1 class="page-title">&gt; MY_CLIENTS.EXE</h1>
+
+        <div id="clients-loading" class="page-section"><p>LOADING...</p></div>
+
+        <div id="clients-body" style="display:none">
+            <div class="clients-toolbar">
+                <div id="cap-banner"></div>
+                <a href="/" class="auth-btn" style="text-decoration:none">[ + SCAN FOR LEADS ]</a>
+            </div>
+            <div id="clients-list"></div>
+        </div>
+    </main>
+
+    <script src="/static/auth.js?v={{ version }}"></script>
+    <script>
+        const STATUSES = ['new', 'contacted', 'interested', 'won', 'lost'];
+
+        function esc(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function authHeaders(json) {
+            const h = { 'Authorization': `Bearer ${getToken()}` };
+            if (json) h['Content-Type'] = 'application/json';
+            return h;
+        }
+
+        function renderCapBanner(plan, count) {
+            const el = document.getElementById('cap-banner');
+            if (!plan || plan.pro || plan.portal_limit == null) {
+                el.textContent = `${count} client${count !== 1 ? 's' : ''} saved`;
+                el.className = '';
+                return;
+            }
+            const limit = plan.portal_limit;
+            const full = count >= limit;
+            el.innerHTML = `${count}/${limit} saved on Free` +
+                (full ? ' — <a href="/pricing" style="color:inherit">upgrade to Pro</a> for unlimited' : '');
+            el.className = 'cap-banner' + (full ? ' full' : '');
+        }
+
+        function clientCard(c) {
+            const card = document.createElement('div');
+            card.className = 'client-card';
+            card.dataset.id = c.id;
+
+            const nameHtml = c.maps_url
+                ? `<a href="${esc(c.maps_url)}" target="_blank" rel="noopener">${esc(c.business_name)}</a>`
+                : esc(c.business_name);
+            const ratingHtml = (c.rating != null)
+                ? `${Number(c.rating).toFixed(1)} ★ (${c.reviews ?? 0})` : '';
+
+            const options = STATUSES.map(s =>
+                `<option value="${s}"${s === c.status ? ' selected' : ''}>${s.toUpperCase()}</option>`).join('');
+
+            const callHtml = c.phone
+                ? `<a class="call-link" href="tel:${esc(c.phone)}">📞 CALL ${esc(c.phone)}</a>`
+                : `<span class="client-meta">no phone</span>`;
+
+            card.innerHTML = `
+                <div class="client-head">
+                    <span class="client-name">${nameHtml}</span>
+                    <span class="client-meta">${esc(c.city || '')}${ratingHtml ? ' · ' + ratingHtml : ''}</span>
+                </div>
+                <div class="client-row">
+                    ${callHtml}
+                    <select class="client-status" data-status="${esc(c.status)}">${options}</select>
+                    <button class="client-del">[ DELETE ]</button>
+                </div>
+                <textarea class="client-notes" placeholder="Call notes...">${esc(c.notes || '')}</textarea>
+            `;
+
+            const statusSel = card.querySelector('.client-status');
+            statusSel.addEventListener('change', () => {
+                statusSel.dataset.status = statusSel.value;
+                patchClient(c.id, { status: statusSel.value });
+            });
+
+            const notes = card.querySelector('.client-notes');
+            let lastNotes = c.notes || '';
+            notes.addEventListener('blur', () => {
+                if (notes.value === lastNotes) return;
+                lastNotes = notes.value;
+                patchClient(c.id, { notes: notes.value });
+            });
+
+            card.querySelector('.client-del').addEventListener('click', () => deleteClient(c.id, card));
+            return card;
+        }
+
+        async function patchClient(id, body) {
+            try {
+                await fetch(`/api/clients/${id}`, {
+                    method: 'PATCH', headers: authHeaders(true), body: JSON.stringify(body),
+                });
+            } catch { /* best-effort; UI already reflects the change */ }
+        }
+
+        async function deleteClient(id, card) {
+            if (!confirm('Remove this client?')) return;
+            try {
+                const res = await fetch(`/api/clients/${id}`, { method: 'DELETE', headers: authHeaders() });
+                if (res.ok) { card.remove(); loadClients(); }
+            } catch { /* ignore */ }
+        }
+
+        async function loadClients() {
+            const res = await fetch('/api/clients', { headers: authHeaders() });
+            if (res.status === 401) { window.location.href = '/login'; return; }
+            const data = await res.json();
+            const list = document.getElementById('clients-list');
+            list.innerHTML = '';
+            const clients = data.clients || [];
+            renderCapBanner(data.plan, clients.length);
+            if (clients.length === 0) {
+                list.innerHTML = '<div class="empty-clients">&gt; No saved clients yet. Run a scan and hit <strong>+ SAVE</strong> on a lead to add it here.</div>';
+                return;
+            }
+            clients.forEach(c => list.appendChild(clientCard(c)));
+        }
+
+        (async function init() {
+            const token = getToken();
+            if (!token) { window.location.href = '/login'; return; }
+            try {
+                await loadClients();
+                document.getElementById('clients-loading').style.display = 'none';
+                document.getElementById('clients-body').style.display = 'block';
+            } catch {
+                document.getElementById('clients-loading').innerHTML = '<p>&gt; ERR: could not load clients.</p>';
+            }
+        })();
+    </script>
+</body>
+</html>

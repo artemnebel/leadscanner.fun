@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1EHSVC4QBJ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-1EHSVC4QBJ');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - Lead Scanner</title>
+    <meta name="description" content="Lead Scanner is free forever — 10 scans a day, a 5mi radius, and a starter client portal. Upgrade to Pro for a 10mi radius, unlimited daily scans, multi-scan, and an unlimited client portal.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
+    <link rel="icon" href="/favicon.ico"/>
+    <link rel="shortcut icon" href="/favicon.ico"/>
+    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <style>
+        .pricing-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        .plan-card {
+            flex: 1 1 300px;
+            max-width: 380px;
+            border: 1px solid var(--border, #2a2a2a);
+            padding: 1.5rem;
+            background: rgba(0,0,0,0.2);
+        }
+        .plan-card.pro { border-color: #33ff00; box-shadow: 0 0 18px rgba(51,255,0,0.12); }
+        .plan-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .plan-price { font-size: 2rem; font-weight: 700; margin: 0.25rem 0; }
+        .plan-price small { font-size: 0.9rem; opacity: 0.7; font-weight: 400; }
+        .plan-feat { list-style: none; padding: 0; margin: 1rem 0; }
+        .plan-feat li { padding: 0.3rem 0; font-size: 0.92rem; opacity: 0.92; }
+        .plan-feat li::before { content: "› "; color: #33ff00; }
+        .plan-feat li.muted { opacity: 0.5; }
+        .plan-feat li.muted::before { content: "× "; color: #ff5555; }
+        .billing-toggle { display: flex; gap: 0.5rem; justify-content: center; margin: 0.5rem 0 0; }
+        .billing-toggle button {
+            background: transparent; border: 1px solid var(--border, #2a2a2a);
+            color: inherit; font-family: inherit; padding: 0.35rem 0.8rem; cursor: pointer;
+        }
+        .billing-toggle button.active { border-color: #33ff00; color: #33ff00; }
+        .save-badge { color: #33ff00; font-size: 0.8rem; margin-left: 0.35rem; }
+        .roi-note { text-align: center; opacity: 0.65; font-size: 0.85rem; margin-top: 1.5rem; }
+    </style>
+</head>
+<body class="page">
+    <div id="crt-overlay"></div>
+
+    <header id="top-bar">
+        <div id="logo">
+            <span id="logo-blink">█</span>
+            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <div class="nav-left">
+            <a href="/" class="nav-link">[ HOME ]</a>
+            <a href="/about" class="nav-link">[ ABOUT ]</a>
+            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
+            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
+        </div>
+        <div class="nav-right">
+            <a href="/pricing" class="nav-link active">[ PRICING ]</a>
+            <a href="/clients" class="nav-link" id="nav-clients-link" style="display:none">[ MY_CLIENTS ]</a>
+            <a href="/contact" class="nav-link">[ CONTACT ]</a>
+            <a href="/login" class="nav-link" id="nav-auth-link">[ LOGIN ]</a>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <h1 class="page-title">&gt; PRICING.EXE</h1>
+        <p class="page-subtitle">Lead Scanner is free forever — I built it because I wished it existed when I freelanced. Pro is for when you're working leads at volume and want the workflow to live in one place.</p>
+
+        <div id="pricing-error" class="auth-error" style="display:none;margin:1rem auto;max-width:420px"></div>
+
+        <div class="pricing-grid">
+            <!-- FREE -->
+            <div class="plan-card">
+                <div class="plan-name">FREE</div>
+                <div class="plan-price">$0<small> / forever</small></div>
+                <ul class="plan-feat">
+                    <li>10 scans per day</li>
+                    <li>5mi scan radius</li>
+                    <li>Export to CSV / JSON / XLSX</li>
+                    <li>Save up to 5 clients in the portal</li>
+                    <li class="muted">Multi-scan</li>
+                    <li class="muted">Unlimited daily scans</li>
+                </ul>
+                <a href="/" class="auth-btn" style="text-decoration:none;display:inline-block;width:100%;text-align:center;box-sizing:border-box">[ START SCANNING ]</a>
+            </div>
+
+            <!-- PRO -->
+            <div class="plan-card pro">
+                <div class="plan-name">PRO ⚡</div>
+                <div class="plan-price"><span id="pro-price">$49</span><small id="pro-period"> / month</small></div>
+                <div class="billing-toggle">
+                    <button id="toggle-monthly" class="active" onclick="selectPlan('monthly')">MONTHLY</button>
+                    <button id="toggle-annual" onclick="selectPlan('annual')">ANNUAL<span class="save-badge">2 mo free</span></button>
+                </div>
+                <ul class="plan-feat">
+                    <li>Unlimited daily scans — no waiting</li>
+                    <li>10mi scan radius</li>
+                    <li>Multi-scan (sweep several areas at once)</li>
+                    <li>Unlimited client portal (call, notes, status)</li>
+                    <li>Export to CSV / JSON / XLSX</li>
+                </ul>
+                <button class="auth-btn paywall-upgrade-btn" id="subscribe-btn" onclick="subscribe()" style="width:100%">[ ⚡ UPGRADE TO PRO ]</button>
+            </div>
+        </div>
+
+        <p class="roi-note">One won client usually pays for years of Pro. Cancel anytime.</p>
+    </main>
+
+    <script src="/static/auth.js?v={{ version }}"></script>
+    <script>
+        let selectedPlan = 'monthly';
+
+        function selectPlan(plan) {
+            selectedPlan = plan;
+            document.getElementById('toggle-monthly').classList.toggle('active', plan === 'monthly');
+            document.getElementById('toggle-annual').classList.toggle('active', plan === 'annual');
+            document.getElementById('pro-price').textContent = plan === 'annual' ? '$490' : '$49';
+            document.getElementById('pro-period').textContent = plan === 'annual' ? ' / year' : ' / month';
+        }
+
+        async function subscribe() {
+            const errEl = document.getElementById('pricing-error');
+            const btn = document.getElementById('subscribe-btn');
+            errEl.style.display = 'none';
+            const token = getToken();
+            if (!token) { window.location.href = '/login'; return; }
+            btn.disabled = true;
+            btn.textContent = '[ REDIRECTING... ]';
+            try {
+                const res = await fetch('/api/billing/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ plan: selectedPlan }),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    errEl.textContent = '> ERR: ' + (typeof data.detail === 'string' ? data.detail : 'Checkout failed.');
+                    errEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = '[ ⚡ UPGRADE TO PRO ]';
+                    return;
+                }
+                window.location.href = data.url;
+            } catch {
+                errEl.textContent = '> ERR: Network error.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = '[ ⚡ UPGRADE TO PRO ]';
+            }
+        }
+    </script>
+</body>
+</html>

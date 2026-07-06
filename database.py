@@ -32,6 +32,8 @@ class User(Base):
     leads_used = Column(Integer, default=0)         # counts Free-tier monthly allotment usage; resets monthly
     lead_credits = Column(Integer, default=0)       # paid credit balance from one-time pack purchases; never resets
     usage_reset = Column(Date, default=date.today)  # reset on 1st of each month (Free allotment only)
+    daily_scans = Column(Integer, default=0)        # scans used in the current rolling 24h window (free-tier cooldown)
+    daily_reset = Column(DateTime, nullable=True)   # end of the current 24h scan window; reset once passed
     stripe_customer_id = Column(String, nullable=True)
     stripe_subscription_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -60,6 +62,23 @@ class SearchLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
 
+class SavedClient(Base):
+    __tablename__ = "saved_clients"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, index=True, nullable=False)  # owner (User.id UUID)
+    business_name = Column(String)
+    phone = Column(String)
+    city = Column(String)                                 # formatted address
+    maps_url = Column(String)
+    rating = Column(Float)
+    reviews = Column(Integer)
+    status = Column(String, default="new")                # new | contacted | interested | won | lost
+    notes = Column(Text, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 def init_db():
     is_postgres = "postgresql" in DATABASE_URL or "postgres" in DATABASE_URL
     try:
@@ -76,6 +95,10 @@ def init_db():
         ("lead_credits", "INTEGER DEFAULT 0"),
         ("reset_token", "VARCHAR"),
         ("reset_token_expires", "DATETIME"),
+        ("daily_scans", "INTEGER DEFAULT 0"),
+        # TIMESTAMP works on both SQLite and Postgres; Postgres rejects "DATETIME"
+        # on ALTER, which would leave existing prod rows without the column.
+        ("daily_reset", "TIMESTAMP"),
     ]
     with engine.connect() as conn:
         for col, typedef in migrations:

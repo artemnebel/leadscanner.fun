@@ -25,7 +25,7 @@ import bcrypt
 from sqlalchemy.orm import Session
 from sqlalchemy import text, func
 
-from database import User, PlacesCache, SearchLog, get_db, init_db
+from database import User, PlacesCache, SearchLog, SavedClient, get_db, init_db
 
 load_dotenv()
 load_dotenv(".env.local", override=True)  # local overrides — not committed
@@ -50,6 +50,17 @@ PRICE_IDS = {
     "unlimited": os.getenv("STRIPE_PRICE_UNLIMITED"),
 }
 
+# New Pro subscription prices (monthly + annual). Both grant tier="pro".
+PRO_PRICE_MONTHLY = os.getenv("STRIPE_PRICE_PRO_MONTHLY")
+PRO_PRICE_ANNUAL  = os.getenv("STRIPE_PRICE_PRO_ANNUAL")
+
+# All subscription price IDs → tier, used by the Stripe webhook. Legacy tiers keep
+# their names; the new Pro monthly/annual prices both map to "pro".
+SUBSCRIPTION_PRICE_TO_TIER = {pid: tier for tier, pid in PRICE_IDS.items() if pid}
+for _pid in (PRO_PRICE_MONTHLY, PRO_PRICE_ANNUAL):
+    if _pid:
+        SUBSCRIPTION_PRICE_TO_TIER[_pid] = "pro"
+
 # New pricing: one-time credit packs. price_id -> credits granted.
 PACK_PRICE_IDS = {
     "mini":     os.getenv("STRIPE_PRICE_PACK_MINI"),
@@ -68,6 +79,15 @@ PACK_CREDITS = {
 PACK_CREDITS = {pid: credits for pid, credits in PACK_CREDITS.items() if pid}
 
 FREE_MONTHLY_LEADS = 500
+
+# ── Plan gating (new pricing) ──────────────────────────────────────────────
+# Free plan: ~5mi radius, 10 scans per rolling 24h, up to 5 saved clients.
+# Pro plan:  ~10mi radius, no daily cap, unlimited saved clients.
+FREE_RADIUS_M     = 8_000     # ~5mi
+PRO_RADIUS_M      = 16_000    # ~10mi
+FREE_DAILY_SCANS  = 10
+FREE_PORTAL_LIMIT = 5
+PAID_TIERS = {"pro", "starter", "business", "unlimited"}
 
 # Legacy monthly caps for grandfathered subscribers. None = uncapped.
 LEGACY_TIER_LIMITS = {
@@ -196,6 +216,45 @@ def usage_info(user: User) -> dict:
         "limit": allotment,                         # legacy field, kept for old UI
     }
 
+# ── Plan gating ────────────────────────────────────────────────────────────────
+
+def is_pro(user: User) -> bool:
+    """True if the user has any paid/elevated plan. Admin is always Pro."""
+    if user is None:
+        return False
+    return user.email == ADMIN_EMAIL or (user.tier in PAID_TIERS)
+
+def plan_features(user: User) -> dict:
+    """Single source of truth for what a user's plan unlocks."""
+    pro = is_pro(user)
+    return {
+        "pro": pro,
+        "max_radius_m": PRO_RADIUS_M if pro else FREE_RADIUS_M,
+        "daily_scan_limit": None if pro else FREE_DAILY_SCANS,   # None = uncapped
+        "portal_limit": None if pro else FREE_PORTAL_LIMIT,      # None = uncapped
+    }
+
+def plan_payload(user: User) -> dict:
+    """Plan info for the frontend, including remaining scans in the 24h window."""
+    feats = plan_features(user)
+    remaining = None
+    reset_at = None
+    if feats["daily_scan_limit"] is not None:
+        now = datetime.utcnow()
+        if not user.daily_reset or now >= user.daily_reset:
+            remaining = feats["daily_scan_limit"]      # window elapsed → full quota
+        else:
+            remaining = max(0, feats["daily_scan_limit"] - (user.daily_scans or 0))
+            reset_at = user.daily_reset.isoformat()
+    return {
+        "pro": feats["pro"],
+        "max_radius_m": feats["max_radius_m"],
+        "daily_scan_limit": feats["daily_scan_limit"],
+        "daily_remaining": remaining,
+        "daily_reset": reset_at,
+        "portal_limit": feats["portal_limit"],
+    }
+
 # ── Page routes ───────────────────────────────────────────────────────────────
 
 def _ctx(request: Request):
@@ -238,14 +297,16 @@ async def serve_coffee(request: Request):
     return templates.TemplateResponse("coffee.html", _ctx(request))
 
 @app.get("/pricing")
-async def serve_pricing():
-    # Lead Scanner is now free & unlimited — the old pricing page is just the tip jar.
-    # 301 (permanent) so Google transfers /pricing's ranking signals to /coffee.
-    return RedirectResponse("/coffee", status_code=301)
+async def serve_pricing(request: Request):
+    return templates.TemplateResponse("pricing.html", _ctx(request))
 
 @app.get("/dashboard")
 async def serve_dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", _ctx(request))
+
+@app.get("/clients")
+async def serve_clients(request: Request):
+    return templates.TemplateResponse("clients.html", _ctx(request))
 
 @app.get("/forgot-password")
 async def serve_forgot_password(request: Request):
@@ -438,7 +499,13 @@ async def me(user=Depends(get_current_user)):
         raise HTTPException(status_code=401, detail="Not authenticated.")
     is_admin = user.email == ADMIN_EMAIL
     effective_tier = "unlimited" if is_admin else user.tier
-    return {"email": user.email, "tier": effective_tier, "is_admin": is_admin, "usage": usage_info(user)}
+    return {
+        "email": user.email,
+        "tier": effective_tier,
+        "is_admin": is_admin,
+        "plan": plan_payload(user),
+        "usage": usage_info(user),
+    }
 
 @app.get("/api/admin/users")
 async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_db)):
@@ -743,6 +810,43 @@ async def buy_coffee(user=Depends(get_current_user), db: Session = Depends(get_d
     )
     return {"url": session.url}
 
+class SubscribeBody(BaseModel):
+    plan: str | None = "monthly"  # "monthly" | "annual"
+
+@app.post("/api/billing/subscribe")
+async def create_subscription(
+    body: SubscribeBody,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Start a Pro subscription checkout ($49/mo or annual). The webhook flips
+    the user's tier to 'pro' once the subscription is active."""
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="Payments not configured.")
+
+    plan = (body.plan or "monthly").lower()
+    price_id = PRO_PRICE_ANNUAL if plan == "annual" else PRO_PRICE_MONTHLY
+    if not price_id:
+        raise HTTPException(status_code=400, detail="Pro plan not configured.")
+
+    if not user.stripe_customer_id:
+        customer = stripe.Customer.create(email=user.email)
+        user.stripe_customer_id = customer.id
+        db.commit()
+
+    session = stripe.checkout.Session.create(
+        customer=user.stripe_customer_id,
+        payment_method_types=["card"],
+        line_items=[{"price": price_id, "quantity": 1}],
+        mode="subscription",
+        success_url=f"{BASE_URL}/dashboard?upgraded=1",
+        cancel_url=f"{BASE_URL}/pricing",
+        metadata={"user_id": user.id, "plan": plan},
+    )
+    return {"url": session.url}
+
 @app.post("/api/billing/webhook")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     payload = await request.body()
@@ -762,6 +866,24 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
 
     # ── New pricing: one-time credit pack purchases ─────────────────────────
     if ev_type == "checkout.session.completed":
+        # Pro subscription checkout: grant the plan immediately (don't wait for the
+        # separate customer.subscription.created event).
+        if obj.get("mode") == "subscription":
+            metadata = obj.get("metadata") or {}
+            user_id = metadata.get("user_id")
+            customer_id = obj.get("customer")
+            user = None
+            if user_id:
+                user = db.query(User).filter(User.id == user_id).first()
+            if not user and customer_id:
+                user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
+            if user:
+                user.tier = "pro"
+                user.stripe_subscription_id = obj.get("subscription")
+                db.commit()
+                print(f"[webhook] pro subscription activated for {user.email}", flush=True)
+            return {"ok": True}
+
         if obj.get("payment_status") != "paid":
             return {"ok": True}
 
@@ -805,11 +927,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         status = obj.get("status")
         price_id = obj["items"]["data"][0]["price"]["id"] if obj.get("items") else None
 
-        tier = "free"
-        for t, pid in PRICE_IDS.items():
-            if pid == price_id:
-                tier = t
-                break
+        tier = SUBSCRIPTION_PRICE_TO_TIER.get(price_id, "free")
 
         user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
         if user:
@@ -839,6 +957,123 @@ async def billing_portal(user=Depends(get_current_user)):
         return_url=f"{BASE_URL}/dashboard",
     )
     return {"url": session.url}
+
+# ── Client portal (saved leads / mini-CRM) ─────────────────────────────────────
+
+VALID_CLIENT_STATUSES = {"new", "contacted", "interested", "won", "lost"}
+
+class SaveClientBody(BaseModel):
+    business_name: str
+    phone: str | None = ""
+    city: str | None = ""
+    maps_url: str | None = ""
+    rating: float | None = None
+    reviews: int | None = None
+
+class UpdateClientBody(BaseModel):
+    status: str | None = None
+    notes: str | None = None
+
+def _client_to_dict(c: SavedClient) -> dict:
+    return {
+        "id": c.id,
+        "business_name": c.business_name,
+        "phone": c.phone,
+        "city": c.city,
+        "maps_url": c.maps_url,
+        "rating": c.rating,
+        "reviews": c.reviews,
+        "status": c.status,
+        "notes": c.notes or "",
+        "created_at": c.created_at.isoformat() if c.created_at else None,
+    }
+
+@app.get("/api/clients")
+async def list_clients(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    rows = (
+        db.query(SavedClient)
+        .filter(SavedClient.user_id == user.id)
+        .order_by(SavedClient.created_at.desc())
+        .all()
+    )
+    return {"clients": [_client_to_dict(c) for c in rows], "plan": plan_payload(user)}
+
+@app.post("/api/clients")
+async def save_client(body: SaveClientBody, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+
+    # Skip duplicates (same business already saved by this user).
+    if body.maps_url:
+        existing = (
+            db.query(SavedClient)
+            .filter(SavedClient.user_id == user.id, SavedClient.maps_url == body.maps_url)
+            .first()
+        )
+        if existing:
+            return {"client": _client_to_dict(existing), "duplicate": True}
+
+    # Free plan is capped at FREE_PORTAL_LIMIT saved clients (a taste of the CRM);
+    # Pro is uncapped.
+    limit = plan_features(user)["portal_limit"]
+    if limit is not None:
+        count = db.query(SavedClient).filter(SavedClient.user_id == user.id).count()
+        if count >= limit:
+            raise HTTPException(status_code=403, detail={"code": "PORTAL_LIMIT_REACHED", "limit": limit})
+
+    client = SavedClient(
+        user_id=user.id,
+        business_name=body.business_name,
+        phone=body.phone or "",
+        city=body.city or "",
+        maps_url=body.maps_url or "",
+        rating=body.rating,
+        reviews=body.reviews,
+        status="new",
+        notes="",
+    )
+    db.add(client)
+    db.commit()
+    db.refresh(client)
+    return {"client": _client_to_dict(client)}
+
+@app.patch("/api/clients/{client_id}")
+async def update_client(client_id: str, body: UpdateClientBody, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    client = (
+        db.query(SavedClient)
+        .filter(SavedClient.id == client_id, SavedClient.user_id == user.id)
+        .first()
+    )
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    if body.status is not None:
+        if body.status not in VALID_CLIENT_STATUSES:
+            raise HTTPException(status_code=400, detail="Invalid status.")
+        client.status = body.status
+    if body.notes is not None:
+        client.notes = body.notes[:5000]
+    db.commit()
+    db.refresh(client)
+    return {"client": _client_to_dict(client)}
+
+@app.delete("/api/clients/{client_id}")
+async def delete_client(client_id: str, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    client = (
+        db.query(SavedClient)
+        .filter(SavedClient.id == client_id, SavedClient.user_id == user.id)
+        .first()
+    )
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found.")
+    db.delete(client)
+    db.commit()
+    return {"ok": True}
 
 def _generate_sub_circles(lat: float, lng: float, total_radius_m: float) -> list[tuple[float, float]]:
     """
@@ -1000,21 +1235,30 @@ async def search_leads(
     if not API_KEY:
         raise HTTPException(status_code=500, detail="GOOGLE_MAPS_API_KEY not set in .env file")
 
-    # Hard cap scan radius server-side. A wide scan tiles into many 8km sub-circles,
-    # and each sub-circle is a paid Places call — 16km (~10mi) keeps worst-case cost
-    # ~$0.56/scan instead of ~$16 at 100km. The UI slider maxes at 16km; this enforces
-    # it for crafted requests that bypass the slider.
-    MAX_RADIUS_M = 16_000
-    if req.radius_meters > MAX_RADIUS_M:
-        req.radius_meters = MAX_RADIUS_M
+    feats = plan_features(user)
+
+    # Per-plan radius cap, enforced server-side (defends crafted requests that bypass
+    # the slider). Free ~5mi, Pro ~10mi. A wide scan tiles into many 8km sub-circles,
+    # each a paid Places call, so the cap directly bounds worst-case cost. Silent clamp.
+    max_radius = feats["max_radius_m"]
+    if req.radius_meters > max_radius:
+        req.radius_meters = max_radius
 
     reset_usage_if_needed(user, db)
 
-    # Hidden lifetime scan cap: once a user has run their allotted scans, block further
-    # scanning and steer them to contact support (who can raise scan_limit in /admin).
-    scan_cap = user.scan_limit if user.scan_limit is not None else DEFAULT_SCAN_CAP
-    if (user.total_scans or 0) >= scan_cap:
-        raise HTTPException(status_code=403, detail="SCAN_CAP_REACHED")
+    # Free-tier daily scan window: N scans per rolling 24h, then a wait wall that steers
+    # toward Pro. Pro/admin have no daily cap (daily_scan_limit is None). The window is
+    # anchored at the first scan and resets once 24h have elapsed.
+    daily_limit = feats["daily_scan_limit"]
+    now = datetime.utcnow()
+    if not user.daily_reset or now >= user.daily_reset:
+        user.daily_scans = 0
+        user.daily_reset = now + timedelta(hours=24)
+    if daily_limit is not None and (user.daily_scans or 0) >= daily_limit:
+        raise HTTPException(
+            status_code=429,
+            detail={"code": "DAILY_LIMIT_REACHED", "retry_at": user.daily_reset.isoformat()},
+        )
 
     # Pre-check: block if user has no leads available (free allotment exhausted AND no credits).
     available_before = available_leads(user)
@@ -1097,7 +1341,8 @@ async def search_leads(
             limit_reached = True
 
     user.scans_used = (user.scans_used or 0) + 1  # one /api/search call = one scan (analytics)
-    user.total_scans = (user.total_scans or 0) + 1  # lifetime counter — backs the hidden scan cap
+    user.total_scans = (user.total_scans or 0) + 1  # lifetime counter (analytics)
+    user.daily_scans = (user.daily_scans or 0) + 1  # rolling 24h window — free-tier cooldown
     consume_leads(user, leads_count)
     # Log the query for the admin panel. Analytics only — never fail a search over it.
     try:
@@ -1120,6 +1365,7 @@ async def search_leads(
         "skipped_has_website": skipped_has_website,
         "skipped_no_contact": skipped_no_contact,
         "usage": usage_info(user),
+        "plan": plan_payload(user),
         "limit_reached": limit_reached,
     }
 

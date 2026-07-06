@@ -40,8 +40,9 @@
             <a href="/resources" class="nav-link">[ RESOURCES ]</a>
         </div>
         <div class="nav-right">
+            <a href="/pricing" class="nav-link">[ PRICING ]</a>
+            <a href="/clients" class="nav-link" id="nav-clients-link" style="display:none">[ MY_CLIENTS ]</a>
             <a href="/contact" class="nav-link">[ CONTACT ]</a>
-            <a href="/coffee" class="nav-link">[ ☕ COFFEE ]</a>
             <a href="/dashboard" class="nav-link active" id="nav-auth-link">[ ACCOUNT ]</a>
         </div>
     </nav>
@@ -61,23 +62,36 @@
                 <p>Plan: <span id="dash-tier" class="dash-value"></span></p>
             </div>
 
-            <div class="page-section" id="dash-leads-card">
-                <h2>&gt; LEADS AVAILABLE</h2>
-                <p style="font-size:1.6rem;margin:0.25rem 0">
-                    <span id="dash-available" class="dash-value">∞</span>
-                    <span style="font-size:0.9rem;opacity:0.7">leads ready to scan</span>
+            <!-- FREE plan card -->
+            <div class="page-section" id="dash-free-card" style="display:none">
+                <h2>&gt; YOUR PLAN — FREE</h2>
+                <p style="font-size:1.4rem;margin:0.25rem 0">
+                    <span id="dash-scans-left" class="dash-value">10</span>
+                    <span style="font-size:0.9rem;opacity:0.7">scans left today</span>
                 </p>
-                <p id="dash-usage-text" class="dash-value" style="margin-top:0.75rem"></p>
+                <p id="dash-reset-text" class="dash-value" style="margin:0.35rem 0 0.75rem;font-size:0.85rem;opacity:0.7"></p>
+                <p style="font-size:0.9rem;opacity:0.85">Free includes a 5mi scan radius and up to 5 saved clients. Pro unlocks a 10mi radius, unlimited daily scans, multi-scan, and an unlimited client portal.</p>
+                <a href="/pricing" class="auth-btn paywall-upgrade-btn" style="text-decoration:none;margin-top:0.5rem;display:inline-block">[ ⚡ UPGRADE TO PRO ]</a>
+            </div>
+
+            <!-- PRO plan card -->
+            <div class="page-section" id="dash-pro-card" style="display:none">
+                <h2>&gt; YOUR PLAN — PRO ⚡</h2>
+                <p style="font-size:0.95rem;opacity:0.9">10mi radius · unlimited daily scans · multi-scan · unlimited client portal. Thank you for supporting Lead Scanner.</p>
+                <button class="auth-btn" id="portal-btn" onclick="openPortal()" style="margin-top:0.5rem">[ MANAGE SUBSCRIPTION ]</button>
             </div>
 
             <div class="page-section">
-                <h2>&gt; SUPPORT</h2>
-                <p>Lead Scanner is free and unlimited — no plans, no limits. If it's helped you land work, you can buy me a coffee.</p>
-                <a href="/coffee" class="auth-btn" style="text-decoration:none;margin-top:0.5rem;display:inline-block">[ ☕ BUY ARTEM A COFFEE ]</a>
-                <div id="dash-billing-paid" style="display:none;margin-top:0.75rem">
-                    <button class="auth-btn" id="portal-btn" onclick="openPortal()">[ MANAGE SUBSCRIPTION ]</button>
-                    <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--muted)">You have a legacy subscription. It's no longer needed — everything is free now — but you can manage or cancel it here.</p>
-                </div>
+                <h2>&gt; MY CLIENTS</h2>
+                <p>Save leads into your personal client portal — call them, log notes, and track status from new to won.</p>
+                <a href="/clients" class="auth-btn" style="text-decoration:none;margin-top:0.5rem;display:inline-block">[ OPEN CLIENT PORTAL ]</a>
+            </div>
+
+            <!-- Legacy subscribers (grandfathered) -->
+            <div class="page-section" id="dash-billing-paid" style="display:none">
+                <h2>&gt; BILLING</h2>
+                <button class="auth-btn" id="legacy-portal-btn" onclick="openPortal()">[ MANAGE SUBSCRIPTION ]</button>
+                <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--muted)">You have a legacy subscription. You can manage or cancel it here.</p>
             </div>
 
             <div class="page-section">
@@ -111,20 +125,24 @@
             document.getElementById('dash-content').style.display = 'block';
 
             document.getElementById('dash-email').textContent = user.email;
-            document.getElementById('dash-tier').textContent =
-                (user.tier && user.tier !== 'free' ? user.tier.toUpperCase() : 'FREE');
+            const plan = user.plan || {};
+            const userIsPro = !!plan.pro;
+            document.getElementById('dash-tier').textContent = userIsPro ? 'PRO ⚡' : 'FREE';
 
-            const usage = user.usage || {};
-            const tier = usage.tier || user.tier || 'free';
-
-            // Hide the "leads available" card for now — no cap to display while
-            // the pricing model is being decided.
-            document.getElementById('dash-leads-card').style.display = 'none';
-
-            // Legacy subscribers can still reach the Stripe portal to cancel.
-            const hasLegacySub = tier && tier !== 'free' && tier !== 'unlimited';
-            if (hasLegacySub) {
-                document.getElementById('dash-billing-paid').style.display = 'block';
+            if (userIsPro) {
+                document.getElementById('dash-pro-card').style.display = 'block';
+                // Admins have Pro by virtue of being admin — no subscription to manage.
+                if (user.is_admin) document.getElementById('portal-btn').style.display = 'none';
+            } else {
+                document.getElementById('dash-free-card').style.display = 'block';
+                const left = plan.daily_remaining != null
+                    ? plan.daily_remaining
+                    : (plan.daily_scan_limit != null ? plan.daily_scan_limit : 10);
+                document.getElementById('dash-scans-left').textContent = left;
+                if (plan.daily_reset && left <= 0) {
+                    const h = Math.max(1, Math.round((new Date(plan.daily_reset).getTime() - Date.now()) / 3600000));
+                    document.getElementById('dash-reset-text').textContent = `Resets in about ${h}h.`;
+                }
             }
         })();
 
