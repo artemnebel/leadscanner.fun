@@ -25,7 +25,7 @@ Lead Scanner uses live Google Places data (not archived databases), so every res
 Lead Scanner has a Free plan and a paid Pro plan.
 
 - Free: $0 — 10 scans/day within a ~5-mile radius, plus a starter client portal (up to 5 saved clients). No credit card required.
-- Pro: $49/month or $490/year — ~10-mile radius, unlimited daily scans, multi-scan, and an unlimited client portal (call, notes, status pipeline).
+- Pro: $49/month or $490/year — ~15-mile radius, unlimited daily scans, multi-scan, and an unlimited client portal (call, notes, status pipeline).
 
 See https://leadscanner.fun/pricing for full details.
 

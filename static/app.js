@@ -338,7 +338,7 @@ function showDailyLimitModal(retryAt) {
     countdown.style.fontVariantNumeric = 'tabular-nums';
     const modal = showUpgradeModal(
         "> YOU'VE USED TODAY'S FREE SCANS",
-        "You've hit the free limit of 10 scans in 24 hours. Upgrade to Pro to remove the wait — plus a 10mi radius, multi-scan, and the client portal.",
+        "You've hit the free limit of 10 scans in 24 hours. Upgrade to Pro to remove the wait — plus a 15mi radius, multi-scan, and the client portal.",
         countdown
     );
     if (!retryAt) return;
@@ -359,7 +359,7 @@ function showDailyLimitModal(retryAt) {
 function showPremiumFeatureModal() {
     showUpgradeModal(
         '> MULTI-SCAN IS A PRO FEATURE',
-        'Multi-scan sweeps several areas in one run. Upgrade to Pro to unlock it — along with a 10mi radius, no daily scan limit, and the client portal.'
+        'Multi-scan sweeps several areas in one run. Upgrade to Pro to unlock it — along with a 15mi radius, no daily scan limit, and the client portal.'
     );
 }
 
@@ -667,15 +667,13 @@ async function applyPlanToUI() {
     const user = typeof getUser === 'function' ? await getUser() : null;
     state.plan = user && user.plan ? user.plan : null;
     const slider = document.getElementById('radius-slider');
-    if (!slider || !state.plan) return;
-    // Free plan: cap the slider at the plan's max radius (~5mi) and hint at Pro.
-    if (!state.plan.pro && state.plan.max_radius_m) {
-        const maxM = state.plan.max_radius_m;
-        slider.max = String(maxM);
-        if (parseInt(slider.value, 10) > maxM) slider.value = String(maxM);
-        slider.title = 'Free plan caps at ~5mi — upgrade to Pro for 10mi';
-        slider.dispatchEvent(new Event('input'));
-    }
+    if (!slider || !state.plan || !state.plan.max_radius_m) return;
+    // Cap the slider at the plan's max radius (Free ~5mi, Pro ~15mi).
+    const maxM = state.plan.max_radius_m;
+    slider.max = String(maxM);
+    if (parseInt(slider.value, 10) > maxM) slider.value = String(maxM);
+    if (!state.plan.pro) slider.title = 'Free plan caps at ~5mi — upgrade to Pro for 15mi';
+    slider.dispatchEvent(new Event('input'));
 }
 
 /* ===== SORT HEADERS ===== */

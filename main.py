@@ -82,9 +82,9 @@ FREE_MONTHLY_LEADS = 500
 
 # ── Plan gating (new pricing) ──────────────────────────────────────────────
 # Free plan: ~5mi radius, 10 scans per rolling 24h, up to 5 saved clients.
-# Pro plan:  ~10mi radius, no daily cap, unlimited saved clients.
+# Pro plan:  ~15mi radius, no daily cap, unlimited saved clients.
 FREE_RADIUS_M     = 8_000     # ~5mi
-PRO_RADIUS_M      = 16_000    # ~10mi
+PRO_RADIUS_M      = 24_140    # ~15mi
 FREE_DAILY_SCANS  = 10
 FREE_PORTAL_LIMIT = 5
 PAID_TIERS = {"pro", "starter", "business", "unlimited"}
@@ -1218,7 +1218,7 @@ async def search_leads(
     feats = plan_features(user)
 
     # Per-plan radius cap, enforced server-side (defends crafted requests that bypass
-    # the slider). Free ~5mi, Pro ~10mi. A wide scan tiles into many 8km sub-circles,
+    # the slider). Free ~5mi, Pro ~15mi. A wide scan tiles into many 8km sub-circles,
     # each a paid Places call, so the cap directly bounds worst-case cost. Silent clamp.
     max_radius = feats["max_radius_m"]
     if req.radius_meters > max_radius:
