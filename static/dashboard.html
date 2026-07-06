@@ -107,13 +107,9 @@
             const token = getToken();
             if (!token) { window.location.href = '/login'; return; }
 
-            // Check for purchase / coffee success
+            // Check for successful upgrade / purchase
             const params = new URLSearchParams(window.location.search);
-            if (params.get('coffee')) {
-                gtag('event', 'conversion_event_purchase');
-                alert('☕ Thank you so much for the coffee! It genuinely means a lot. — Artem');
-                history.replaceState({}, '', '/dashboard');
-            } else if (params.get('upgraded') || params.get('credits_added')) {
+            if (params.get('upgraded') || params.get('credits_added')) {
                 gtag('event', 'conversion_event_purchase');
                 history.replaceState({}, '', '/dashboard');
             }

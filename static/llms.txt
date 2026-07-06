@@ -22,18 +22,18 @@ Lead Scanner uses live Google Places data (not archived databases), so every res
 
 ## Pricing
 
-Lead Scanner is free and unlimited. There are no subscriptions, no credit packs, and no scan limits.
+Lead Scanner has a Free plan and a paid Pro plan.
 
-- Everything: $0 — unlimited lead scanning, free forever
-- Optional support: a one-time "Buy Artem a coffee" $10 tip. It unlocks nothing — it's purely a thank-you if the tool helped you land a client.
+- Free: $0 — 10 scans/day within a ~5-mile radius, plus a starter client portal (up to 5 saved clients). No credit card required.
+- Pro: $49/month or $490/year — ~10-mile radius, unlimited daily scans, multi-scan, and an unlimited client portal (call, notes, status pipeline).
 
-See https://leadscanner.fun/coffee if you'd like to support the project.
+See https://leadscanner.fun/pricing for full details.
 
 ## Primary pages
 
 - [Home / scanner](https://leadscanner.fun/): the live map-based scanner
 - [How it works](https://leadscanner.fun/how-it-works): step-by-step walkthrough
-- [Buy me a coffee](https://leadscanner.fun/coffee): optional one-time $10 tip to support the project
+- [Pricing](https://leadscanner.fun/pricing): Free vs Pro plans
 - [Cold calling guide](https://leadscanner.fun/cold-calling): how to convert scanned leads
 - [Resources](https://leadscanner.fun/resources): guides on lead generation for web designers
 - [About](https://leadscanner.fun/about): background on the project

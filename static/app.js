@@ -284,14 +284,14 @@ function showPaywallModal(message) {
     box.className = 'paywall-box';
     const title = document.createElement('div');
     title.className = 'paywall-title';
-    title.textContent = '> ☕ ENJOYING LEAD SCANNER?';
+    title.textContent = '> UPGRADE TO PRO';
     const msg = document.createElement('p');
     msg.className = 'paywall-msg';
     msg.textContent = message;
     const upgradeBtn = document.createElement('a');
-    upgradeBtn.href = '/coffee';
+    upgradeBtn.href = '/pricing';
     upgradeBtn.className = 'auth-btn paywall-upgrade-btn';
-    upgradeBtn.textContent = '[ ☕ BUY ME A COFFEE ]';
+    upgradeBtn.textContent = '[ ⚡ UPGRADE TO PRO ]';
     const dismissBtn = document.createElement('button');
     dismissBtn.className = 'paywall-close';
     dismissBtn.textContent = '[ DISMISS ]';
