@@ -24,36 +24,102 @@
     <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
     <style>
         .pricing-grid {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 1.25rem;
-            justify-content: center;
-            margin-top: 1.5rem;
+            max-width: 780px;
+            margin: 1.75rem auto 0;
+            align-items: stretch;
         }
         .plan-card {
-            flex: 1 1 300px;
-            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-width: 0;
             border: 1px solid var(--border, #2a2a2a);
-            padding: 1.5rem;
-            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+            padding: 1.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.015);
         }
-        .plan-card.pro { border-color: #33ff00; box-shadow: 0 0 18px rgba(51,255,0,0.12); }
-        .plan-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .plan-price { font-size: 2rem; font-weight: 700; margin: 0.25rem 0; }
-        .plan-price small { font-size: 0.9rem; opacity: 0.7; font-weight: 400; }
-        .plan-feat { list-style: none; padding: 0; margin: 1rem 0; }
-        .plan-feat li { padding: 0.3rem 0; font-size: 0.92rem; opacity: 0.92; }
-        .plan-feat li::before { content: "› "; color: #33ff00; }
-        .plan-feat li.muted { opacity: 0.5; }
-        .plan-feat li.muted::before { content: "× "; color: #ff5555; }
-        .billing-toggle { display: flex; gap: 0.5rem; justify-content: center; margin: 0.5rem 0 0; }
+        .plan-card.pro {
+            border-color: #33ff00;
+            box-shadow: 0 0 22px rgba(51, 255, 0, 0.10);
+        }
+        .plan-tag {
+            position: absolute;
+            top: -1px;
+            right: -1px;
+            background: #ffb000;
+            color: #0a0a0a;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            padding: 0.2rem 0.55rem;
+            border-radius: 0 4px 0 6px;
+        }
+        .plan-name { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.06em; }
+        .plan-card.pro .plan-name { color: #33ff00; }
+        .plan-price {
+            font-size: 2.4rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 0.4rem 0 0;
+            font-variant-numeric: tabular-nums;
+        }
+        .plan-price small { font-size: 0.85rem; opacity: 0.55; font-weight: 400; }
+        /* Reserved header slot keeps both feature lists starting on the same line */
+        .billing-slot { min-height: 44px; display: flex; align-items: center; margin: 0.7rem 0 0.5rem; }
+        .billing-note { font-size: 0.8rem; opacity: 0.5; }
+        .billing-toggle {
+            display: inline-flex;
+            border: 1px solid var(--border, #2a2a2a);
+            border-radius: 4px;
+            overflow: hidden;
+        }
         .billing-toggle button {
-            background: transparent; border: 1px solid var(--border, #2a2a2a);
-            color: inherit; font-family: inherit; padding: 0.35rem 0.8rem; cursor: pointer;
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+            padding: 0.5rem 0.8rem;
+            border: 0;
+            cursor: pointer;
+            transition: background 150ms ease, color 150ms ease;
         }
-        .billing-toggle button.active { border-color: #33ff00; color: #33ff00; }
-        .save-badge { color: #33ff00; font-size: 0.8rem; margin-left: 0.35rem; }
-        .roi-note { text-align: center; opacity: 0.65; font-size: 0.85rem; margin-top: 1.5rem; }
+        .billing-toggle button + button { border-left: 1px solid var(--border, #2a2a2a); }
+        .billing-toggle button.active { background: #33ff00; color: #0a0a0a; font-weight: 700; }
+        .save-badge { font-size: 0.62rem; margin-left: 0.35rem; opacity: 0.85; }
+        .plan-divider { border: 0; border-top: 1px solid var(--border, #2a2a2a); margin: 0 0 0.9rem; }
+        .plan-feat { list-style: none; padding: 0; margin: 0 0 1.5rem; }
+        .plan-feat li {
+            position: relative;
+            padding: 0.42rem 0 0.42rem 1.5em;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            overflow-wrap: break-word;
+        }
+        .plan-feat li::before {
+            content: "\203A";                 /* › hanging marker */
+            position: absolute;
+            left: 0.25em;
+            color: #33ff00;
+            font-weight: 700;
+        }
+        .plan-feat li.muted { opacity: 0.42; }
+        .plan-feat li.muted::before { content: "\00D7"; color: #ff5555; }  /* × */
+        .plan-cta {
+            margin-top: auto;               /* pin CTA to the bottom → buttons align */
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            text-decoration: none;
+        }
+        .roi-note { text-align: center; opacity: 0.6; font-size: 0.85rem; margin-top: 1.5rem; }
+        @media (max-width: 720px) {
+            .pricing-grid { grid-template-columns: 1fr; max-width: 420px; }
+        }
     </style>
 </head>
 <body class="page">
@@ -92,6 +158,8 @@
             <div class="plan-card">
                 <div class="plan-name">FREE</div>
                 <div class="plan-price">$0<small> / forever</small></div>
+                <div class="billing-slot"><span class="billing-note">No card required — free forever.</span></div>
+                <hr class="plan-divider">
                 <ul class="plan-feat">
                     <li>10 scans per day</li>
                     <li>5mi scan radius</li>
@@ -100,17 +168,21 @@
                     <li class="muted">Multi-scan</li>
                     <li class="muted">Unlimited daily scans</li>
                 </ul>
-                <a href="/" class="auth-btn" style="text-decoration:none;display:inline-block;width:100%;text-align:center;box-sizing:border-box">[ START SCANNING ]</a>
+                <a href="/" class="auth-btn plan-cta">[ START SCANNING ]</a>
             </div>
 
             <!-- PRO -->
             <div class="plan-card pro">
+                <span class="plan-tag">RECOMMENDED</span>
                 <div class="plan-name">PRO ⚡</div>
                 <div class="plan-price"><span id="pro-price">$49</span><small id="pro-period"> / month</small></div>
-                <div class="billing-toggle">
-                    <button id="toggle-monthly" class="active" onclick="selectPlan('monthly')">MONTHLY</button>
-                    <button id="toggle-annual" onclick="selectPlan('annual')">ANNUAL<span class="save-badge">2 mo free</span></button>
+                <div class="billing-slot">
+                    <div class="billing-toggle">
+                        <button id="toggle-monthly" class="active" onclick="selectPlan('monthly')">MONTHLY</button>
+                        <button id="toggle-annual" onclick="selectPlan('annual')">ANNUAL<span class="save-badge">2 mo free</span></button>
+                    </div>
                 </div>
+                <hr class="plan-divider">
                 <ul class="plan-feat">
                     <li>Unlimited daily scans — no waiting</li>
                     <li>15mi scan radius</li>
@@ -118,7 +190,7 @@
                     <li>Unlimited client portal (call, notes, status)</li>
                     <li>Export to CSV / JSON / XLSX</li>
                 </ul>
-                <button class="auth-btn paywall-upgrade-btn" id="subscribe-btn" onclick="subscribe()" style="width:100%">[ ⚡ UPGRADE TO PRO ]</button>
+                <button class="auth-btn paywall-upgrade-btn plan-cta" id="subscribe-btn" onclick="subscribe()">[ ⚡ UPGRADE TO PRO ]</button>
             </div>
         </div>
 
