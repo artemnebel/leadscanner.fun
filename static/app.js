@@ -337,8 +337,8 @@ function showDailyLimitModal(retryAt) {
     countdown.className = 'paywall-msg';
     countdown.style.fontVariantNumeric = 'tabular-nums';
     const modal = showUpgradeModal(
-        "> YOU'VE USED TODAY'S FREE SCANS",
-        "You've hit the free limit of 10 scans in 24 hours. Upgrade to Pro to remove the wait — plus a 15mi radius, multi-scan, and the client portal.",
+        "> YOU'VE USED YOUR FREE SCANS",
+        "You've used your 10 free scans. They refill in a few hours (see below) — or upgrade to Pro to remove the wait entirely, plus a 15mi radius, multi-scan, and the client portal.",
         countdown
     );
     if (!retryAt) return;

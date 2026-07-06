@@ -81,12 +81,13 @@ PACK_CREDITS = {pid: credits for pid, credits in PACK_CREDITS.items() if pid}
 FREE_MONTHLY_LEADS = 500
 
 # ── Plan gating (new pricing) ──────────────────────────────────────────────
-# Free plan: ~5mi radius, 10 scans per rolling 24h, up to 5 saved clients.
+# Free plan: ~5mi radius, 10 scans per rolling 5h window, up to 5 saved clients.
 # Pro plan:  ~15mi radius, no daily cap, unlimited saved clients.
-FREE_RADIUS_M     = 8_000     # ~5mi
-PRO_RADIUS_M      = 24_140    # ~15mi
-FREE_DAILY_SCANS  = 10
-FREE_PORTAL_LIMIT = 5
+FREE_RADIUS_M          = 8_000     # ~5mi
+PRO_RADIUS_M           = 24_140    # ~15mi
+FREE_DAILY_SCANS       = 10
+FREE_SCAN_WINDOW_HOURS = 5         # after using the free scans, wait this long to refill
+FREE_PORTAL_LIMIT      = 5
 PAID_TIERS = {"pro", "starter", "business", "unlimited"}
 
 # Legacy monthly caps for grandfathered subscribers. None = uncapped.
@@ -235,7 +236,7 @@ def plan_features(user: User) -> dict:
     }
 
 def plan_payload(user: User) -> dict:
-    """Plan info for the frontend, including remaining scans in the 24h window."""
+    """Plan info for the frontend, including remaining scans in the 5h window."""
     feats = plan_features(user)
     remaining = None
     reset_at = None
@@ -1226,14 +1227,14 @@ async def search_leads(
 
     reset_usage_if_needed(user, db)
 
-    # Free-tier daily scan window: N scans per rolling 24h, then a wait wall that steers
-    # toward Pro. Pro/admin have no daily cap (daily_scan_limit is None). The window is
-    # anchored at the first scan and resets once 24h have elapsed.
+    # Free-tier scan window: N scans per rolling 5h window, then a wait wall that steers
+    # toward Pro. Pro/admin have no cap (daily_scan_limit is None). The window is anchored
+    # at the first scan and resets once FREE_SCAN_WINDOW_HOURS have elapsed.
     daily_limit = feats["daily_scan_limit"]
     now = datetime.utcnow()
     if not user.daily_reset or now >= user.daily_reset:
         user.daily_scans = 0
-        user.daily_reset = now + timedelta(hours=24)
+        user.daily_reset = now + timedelta(hours=FREE_SCAN_WINDOW_HOURS)
     if daily_limit is not None and (user.daily_scans or 0) >= daily_limit:
         raise HTTPException(
             status_code=429,
@@ -1322,7 +1323,7 @@ async def search_leads(
 
     user.scans_used = (user.scans_used or 0) + 1  # one /api/search call = one scan (analytics)
     user.total_scans = (user.total_scans or 0) + 1  # lifetime counter (analytics)
-    user.daily_scans = (user.daily_scans or 0) + 1  # rolling 24h window — free-tier cooldown
+    user.daily_scans = (user.daily_scans or 0) + 1  # rolling 5h window — free-tier cooldown
     consume_leads(user, leads_count)
     # Log the query for the admin panel. Analytics only — never fail a search over it.
     try:
