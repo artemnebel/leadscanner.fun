@@ -797,7 +797,7 @@ async def create_subscription(
             payment_method_types=["card"],
             line_items=[{"price": price_id, "quantity": 1}],
             mode="subscription",
-            success_url=f"{BASE_URL}/dashboard?upgraded=1",
+            success_url=f"{BASE_URL}/dashboard?upgraded=1&plan={plan}&sid={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{BASE_URL}/pricing",
             metadata={"user_id": user.id, "plan": plan},
         )

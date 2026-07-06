@@ -217,6 +217,13 @@
             errEl.style.display = 'none';
             const token = getToken();
             if (!token) { window.location.href = '/login'; return; }
+            // GA4 funnel step: user clicked Upgrade → entering checkout
+            const planValue = selectedPlan === 'annual' ? 490 : 49;
+            gtag('event', 'begin_checkout', {
+                currency: 'USD',
+                value: planValue,
+                items: [{ item_id: 'pro_' + selectedPlan, item_name: 'Pro (' + selectedPlan + ')', price: planValue, quantity: 1 }]
+            });
             btn.disabled = true;
             btn.textContent = '[ REDIRECTING... ]';
             try {

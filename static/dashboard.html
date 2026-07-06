@@ -110,7 +110,17 @@
             // Check for successful upgrade / purchase
             const params = new URLSearchParams(window.location.search);
             if (params.get('upgraded') || params.get('credits_added')) {
-                gtag('event', 'conversion_event_purchase');
+                gtag('event', 'conversion_event_purchase');  // existing (Google Ads)
+                const plan = params.get('plan');
+                if (plan) {
+                    const value = plan === 'annual' ? 490 : 49;
+                    gtag('event', 'purchase', {         // GA4 funnel: subscription completed
+                        transaction_id: params.get('sid') || ('sub_' + Date.now()),
+                        currency: 'USD',
+                        value: value,
+                        items: [{ item_id: 'pro_' + plan, item_name: 'Pro (' + plan + ')', price: value, quantity: 1 }]
+                    });
+                }
                 history.replaceState({}, '', '/dashboard');
             }
 
