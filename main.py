@@ -791,20 +791,40 @@ async def create_subscription(
     if not price_id:
         raise HTTPException(status_code=400, detail="Pro plan not configured.")
 
-    if not user.stripe_customer_id:
-        customer = stripe.Customer.create(email=user.email)
-        user.stripe_customer_id = customer.id
-        db.commit()
+    def _create_session(customer_id: str):
+        return stripe.checkout.Session.create(
+            customer=customer_id,
+            payment_method_types=["card"],
+            line_items=[{"price": price_id, "quantity": 1}],
+            mode="subscription",
+            success_url=f"{BASE_URL}/dashboard?upgraded=1",
+            cancel_url=f"{BASE_URL}/pricing",
+            metadata={"user_id": user.id, "plan": plan},
+        )
 
-    session = stripe.checkout.Session.create(
-        customer=user.stripe_customer_id,
-        payment_method_types=["card"],
-        line_items=[{"price": price_id, "quantity": 1}],
-        mode="subscription",
-        success_url=f"{BASE_URL}/dashboard?upgraded=1",
-        cancel_url=f"{BASE_URL}/pricing",
-        metadata={"user_id": user.id, "plan": plan},
-    )
+    try:
+        if not user.stripe_customer_id:
+            customer = stripe.Customer.create(email=user.email)
+            user.stripe_customer_id = customer.id
+            db.commit()
+        try:
+            session = _create_session(user.stripe_customer_id)
+        except stripe.InvalidRequestError as e:
+            # A stripe_customer_id saved under a different mode/account (e.g. a live
+            # customer while using a test key) 404s here — recreate it once and retry.
+            if "customer" in str(e).lower():
+                customer = stripe.Customer.create(email=user.email)
+                user.stripe_customer_id = customer.id
+                db.commit()
+                session = _create_session(user.stripe_customer_id)
+            else:
+                raise
+    except stripe.StripeError as e:
+        # Surface Stripe's actual message (e.g. "No such price … a similar object
+        # exists in live mode …") instead of a generic 500 → "Network error".
+        msg = getattr(e, "user_message", None) or str(e)
+        raise HTTPException(status_code=400, detail=f"Stripe error: {msg}")
+
     return {"url": session.url}
 
 @app.post("/api/billing/webhook")
