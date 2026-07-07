@@ -65,6 +65,36 @@ function renderUsage(usage) {
   el.textContent = `[ LEADS: ${used ?? 0}/${limitStr} ]`;
 }
 
+// ── Mobile nav toggle (hamburger) — injected on every page that has #main-nav ──
+function initMobileNav() {
+  const nav = document.getElementById('main-nav');
+  if (!nav || nav.querySelector('.nav-toggle')) return;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'nav-toggle';
+  btn.setAttribute('aria-label', 'Toggle navigation menu');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.textContent = '[ MENU ]';
+
+  function close() {
+    nav.classList.remove('nav-open');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.textContent = '[ MENU ]';
+  }
+
+  btn.addEventListener('click', () => {
+    const open = nav.classList.toggle('nav-open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? '[ CLOSE ]' : '[ MENU ]';
+  });
+  nav.appendChild(btn);
+
+  // Tapping a link navigates away; collapse the menu for same-page/hash cases too.
+  nav.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', close));
+}
+initMobileNav();
+
 // ── On page load: handle Google OAuth token in URL, update nav ────────────────
 (async function init() {
   // If Google OAuth redirected here with ?token=...

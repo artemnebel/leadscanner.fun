@@ -594,9 +594,9 @@ function renderTable() {
             : '<span class="muted">—</span>';
         tr.innerHTML = `
             <td class="name-cell" title="${esc(lead.name)}"><a href="${esc(lead.maps_url)}" target="_blank" rel="noopener" class="name-link">${esc(lead.name)}</a></td>
-            <td>${phoneCell}</td>
-            <td>${ratingCell}</td>
-            <td class="muted" title="${esc(lead.city)}">${esc(lead.city)}</td>
+            <td data-label="PHONE">${phoneCell}</td>
+            <td data-label="RATING">${ratingCell}</td>
+            <td class="muted" data-label="ADDRESS" title="${esc(lead.city)}">${esc(lead.city)}</td>
         `;
         // Save-to-portal action
         const actionTd = document.createElement('td');
@@ -945,6 +945,12 @@ function showLeadsUI() {
     document.getElementById('export-wrap').classList.remove('hidden');
     document.getElementById('clear-btn').classList.remove('hidden');
     document.getElementById('filter-wrap').classList.remove('hidden');
+    // On the stacked mobile layout results render below the map, off-screen —
+    // bring them into view so a scan visibly "does something".
+    if (window.matchMedia('(max-width: 820px)').matches) {
+        document.getElementById('leads-section')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 /* ===== BOOTSTRAP ===== */
