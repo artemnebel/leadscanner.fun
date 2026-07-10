@@ -359,7 +359,7 @@ function showDailyLimitModal(retryAt) {
 function showPremiumFeatureModal() {
     showUpgradeModal(
         '> MULTI-SCAN IS A PRO FEATURE',
-        'Multi-scan sweeps several areas in one run. Upgrade to Pro to unlock it — along with a 15mi radius, no daily scan limit, and the client portal.'
+        'Multi-scan sweeps several areas in one run. Upgrade to Pro to unlock it — along with a 15mi radius, priority access with no waiting, and the client portal.'
     );
 }
 

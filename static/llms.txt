@@ -18,14 +18,14 @@ Lead Scanner uses live Google Places data (not archived databases), so every res
 - Live data from Google Maps — never stale
 - Only returns businesses with a phone number AND no website (no wasted leads)
 - Export to CSV, JSON, or XLSX
-- Free to start: 10 scans a day with no credit card required; Pro unlocks unlimited daily scans
+- Free to start with no credit card required; Pro unlocks priority access with no waiting
 
 ## Pricing
 
 Lead Scanner has a Free plan and a paid Pro plan.
 
-- Free: $0 — 10 scans/day within a ~5-mile radius, plus a starter client portal (up to 5 saved clients). No credit card required.
-- Pro: $49/month or $490/year — ~15-mile radius, unlimited daily scans, multi-scan, and an unlimited client portal (call, notes, status pipeline).
+- Free: $0 — map scanning within a ~5-mile radius, plus a starter client portal (up to 5 saved clients). No credit card required.
+- Pro: $49/month or $490/year — priority access with no waiting, ~15-mile radius, multi-scan, and an unlimited client portal (call, notes, status pipeline).
 
 See https://leadscanner.fun/pricing for full details.
 
