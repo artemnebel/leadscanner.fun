@@ -18,7 +18,7 @@ Lead Scanner uses live Google Places data (not archived databases), so every res
 - Live data from Google Maps — never stale
 - Only returns businesses with a phone number AND no website (no wasted leads)
 - Export to CSV, JSON, or XLSX
-- Completely free and unlimited — no plans, no scan limits
+- Free to start: 10 scans a day with no credit card required; Pro unlocks unlimited daily scans
 
 ## Pricing
 
