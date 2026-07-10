@@ -65,11 +65,6 @@
             <!-- FREE plan card -->
             <div class="page-section" id="dash-free-card" style="display:none">
                 <h2>&gt; YOUR PLAN — FREE</h2>
-                <p style="font-size:1.4rem;margin:0.25rem 0">
-                    <span id="dash-scans-left" class="dash-value">10</span>
-                    <span style="font-size:0.9rem;opacity:0.7">free scans left</span>
-                </p>
-                <p id="dash-reset-text" class="dash-value" style="margin:0.35rem 0 0.75rem;font-size:0.85rem;opacity:0.7"></p>
                 <p style="font-size:0.9rem;opacity:0.85">Free includes a 5mi scan radius and up to 5 saved clients. Pro unlocks a 15mi radius, unlimited daily scans, multi-scan, and an unlimited client portal.</p>
                 <a href="/pricing" class="auth-btn paywall-upgrade-btn" style="text-decoration:none;margin-top:0.5rem;display:inline-block">[ ⚡ UPGRADE TO PRO ]</a>
             </div>
@@ -141,14 +136,6 @@
                 if (user.is_admin) document.getElementById('portal-btn').style.display = 'none';
             } else {
                 document.getElementById('dash-free-card').style.display = 'block';
-                const left = plan.daily_remaining != null
-                    ? plan.daily_remaining
-                    : (plan.daily_scan_limit != null ? plan.daily_scan_limit : 10);
-                document.getElementById('dash-scans-left').textContent = left;
-                if (plan.daily_reset && left <= 0) {
-                    const h = Math.max(1, Math.round((new Date(plan.daily_reset).getTime() - Date.now()) / 3600000));
-                    document.getElementById('dash-reset-text').textContent = `Resets in about ${h}h.`;
-                }
             }
         })();
 

@@ -331,14 +331,14 @@ function showUpgradeModal(title, message, extraNode) {
     return modal;
 }
 
-/* ===== DAILY LIMIT MODAL (free tier — honest copy + live countdown) ===== */
+/* ===== HIGH-DEMAND THROTTLE MODAL (free tier — live countdown) ===== */
 function showDailyLimitModal(retryAt) {
     const countdown = document.createElement('p');
     countdown.className = 'paywall-msg';
     countdown.style.fontVariantNumeric = 'tabular-nums';
     const modal = showUpgradeModal(
-        "> YOU'VE USED YOUR FREE SCANS",
-        "You've used your 10 free scans. They refill in a few hours (see below) — or upgrade to Pro to remove the wait entirely, plus a 15mi radius, multi-scan, and the client portal.",
+        '> HIGH DEMAND — SCANS PAUSED',
+        "Lead Scanner is under heavy demand right now, so free scans are temporarily paused to keep things fast for everyone. Your access frees up again shortly (see below). Pro users skip the wait with priority access — plus a 15mi radius, multi-scan, and the client portal.",
         countdown
     );
     if (!retryAt) return;
@@ -346,11 +346,11 @@ function showDailyLimitModal(retryAt) {
     (function tick() {
         if (!document.body.contains(modal)) return;
         const ms = target - Date.now();
-        if (ms <= 0) { countdown.textContent = '> Your free scans have reset — reload to continue.'; return; }
+        if (ms <= 0) { countdown.textContent = "> You're back in — reload to continue."; return; }
         const h = Math.floor(ms / 3600000);
         const m = Math.floor((ms % 3600000) / 60000);
         const s = Math.floor((ms % 60000) / 1000);
-        countdown.textContent = `> Resets in ${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+        countdown.textContent = `> Access frees up in ${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
         setTimeout(tick, 1000);
     })();
 }
@@ -439,8 +439,7 @@ async function handleSearch() {
                     return;
                 }
                 if (!resp.ok) { showToast(`Zone ${i + 1}: ${data.detail || 'Search failed'}`, 'error'); continue; }
-                if (data.plan && typeof renderPlanBadge === 'function') {
-                    renderPlanBadge(data.plan);
+                if (data.plan) {
                     state.plan = data.plan;
                     localStorage.removeItem('ls_user');
                 }
@@ -504,8 +503,7 @@ async function handleSearch() {
             throw new Error(typeof data.detail === 'string' ? data.detail : 'Search failed');
         }
 
-        if (data.plan && typeof renderPlanBadge === 'function') {
-            renderPlanBadge(data.plan);
+        if (data.plan) {
             state.plan = data.plan;
             localStorage.removeItem('ls_user');
         }
