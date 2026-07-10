@@ -81,6 +81,21 @@
             box-shadow: 0 0 4px rgba(51,255,0,0.35);
         }
         .toolbar-count { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; }
+        .admin-btn {
+            margin-left: auto;
+            background: var(--bg);
+            border: 1px solid var(--muted);
+            color: var(--green);
+            font-family: inherit;
+            font-size: 0.78rem;
+            letter-spacing: 0.06em;
+            padding: 7px 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: border-color 0.18s ease, color 0.18s ease;
+        }
+        .admin-btn:hover { border-color: var(--green); color: var(--amber); }
+        .admin-btn:disabled { opacity: 0.5; cursor: default; }
 
         /* ── Charts ────────────────────────────────────────────────── */
         .chart-row {
@@ -291,6 +306,7 @@
                 <div class="admin-toolbar">
                     <input id="user-filter" class="admin-input" type="text" placeholder="filter by email..." autocomplete="off" />
                     <span class="toolbar-count" id="user-count"></span>
+                    <button id="export-users-btn" class="admin-btn" type="button" title="Download the users currently shown (respects the email filter) as a CSV file">[ EXPORT CSV ]</button>
                 </div>
                 <div class="table-scroll">
                     <table class="admin-table">
@@ -442,14 +458,18 @@
             return u[key] || 0;
         }
 
-        function render() {
-            const rows = users
+        function computeRows() {
+            return users
                 .filter(u => u.email.toLowerCase().includes(filterText))
                 .sort((a, b) => {
                     const av = sortVal(a, sortKey), bv = sortVal(b, sortKey);
                     const cmp = av < bv ? -1 : av > bv ? 1 : 0;
                     return sortDir === 'asc' ? cmp : -cmp;
                 });
+        }
+
+        function render() {
+            const rows = computeRows();
 
             countEl.textContent = `[ ${rows.length} / ${users.length} ]`;
             tbody.innerHTML = '';
@@ -511,6 +531,45 @@
             clearTimeout(filterTimer);
             filterTimer = setTimeout(() => { filterText = e.target.value.trim().toLowerCase(); render(); }, 150);
         });
+
+        // ── CSV export (users currently shown) ─────────────────────
+        function csvEscape(v) {
+            const s = v == null ? '' : String(v);
+            return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        }
+
+        function exportUsersCsv() {
+            const cols = [
+                ['email',        u => u.email],
+                ['tier',         u => u.tier],
+                ['total_scans',  u => u.total_scans || 0],
+                ['scan_limit',   u => u.scan_limit],
+                ['leads_found',  u => u.leads_found || 0],
+                ['searches',     u => u.search_count || 0],
+                ['lead_credits', u => u.lead_credits || 0],
+                ['paid_stripe',  u => u.has_stripe ? 'yes' : 'no'],
+                ['auth',         u => u.google ? 'google' : 'password'],
+                ['joined',       u => u.created_at || ''],
+                ['last_active',  u => u.last_active || ''],
+                ['usage_reset',  u => u.usage_reset || ''],
+            ];
+            const rows = computeRows();
+            const lines = [cols.map(c => c[0]).join(',')];
+            rows.forEach(u => lines.push(cols.map(c => csvEscape(c[1](u))).join(',')));
+            const csv = '\ufeff' + lines.join('\r\n') + '\r\n';  // BOM → Excel reads UTF-8
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'leadscanner-users-' + new Date().toISOString().slice(0, 10) + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        document.getElementById('export-users-btn').addEventListener('click', exportUsersCsv);
 
         render();
 
