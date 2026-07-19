@@ -534,6 +534,7 @@ async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_
             "lead_credits": u.lead_credits or 0,
             "usage_reset": str(u.usage_reset),
             "created_at": str(u.created_at),
+            "promo_sent_at": str(u.promo_sent_at) if u.promo_sent_at else None,
             "has_stripe": bool(u.stripe_customer_id),
             "google": bool(u.google_id),
             "search_count": agg.get(u.email, {}).get("search_count", 0),

@@ -39,6 +39,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     reset_token = Column(String, nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
+    promo_sent_at = Column(DateTime, nullable=True)  # when the founding-user promo was last emailed (marketing suppression)
 
 
 class PlacesCache(Base):
@@ -99,6 +100,7 @@ def init_db():
         # TIMESTAMP works on both SQLite and Postgres; Postgres rejects "DATETIME"
         # on ALTER, which would leave existing prod rows without the column.
         ("daily_reset", "TIMESTAMP"),
+        ("promo_sent_at", "TIMESTAMP"),
     ]
     with engine.connect() as conn:
         for col, typedef in migrations:

@@ -320,6 +320,7 @@
                                 <th class="sortable col-num" data-sort="search_count">SEARCHES</th>
                                 <th class="sortable" data-sort="last_active">LAST ACTIVE</th>
                                 <th class="sortable" data-sort="created_at">JOINED</th>
+                                <th class="sortable" data-sort="promo_sent_at" title="When the founding-user promo email was sent to this user">PROMO</th>
                                 <th>FLAGS</th>
                             </tr>
                         </thead>
@@ -452,7 +453,7 @@
         let sortDir = 'desc';
 
         function sortVal(u, key) {
-            if (key === 'last_active' || key === 'created_at') {
+            if (key === 'last_active' || key === 'created_at' || key === 'promo_sent_at') {
                 const d = parseDate(u[key]); return d ? d.getTime() : 0;
             }
             return u[key] || 0;
@@ -493,6 +494,9 @@
                 const searches = document.createElement('td'); searches.className = 'col-num'; searches.textContent = u.search_count || 0;
                 const active = document.createElement('td'); active.className = 'muted'; active.textContent = relDays(u.last_active);
                 const joined = document.createElement('td'); joined.className = 'muted'; joined.textContent = fmtDate(u.created_at);
+                const promo = document.createElement('td');
+                if (u.promo_sent_at) { promo.className = 'badge-stripe'; promo.textContent = fmtDate(u.promo_sent_at); promo.title = u.promo_sent_at; }
+                else { promo.className = 'muted'; promo.textContent = '—'; }
 
                 const flags = document.createElement('td');
                 const parts = [];
@@ -501,7 +505,7 @@
                 if (capped) parts.push('<span class="flag-cap">[CAP]</span>');
                 flags.innerHTML = parts.join(' ');  // trusted static strings
 
-                tr.append(num, email, tier, scans, leads, searches, active, joined, flags);
+                tr.append(num, email, tier, scans, leads, searches, active, joined, promo, flags);
                 tr.addEventListener('click', () => openDrawer(u.email));
                 tr.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(u.email); }
@@ -552,6 +556,7 @@
                 ['joined',       u => u.created_at || ''],
                 ['last_active',  u => u.last_active || ''],
                 ['usage_reset',  u => u.usage_reset || ''],
+                ['promo_sent_at',u => u.promo_sent_at || ''],
             ];
             const rows = computeRows();
             const lines = [cols.map(c => c[0]).join(',')];

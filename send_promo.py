@@ -21,6 +21,8 @@ import time
 import httpx
 from dotenv import load_dotenv
 
+from database import SessionLocal, User
+
 load_dotenv()
 load_dotenv(".env.local", override=True)
 
@@ -283,6 +285,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--live", action="store_true", help="target all free users in the CSV")
     ap.add_argument("--yes", action="store_true", help="actually send the live blast (otherwise dry-run)")
+    ap.add_argument("--resend-all", action="store_true",
+                    help="also send to users already marked promo_sent_at (default: skip them)")
     args = ap.parse_args()
 
     api_key = os.getenv("RESEND_API_KEY")
@@ -297,6 +301,24 @@ def main():
 
     recipients = free_users_from_csv(CSV_PATH)
     print(f"LIVE: {len(recipients)} free users found in {CSV_PATH}")
+
+    # Suppression: skip anyone already recorded as sent (promo_sent_at set) so a
+    # re-send only reaches people who missed the first blast. The authoritative
+    # "sent" mark is written by reconcile_promo.py from Resend's delivery logs.
+    if not args.resend_all:
+        db = SessionLocal()
+        try:
+            already = {
+                (e or "").lower()
+                for (e,) in db.query(User.email).filter(User.promo_sent_at.isnot(None)).all()
+            }
+        finally:
+            db.close()
+        before = len(recipients)
+        recipients = [e for e in recipients if e.lower() not in already]
+        print(f"Skipping {before - len(recipients)} already-sent (promo_sent_at set); "
+              f"{len(recipients)} remaining. Use --resend-all to override.")
+
     if not args.yes:
         print("Dry run - re-run with --yes to actually send.")
         for e in recipients[:10]:
