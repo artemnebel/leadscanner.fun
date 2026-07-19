@@ -5,3 +5,4 @@ __pycache__/
 .claude/
 # customer data / exports (PII — never commit)
 *.csv
+*.sql

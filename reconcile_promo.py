@@ -87,7 +87,10 @@ def parse_ts(ts):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true",
-                    help="set users.promo_sent_at for delivered recipients")
+                    help="set users.promo_sent_at for delivered recipients (uses DATABASE_URL)")
+    ap.add_argument("--emit-sql", metavar="PATH",
+                    help="write UPDATE statements for delivered recipients to PATH "
+                         "(run against your production DB by hand — no credentials needed here)")
     args = ap.parse_args()
 
     key = get_key()
@@ -129,8 +132,25 @@ def main():
     for a in missing:
         print(f"  {a}  [{status_by_email.get(a, 'not_found')}]")
 
+    if args.emit_sql:
+        lines = [
+            "-- Founding-user promo backfill: mark delivered recipients so they are",
+            "-- never re-emailed. Idempotent (only fills NULLs). Run against production.",
+        ]
+        for addr in got:
+            ts = (parse_ts(when_by_email.get(addr)) or datetime.utcnow()).strftime("%Y-%m-%d %H:%M:%S")
+            safe = addr.replace("'", "''")
+            lines.append(
+                f"UPDATE users SET promo_sent_at = '{ts}' "
+                f"WHERE lower(email) = '{safe}' AND promo_sent_at IS NULL;"
+            )
+        with open(args.emit_sql, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+        print(f"\nWrote {len(got)} UPDATE statements to {args.emit_sql}")
+
     if not args.write:
-        print("\nDry run. Re-run with --write to record promo_sent_at for the received users.")
+        if not args.emit_sql:
+            print("\nDry run. Re-run with --write (uses DATABASE_URL) or --emit-sql PATH.")
         return
 
     init_db()  # ensure the promo_sent_at column exists
