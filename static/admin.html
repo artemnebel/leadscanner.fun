@@ -307,6 +307,8 @@
                     <input id="user-filter" class="admin-input" type="text" placeholder="filter by email..." autocomplete="off" />
                     <span class="toolbar-count" id="user-count"></span>
                     <button id="export-users-btn" class="admin-btn" type="button" title="Download the users currently shown (respects the email filter) as a CSV file">[ EXPORT CSV ]</button>
+                    <button id="reconcile-promo-btn" class="admin-btn" type="button" title="Check Resend for who actually received the founding-user promo and stamp the PROMO column">[ SYNC PROMO SENDS ]</button>
+                    <span id="reconcile-promo-status" class="toolbar-count"></span>
                 </div>
                 <div class="table-scroll">
                     <table class="admin-table">
@@ -575,6 +577,37 @@
         }
 
         document.getElementById('export-users-btn').addEventListener('click', exportUsersCsv);
+
+        // ── Sync promo sends (pull Resend delivery logs, stamp PROMO) ──
+        const reconcileBtn = document.getElementById('reconcile-promo-btn');
+        const reconcileStatus = document.getElementById('reconcile-promo-status');
+        reconcileBtn.addEventListener('click', async () => {
+            if (!confirm('Check Resend and stamp everyone who actually received the promo email?')) return;
+            const prev = reconcileBtn.textContent;
+            reconcileBtn.disabled = true;
+            reconcileBtn.textContent = '[ SYNCING... ]';
+            reconcileStatus.textContent = '';
+            try {
+                const r = await fetch('/api/admin/reconcile-promo', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                });
+                const data = await r.json();
+                if (!r.ok) throw new Error(data.detail || ('HTTP ' + r.status));
+                reconcileStatus.textContent =
+                    `[ ${data.users_updated} stamped, ${data.already_marked} already, ` +
+                    `${data.received} received, ${data.not_received.length} not ]`;
+                // refresh the table so the PROMO column reflects the new stamps
+                const res = await fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + token } });
+                users = await res.json();
+                render();
+            } catch (e) {
+                reconcileStatus.textContent = 'ERROR: ' + e.message;
+            } finally {
+                reconcileBtn.disabled = false;
+                reconcileBtn.textContent = prev;
+            }
+        });
 
         render();
 

@@ -636,6 +636,90 @@ async def admin_set_scan_limit(
     db.commit()
     return {"ok": True, "email": target.email, "scan_limit": target.scan_limit}
 
+# last_event values that mean the recipient actually got the email
+PROMO_RECEIVED_EVENTS = {"delivered", "sent", "opened", "clicked"}
+
+@app.post("/api/admin/reconcile-promo")
+async def admin_reconcile_promo(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """Read Resend's delivery log and stamp users.promo_sent_at for everyone who
+    actually received the founding-user promo, so we never re-email them. A 200
+    from the send API is not proof of delivery — this is the source of truth."""
+    if not user or user.email != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    key = os.getenv("RESEND_READ_API_KEY") or os.getenv("RESEND_API_KEY")
+    if not key:
+        raise HTTPException(status_code=400, detail="RESEND_READ_API_KEY not set in the server environment.")
+
+    # Page through the sent-email log, keeping only the promo sends.
+    promo, after = [], None
+    async with httpx.AsyncClient(timeout=30) as client:
+        for _ in range(20):  # safety cap: 20 pages x 100
+            params = {"limit": 100}
+            if after:
+                params["after"] = after
+            r = await client.get(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {key}"},
+                params=params,
+            )
+            if r.status_code == 401:
+                raise HTTPException(status_code=400,
+                    detail="Resend key is not read-capable — needs a Full-access key.")
+            if r.status_code != 200:
+                raise HTTPException(status_code=502, detail=f"Resend list failed: {r.status_code}")
+            body = r.json()
+            data = body.get("data", [])
+            if not data:
+                break
+            for e in data:
+                subj = (e.get("subject") or "").lower()
+                if "first 1,000" in subj or "first 1000" in subj:
+                    promo.append(e)
+            if not body.get("has_more"):
+                break
+            after = data[-1].get("id")
+
+    # newest status + timestamp per recipient (log is newest-first)
+    status_by_email, when_by_email = {}, {}
+    for e in promo:
+        ev = (e.get("last_event") or "").lower()
+        created = e.get("created_at")
+        to = e.get("to")
+        addrs = to if isinstance(to, list) else ([to] if to else [])
+        for a in addrs:
+            a = str(a).strip().lower()
+            status_by_email.setdefault(a, ev)
+            if a not in when_by_email and created:
+                when_by_email[a] = created
+
+    received = [a for a, ev in status_by_email.items() if ev in PROMO_RECEIVED_EVENTS]
+
+    updated, already = 0, 0
+    if received:
+        for u in db.query(User).filter(func.lower(User.email).in_(received)).all():
+            if u.promo_sent_at is None:
+                ts = when_by_email.get(u.email.lower())
+                dt = None
+                if ts:
+                    try:
+                        dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).replace(tzinfo=None)
+                    except Exception:
+                        dt = None
+                u.promo_sent_at = dt or datetime.utcnow()
+                updated += 1
+            else:
+                already += 1
+        db.commit()
+
+    not_received = sorted(a for a, ev in status_by_email.items() if ev not in PROMO_RECEIVED_EVENTS)
+    return {
+        "promo_emails_scanned": len(promo),
+        "received": len(received),
+        "users_updated": updated,
+        "already_marked": already,
+        "not_received": [{"email": a, "status": status_by_email[a]} for a in not_received],
+    }
+
 @app.get("/api/admin/stats")
 async def admin_stats(user=Depends(get_current_user), db: Session = Depends(get_db)):
     if not user or user.email != ADMIN_EMAIL:
