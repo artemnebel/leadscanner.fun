@@ -160,6 +160,11 @@
         .badge-stripe { color: var(--amber); }
         .flag-cap     { color: var(--red); font-weight: 700; }
         .muted        { color: var(--muted); }
+        .promo-ok      { color: var(--green); }
+        .promo-fail    { color: var(--red); font-weight: 700; }
+        .promo-pending { color: var(--amber); }
+        #reconcile-promo-detail { margin-top: 8px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+        #reconcile-promo-detail .promo-fail, #reconcile-promo-detail .promo-pending { margin-right: 4px; }
 
         /* ── Drawer ────────────────────────────────────────────────── */
         .drawer-overlay {
@@ -310,6 +315,7 @@
                     <button id="reconcile-promo-btn" class="admin-btn" type="button" title="Check Resend for who actually received the founding-user promo and stamp the PROMO column">[ SYNC PROMO SENDS ]</button>
                     <span id="reconcile-promo-status" class="toolbar-count"></span>
                 </div>
+                <div id="reconcile-promo-detail"></div>
                 <div class="table-scroll">
                     <table class="admin-table">
                         <thead>
@@ -497,8 +503,15 @@
                 const active = document.createElement('td'); active.className = 'muted'; active.textContent = relDays(u.last_active);
                 const joined = document.createElement('td'); joined.className = 'muted'; joined.textContent = fmtDate(u.created_at);
                 const promo = document.createElement('td');
-                if (u.promo_sent_at) { promo.className = 'badge-stripe'; promo.textContent = fmtDate(u.promo_sent_at); promo.title = u.promo_sent_at; }
-                else { promo.className = 'muted'; promo.textContent = '—'; }
+                if (u.promo_sent_at) {
+                    promo.className = 'promo-ok'; promo.textContent = fmtDate(u.promo_sent_at);
+                    promo.title = 'delivered ' + u.promo_sent_at;
+                } else if (u.promo_status) {
+                    const s = u.promo_status.toLowerCase();
+                    const failed = ['bounced', 'complained', 'canceled', 'failed', 'suppressed'].includes(s);
+                    promo.className = failed ? 'promo-fail' : 'promo-pending';
+                    promo.textContent = s; promo.title = 'not delivered: ' + s;
+                } else { promo.className = 'muted'; promo.textContent = '—'; }
 
                 const flags = document.createElement('td');
                 const parts = [];
@@ -559,6 +572,7 @@
                 ['last_active',  u => u.last_active || ''],
                 ['usage_reset',  u => u.usage_reset || ''],
                 ['promo_sent_at',u => u.promo_sent_at || ''],
+                ['promo_status', u => u.promo_status || ''],
             ];
             const rows = computeRows();
             const lines = [cols.map(c => c[0]).join(',')];
@@ -597,6 +611,29 @@
                 reconcileStatus.textContent =
                     `[ ${data.users_updated} stamped, ${data.already_marked} already, ` +
                     `${data.received} received, ${data.not_received.length} not ]`;
+
+                // list exactly who did NOT receive it (built via DOM — no injection)
+                const detail = document.getElementById('reconcile-promo-detail');
+                detail.innerHTML = '';
+                if (data.not_received.length) {
+                    const title = document.createElement('div');
+                    title.textContent = 'Did NOT receive (' + data.not_received.length + '):';
+                    detail.appendChild(title);
+                    data.not_received.forEach(x => {
+                        const s = (x.status || '').toLowerCase();
+                        const failed = ['bounced', 'complained', 'canceled', 'failed', 'suppressed'].includes(s);
+                        const row = document.createElement('div');
+                        const tag = document.createElement('span');
+                        tag.className = failed ? 'promo-fail' : 'promo-pending';
+                        tag.textContent = '[' + s + ']';
+                        row.appendChild(tag);
+                        row.appendChild(document.createTextNode(' ' + x.email));
+                        detail.appendChild(row);
+                    });
+                } else {
+                    detail.textContent = 'Everyone targeted received it.';
+                }
+
                 // refresh the table so the PROMO column reflects the new stamps
                 const res = await fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + token } });
                 users = await res.json();

@@ -40,6 +40,7 @@ class User(Base):
     reset_token = Column(String, nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
     promo_sent_at = Column(DateTime, nullable=True)  # when the founding-user promo was last emailed (marketing suppression)
+    promo_status = Column(String, nullable=True)     # Resend last_event: delivered | bounced | suppressed | delivery_delayed | ...
 
 
 class PlacesCache(Base):
@@ -101,6 +102,7 @@ def init_db():
         # on ALTER, which would leave existing prod rows without the column.
         ("daily_reset", "TIMESTAMP"),
         ("promo_sent_at", "TIMESTAMP"),
+        ("promo_status", "VARCHAR"),
     ]
     with engine.connect() as conn:
         for col, typedef in migrations:

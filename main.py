@@ -535,6 +535,7 @@ async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_
             "usage_reset": str(u.usage_reset),
             "created_at": str(u.created_at),
             "promo_sent_at": str(u.promo_sent_at) if u.promo_sent_at else None,
+            "promo_status": u.promo_status,
             "has_stripe": bool(u.stripe_customer_id),
             "google": bool(u.google_id),
             "search_count": agg.get(u.email, {}).get("search_count", 0),
@@ -692,29 +693,33 @@ async def admin_reconcile_promo(user=Depends(get_current_user), db: Session = De
             if a not in when_by_email and created:
                 when_by_email[a] = created
 
-    received = [a for a, ev in status_by_email.items() if ev in PROMO_RECEIVED_EVENTS]
+    received_set = {a for a, ev in status_by_email.items() if ev in PROMO_RECEIVED_EVENTS}
+    all_recipients = list(status_by_email.keys())
 
     updated, already = 0, 0
-    if received:
-        for u in db.query(User).filter(func.lower(User.email).in_(received)).all():
-            if u.promo_sent_at is None:
-                ts = when_by_email.get(u.email.lower())
-                dt = None
-                if ts:
-                    try:
-                        dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).replace(tzinfo=None)
-                    except Exception:
-                        dt = None
-                u.promo_sent_at = dt or datetime.utcnow()
-                updated += 1
-            else:
-                already += 1
+    if all_recipients:
+        for u in db.query(User).filter(func.lower(User.email).in_(all_recipients)).all():
+            key = u.email.lower()
+            u.promo_status = status_by_email.get(key)  # always reflect the latest status
+            if key in received_set:
+                if u.promo_sent_at is None:
+                    ts = when_by_email.get(key)
+                    dt = None
+                    if ts:
+                        try:
+                            dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).replace(tzinfo=None)
+                        except Exception:
+                            dt = None
+                    u.promo_sent_at = dt or datetime.utcnow()
+                    updated += 1
+                else:
+                    already += 1
         db.commit()
 
     not_received = sorted(a for a, ev in status_by_email.items() if ev not in PROMO_RECEIVED_EVENTS)
     return {
         "promo_emails_scanned": len(promo),
-        "received": len(received),
+        "received": len(received_set),
         "users_updated": updated,
         "already_marked": already,
         "not_received": [{"email": a, "status": status_by_email[a]} for a in not_received],
