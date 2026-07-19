@@ -136,6 +136,7 @@ def main():
         lines = [
             "-- Founding-user promo backfill: mark delivered recipients so they are",
             "-- never re-emailed. Idempotent (only fills NULLs). Run against production.",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS promo_sent_at TIMESTAMP;",
         ]
         for addr in got:
             ts = (parse_ts(when_by_email.get(addr)) or datetime.utcnow()).strftime("%Y-%m-%d %H:%M:%S")
