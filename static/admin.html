@@ -15,7 +15,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
@@ -26,12 +25,10 @@
         /* ── KPI cards ─────────────────────────────────────────────── */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 0.75rem;
             margin-bottom: 1.25rem;
         }
-        @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-        @media (max-width: 560px)  { .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .kpi-card {
             border: 1px solid var(--muted);
             padding: 0.9rem 1rem;
@@ -54,49 +51,6 @@
         }
         .kpi-val.accent { color: var(--amber); }
 
-        /* ── Toolbar ───────────────────────────────────────────────── */
-        .admin-toolbar {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-            margin-bottom: 0.75rem;
-        }
-        .admin-input {
-            background: var(--bg);
-            border: 1px solid var(--muted);
-            color: var(--green);
-            font-family: inherit;
-            font-size: 0.82rem;
-            padding: 7px 10px;
-            min-width: 240px;
-            flex: 1 1 240px;
-            max-width: 360px;
-            caret-color: var(--green);
-        }
-        .admin-input::placeholder { color: var(--muted); }
-        .admin-input:focus {
-            outline: none;
-            border-color: var(--green);
-            box-shadow: 0 0 4px rgba(51,255,0,0.35);
-        }
-        .toolbar-count { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; }
-        .admin-btn {
-            margin-left: auto;
-            background: var(--bg);
-            border: 1px solid var(--muted);
-            color: var(--green);
-            font-family: inherit;
-            font-size: 0.78rem;
-            letter-spacing: 0.06em;
-            padding: 7px 14px;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: border-color 0.18s ease, color 0.18s ease;
-        }
-        .admin-btn:hover { border-color: var(--green); color: var(--amber); }
-        .admin-btn:disabled { opacity: 0.5; cursor: default; }
-
         /* ── Charts ────────────────────────────────────────────────── */
         .chart-row {
             display: grid;
@@ -115,7 +69,25 @@
         .bar.hot { background: var(--green); }
         .chart-axis { display: flex; justify-content: space-between; font-size: 0.55rem; color: var(--muted); margin-top: 4px; }
 
-        /* ── Table ─────────────────────────────────────────────────── */
+        /* ── Users link card ───────────────────────────────────────── */
+        .users-link-blurb { color: var(--muted); font-size: 0.82rem; margin: 0 0 0.75rem; line-height: 1.6; }
+        .admin-btn {
+            display: inline-block;
+            background: var(--bg);
+            border: 1px solid var(--muted);
+            color: var(--green);
+            font-family: inherit;
+            font-size: 0.82rem;
+            letter-spacing: 0.06em;
+            padding: 9px 18px;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: border-color 0.18s ease, color 0.18s ease;
+        }
+        .admin-btn:hover { border-color: var(--green); color: var(--amber); }
+
+        /* ── Tables (top categories + recent searches) ─────────────── */
         .table-scroll { max-height: 460px; overflow-y: auto; overflow-x: auto; border: 1px solid #111; }
         .admin-table {
             width: 100%;
@@ -143,111 +115,8 @@
             white-space: nowrap;
         }
         .admin-table tbody tr:nth-child(even) td { background: #070c07; }
-        th.sortable { cursor: pointer; user-select: none; }
-        th.sortable:hover { color: var(--green); }
-        th.sortable .arrow { color: var(--amber); margin-left: 3px; }
-        tr.user-row { cursor: pointer; transition: background 0.15s ease; }
-        tr.user-row:hover td { background: #0f1f0f; }
-        tr.user-row:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
         .col-num { text-align: right; }
-        td.cell-email { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
-
-        .tier-free      { color: var(--muted); }
-        .tier-paid      { color: var(--green); font-weight: 700; }
-        .tier-unlimited { color: #fff; font-weight: 700; }
-        .badge-g      { color: #4da6ff; }
-        .badge-pw     { color: var(--muted); }
-        .badge-stripe { color: var(--amber); }
-        .flag-cap     { color: var(--red); font-weight: 700; }
-        .muted        { color: var(--muted); }
-        .promo-ok      { color: var(--green); }
-        .promo-fail    { color: var(--red); font-weight: 700; }
-        .promo-pending { color: var(--amber); }
-        #reconcile-promo-detail { margin-top: 8px; font-size: 12px; color: var(--muted); line-height: 1.6; }
-        #reconcile-promo-detail .promo-fail, #reconcile-promo-detail .promo-pending { margin-right: 4px; }
-
-        /* ── Drawer ────────────────────────────────────────────────── */
-        .drawer-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.55);
-            opacity: 0; visibility: hidden;
-            transition: opacity 0.2s ease, visibility 0.2s ease;
-            z-index: 900;
-        }
-        .drawer-overlay.open { opacity: 1; visibility: visible; }
-        .drawer {
-            position: fixed; top: 0; right: 0; bottom: 0;
-            width: min(480px, 100%);
-            background: var(--bg);
-            border-left: 1px solid var(--green);
-            box-shadow: -4px 0 24px rgba(0,0,0,0.6);
-            transform: translateX(100%);
-            transition: transform 0.22s ease-out;
-            z-index: 950;
-            display: flex; flex-direction: column;
-            overflow-y: auto;
-        }
-        .drawer.open { transform: translateX(0); }
-        .drawer-header {
-            position: sticky; top: 0;
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 1rem;
-            padding: 1rem 1.25rem;
-            background: var(--bg);
-            border-bottom: 1px solid var(--muted);
-        }
-        .drawer-title { color: var(--amber); font-weight: 700; font-size: 0.9rem; word-break: break-all; }
-        .drawer-close {
-            background: none; border: 1px solid var(--muted); color: var(--green);
-            font-family: inherit; font-size: 0.8rem; padding: 4px 10px; cursor: pointer;
-            flex-shrink: 0;
-        }
-        .drawer-close:hover { border-color: var(--green); color: var(--amber); }
-        .drawer-body { padding: 1rem 1.25rem 2rem; }
-        .drawer-section { margin-bottom: 1.5rem; }
-        .drawer-section h3 {
-            font-size: 0.72rem; color: var(--muted); letter-spacing: 0.12em;
-            border-bottom: 1px solid #111; padding-bottom: 4px; margin-bottom: 0.75rem;
-        }
-        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; }
-        .profile-item .p-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; }
-        .profile-item .p-val { font-size: 0.85rem; color: var(--green); font-variant-numeric: tabular-nums; }
-
-        .cap-control { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .cap-control input {
-            width: 80px; background: var(--bg); border: 1px solid var(--muted);
-            color: var(--green); font-family: inherit; padding: 5px 8px;
-        }
-        .cap-control input:focus { outline: none; border-color: var(--green); }
-
-        .cat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; }
-        .cat-name { flex: 0 0 42%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cat-bar-track { flex: 1; height: 10px; background: #0f1f0f; border: 1px solid var(--muted); }
-        .cat-bar-fill { height: 100%; background: var(--green); }
-        .cat-count { flex: 0 0 auto; color: var(--muted); font-variant-numeric: tabular-nums; }
-
-        #user-map { height: 200px; width: 100%; border: 1px solid var(--muted); background: #060a06; }
-        .map-empty { font-size: 0.75rem; color: var(--muted); padding: 1rem; text-align: center; border: 1px dashed var(--muted); }
-
-        .search-list { max-height: 320px; overflow-y: auto; border: 1px solid #111; }
-        .search-item {
-            display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px;
-            padding: 6px 10px; border-bottom: 1px solid #111; font-size: 0.76rem;
-            font-variant-numeric: tabular-nums; align-items: baseline;
-        }
-        .search-item:last-child { border-bottom: none; }
-        .search-item .s-when { color: var(--muted); }
-        .search-item .s-cat { color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .search-item .s-res { color: var(--amber); }
-
-        .drawer-loading { padding: 2rem 1.25rem; color: var(--muted); }
-
-        @media (prefers-reduced-motion: reduce) {
-            .drawer, .drawer-overlay, tr.user-row, .kpi-card { transition: none; }
-        }
-        @media (max-width: 560px) {
-            .profile-grid { grid-template-columns: 1fr; }
-        }
+        .muted   { color: var(--muted); }
     </style>
 </head>
 <body class="page">
@@ -308,33 +177,8 @@
 
             <div class="page-section">
                 <h2>&gt; USERS</h2>
-                <div class="admin-toolbar">
-                    <input id="user-filter" class="admin-input" type="text" placeholder="filter by email..." autocomplete="off" />
-                    <span class="toolbar-count" id="user-count"></span>
-                    <button id="export-users-btn" class="admin-btn" type="button" title="Download the users currently shown (respects the email filter) as a CSV file">[ EXPORT CSV ]</button>
-                    <button id="reconcile-promo-btn" class="admin-btn" type="button" title="Check Resend for who actually received the founding-user promo and stamp the PROMO column">[ SYNC PROMO SENDS ]</button>
-                    <span id="reconcile-promo-status" class="toolbar-count"></span>
-                </div>
-                <div id="reconcile-promo-detail"></div>
-                <div class="table-scroll">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>EMAIL</th>
-                                <th>TIER</th>
-                                <th class="sortable col-num" data-sort="total_scans">SCANS</th>
-                                <th class="sortable col-num" data-sort="leads_found">LEADS</th>
-                                <th class="sortable col-num" data-sort="search_count">SEARCHES</th>
-                                <th class="sortable" data-sort="last_active">LAST ACTIVE</th>
-                                <th class="sortable" data-sort="created_at">JOINED</th>
-                                <th class="sortable" data-sort="promo_sent_at" title="When the founding-user promo email was sent to this user">PROMO</th>
-                                <th>FLAGS</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-table-body"></tbody>
-                    </table>
-                </div>
+                <p class="users-link-blurb">All users and their info — activity, per-user details, scan caps, CSV export, and promo email sending — live on a dedicated admin page.</p>
+                <a href="/admin/users" class="admin-btn">[ MANAGE USERS → ]</a>
             </div>
 
             <div class="page-section">
@@ -367,31 +211,20 @@
         </div>
     </main>
 
-    <!-- User detail drawer -->
-    <div class="drawer-overlay" id="drawer-overlay"></div>
-    <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="User profile" tabindex="-1">
-        <div class="drawer-header">
-            <span class="drawer-title" id="drawer-title">&gt; USER</span>
-            <button class="drawer-close" id="drawer-close">[ CLOSE ]</button>
-        </div>
-        <div class="drawer-body" id="drawer-body"></div>
-    </aside>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="/static/auth.js?v={{ version }}"></script>
     <script>
     (async function() {
         const token = getToken();
         if (!token) { window.location.href = '/login'; return; }
 
-        // ── Fetch users ────────────────────────────────────────────
+        // ── Fetch users (for KPI aggregates) ───────────────────────
         let users;
         try {
             const res = await fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + token } });
             if (res.status === 401 || res.status === 403) { window.location.href = '/login'; return; }
             users = await res.json();
         } catch (e) {
-            document.getElementById('admin-loading').textContent = 'ERROR: Could not load users.';
+            document.getElementById('admin-loading').textContent = 'ERROR: Could not load admin data.';
             return;
         }
 
@@ -402,13 +235,13 @@
         const parseDate = (s) => s ? new Date(s.replace(' ', 'T')) : null;
         const DAY = 86400000;
         const now = Date.now();
-        const fmtDate = (s) => s ? s.slice(0, 10) : '-';
         const fmtDateTime = (s) => s ? s.slice(0, 16).replace('T', ' ') : '-';
-        const relDays = (s) => {
-            const d = parseDate(s); if (!d) return '-';
-            const days = Math.floor((now - d.getTime()) / DAY);
-            return days <= 0 ? 'today' : days === 1 ? '1d ago' : days + 'd ago';
-        };
+        function el(tag, cls, text) {
+            const n = document.createElement(tag);
+            if (cls) n.className = cls;
+            if (text != null) n.textContent = text;
+            return n;
+        }
 
         // ── KPI cards ──────────────────────────────────────────────
         const sum = (arr, f) => arr.reduce((a, u) => a + (f(u) || 0), 0);
@@ -420,6 +253,7 @@
             { label: 'TOTAL SCANS', val: sum(users, u => u.total_scans) },
             { label: 'LEADS PULLED', val: sum(users, u => u.leads_found), accent: true },
             { label: 'PAID USERS', val: users.filter(u => u.has_stripe).length },
+            { label: 'EMAILS SENT', val: users.filter(u => u.promo_sent_at).length, accent: true },
         ];
         document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
             `<div class="kpi-card"><div class="kpi-label">${k.label}</div>` +
@@ -452,401 +286,6 @@
                 renderBars('chart-scans', 'chart-scans-total', 'chart-scans-start', s.searches_by_day);
             } catch (e) { /* charts optional */ }
         })();
-
-        // ── Users table (filter + sort + render) ───────────────────
-        const tbody = document.getElementById('user-table-body');
-        const countEl = document.getElementById('user-count');
-        let filterText = '';
-        let sortKey = 'created_at';
-        let sortDir = 'desc';
-
-        function sortVal(u, key) {
-            if (key === 'last_active' || key === 'created_at' || key === 'promo_sent_at') {
-                const d = parseDate(u[key]); return d ? d.getTime() : 0;
-            }
-            return u[key] || 0;
-        }
-
-        function computeRows() {
-            return users
-                .filter(u => u.email.toLowerCase().includes(filterText))
-                .sort((a, b) => {
-                    const av = sortVal(a, sortKey), bv = sortVal(b, sortKey);
-                    const cmp = av < bv ? -1 : av > bv ? 1 : 0;
-                    return sortDir === 'asc' ? cmp : -cmp;
-                });
-        }
-
-        function render() {
-            const rows = computeRows();
-
-            countEl.textContent = `[ ${rows.length} / ${users.length} ]`;
-            tbody.innerHTML = '';
-
-            rows.forEach((u, i) => {
-                const tierClass = u.tier === 'free' ? 'tier-free'
-                    : u.tier === 'unlimited' ? 'tier-unlimited' : 'tier-paid';
-                const capped = (u.total_scans || 0) >= (u.scan_limit ?? 50);
-
-                const tr = document.createElement('tr');
-                tr.className = 'user-row';
-                tr.tabIndex = 0;
-                tr.dataset.email = u.email;
-
-                const num = document.createElement('td'); num.className = 'muted'; num.textContent = i + 1;
-                const email = document.createElement('td'); email.className = 'cell-email'; email.textContent = u.email; email.title = u.email;
-                const tier = document.createElement('td'); tier.className = tierClass; tier.textContent = u.tier.toUpperCase();
-                const scans = document.createElement('td'); scans.className = 'col-num' + (capped ? ' flag-cap' : '');
-                scans.textContent = (u.total_scans || 0) + ' / ' + (u.scan_limit ?? 50);
-                const leads = document.createElement('td'); leads.className = 'col-num'; leads.textContent = (u.leads_found || 0).toLocaleString();
-                const searches = document.createElement('td'); searches.className = 'col-num'; searches.textContent = u.search_count || 0;
-                const active = document.createElement('td'); active.className = 'muted'; active.textContent = relDays(u.last_active);
-                const joined = document.createElement('td'); joined.className = 'muted'; joined.textContent = fmtDate(u.created_at);
-                const promo = document.createElement('td');
-                if (u.promo_sent_at) {
-                    promo.className = 'promo-ok'; promo.textContent = fmtDate(u.promo_sent_at);
-                    promo.title = 'delivered ' + u.promo_sent_at;
-                } else if (u.promo_status) {
-                    const s = u.promo_status.toLowerCase();
-                    const failed = ['bounced', 'complained', 'canceled', 'failed', 'suppressed'].includes(s);
-                    promo.className = failed ? 'promo-fail' : 'promo-pending';
-                    promo.textContent = s; promo.title = 'not delivered: ' + s;
-                } else { promo.className = 'muted'; promo.textContent = '—'; }
-
-                const flags = document.createElement('td');
-                const parts = [];
-                parts.push(u.google ? '<span class="badge-g">[G]</span>' : '<span class="badge-pw">[PW]</span>');
-                if (u.has_stripe) parts.push('<span class="badge-stripe">[$]</span>');
-                if (capped) parts.push('<span class="flag-cap">[CAP]</span>');
-                flags.innerHTML = parts.join(' ');  // trusted static strings
-
-                tr.append(num, email, tier, scans, leads, searches, active, joined, promo, flags);
-                tr.addEventListener('click', () => openDrawer(u.email));
-                tr.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(u.email); }
-                });
-                tbody.appendChild(tr);
-            });
-
-            document.querySelectorAll('th.sortable').forEach(th => {
-                const arrow = th.dataset.sort === sortKey ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
-                th.setAttribute('aria-sort', th.dataset.sort === sortKey ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none');
-                th.querySelector('.arrow')?.remove();
-                if (arrow) { const s = document.createElement('span'); s.className = 'arrow'; s.textContent = arrow; th.appendChild(s); }
-            });
-        }
-
-        document.querySelectorAll('th.sortable').forEach(th => {
-            th.addEventListener('click', () => {
-                const key = th.dataset.sort;
-                if (sortKey === key) { sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
-                else { sortKey = key; sortDir = 'desc'; }
-                render();
-            });
-        });
-
-        let filterTimer;
-        document.getElementById('user-filter').addEventListener('input', (e) => {
-            clearTimeout(filterTimer);
-            filterTimer = setTimeout(() => { filterText = e.target.value.trim().toLowerCase(); render(); }, 150);
-        });
-
-        // ── CSV export (users currently shown) ─────────────────────
-        function csvEscape(v) {
-            const s = v == null ? '' : String(v);
-            return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-        }
-
-        function exportUsersCsv() {
-            const cols = [
-                ['email',        u => u.email],
-                ['tier',         u => u.tier],
-                ['total_scans',  u => u.total_scans || 0],
-                ['scan_limit',   u => u.scan_limit],
-                ['leads_found',  u => u.leads_found || 0],
-                ['searches',     u => u.search_count || 0],
-                ['lead_credits', u => u.lead_credits || 0],
-                ['paid_stripe',  u => u.has_stripe ? 'yes' : 'no'],
-                ['auth',         u => u.google ? 'google' : 'password'],
-                ['joined',       u => u.created_at || ''],
-                ['last_active',  u => u.last_active || ''],
-                ['usage_reset',  u => u.usage_reset || ''],
-                ['promo_sent_at',u => u.promo_sent_at || ''],
-                ['promo_status', u => u.promo_status || ''],
-            ];
-            const rows = computeRows();
-            const lines = [cols.map(c => c[0]).join(',')];
-            rows.forEach(u => lines.push(cols.map(c => csvEscape(c[1](u))).join(',')));
-            const csv = '\ufeff' + lines.join('\r\n') + '\r\n';  // BOM → Excel reads UTF-8
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'leadscanner-users-' + new Date().toISOString().slice(0, 10) + '.csv';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        }
-
-        document.getElementById('export-users-btn').addEventListener('click', exportUsersCsv);
-
-        // ── Sync promo sends (pull Resend delivery logs, stamp PROMO) ──
-        const reconcileBtn = document.getElementById('reconcile-promo-btn');
-        const reconcileStatus = document.getElementById('reconcile-promo-status');
-        reconcileBtn.addEventListener('click', async () => {
-            if (!confirm('Check Resend and stamp everyone who actually received the promo email?')) return;
-            const prev = reconcileBtn.textContent;
-            reconcileBtn.disabled = true;
-            reconcileBtn.textContent = '[ SYNCING... ]';
-            reconcileStatus.textContent = '';
-            try {
-                const r = await fetch('/api/admin/reconcile-promo', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token },
-                });
-                const data = await r.json();
-                if (!r.ok) throw new Error(data.detail || ('HTTP ' + r.status));
-                reconcileStatus.textContent =
-                    `[ ${data.users_updated} stamped, ${data.already_marked} already, ` +
-                    `${data.received} received, ${data.not_received.length} not ]`;
-
-                // list exactly who did NOT receive it (built via DOM — no injection)
-                const detail = document.getElementById('reconcile-promo-detail');
-                detail.innerHTML = '';
-                if (data.not_received.length) {
-                    const title = document.createElement('div');
-                    title.textContent = 'Did NOT receive (' + data.not_received.length + '):';
-                    detail.appendChild(title);
-                    data.not_received.forEach(x => {
-                        const s = (x.status || '').toLowerCase();
-                        const failed = ['bounced', 'complained', 'canceled', 'failed', 'suppressed'].includes(s);
-                        const row = document.createElement('div');
-                        const tag = document.createElement('span');
-                        tag.className = failed ? 'promo-fail' : 'promo-pending';
-                        tag.textContent = '[' + s + ']';
-                        row.appendChild(tag);
-                        row.appendChild(document.createTextNode(' ' + x.email));
-                        detail.appendChild(row);
-                    });
-                } else {
-                    detail.textContent = 'Everyone targeted received it.';
-                }
-
-                // refresh the table so the PROMO column reflects the new stamps
-                const res = await fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + token } });
-                users = await res.json();
-                render();
-            } catch (e) {
-                reconcileStatus.textContent = 'ERROR: ' + e.message;
-            } finally {
-                reconcileBtn.disabled = false;
-                reconcileBtn.textContent = prev;
-            }
-        });
-
-        render();
-
-        // ── Drawer ─────────────────────────────────────────────────
-        const overlay = document.getElementById('drawer-overlay');
-        const drawer = document.getElementById('drawer');
-        const drawerBody = document.getElementById('drawer-body');
-        const drawerTitle = document.getElementById('drawer-title');
-        let drawerMap = null, mapLayer = null;
-
-        function closeDrawer() {
-            drawer.classList.remove('open');
-            overlay.classList.remove('open');
-        }
-        overlay.addEventListener('click', closeDrawer);
-        document.getElementById('drawer-close').addEventListener('click', closeDrawer);
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
-
-        function el(tag, cls, text) {
-            const n = document.createElement(tag);
-            if (cls) n.className = cls;
-            if (text != null) n.textContent = text;
-            return n;
-        }
-
-        async function openDrawer(email) {
-            drawerTitle.textContent = '> ' + email;
-            drawerBody.innerHTML = '<div class="drawer-loading">LOADING...</div>';
-            drawer.classList.add('open');
-            overlay.classList.add('open');
-            drawer.focus();
-
-            let data;
-            try {
-                const res = await fetch('/api/admin/user-detail?email=' + encodeURIComponent(email), {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                data = await res.json();
-            } catch (err) {
-                drawerBody.innerHTML = '<div class="drawer-loading">ERROR: could not load profile.</div>';
-                return;
-            }
-            renderDrawer(data);
-        }
-
-        function renderDrawer(data) {
-            const { user: u, stats, searches } = data;
-            drawerBody.innerHTML = '';
-
-            // Profile summary
-            const profSec = el('div', 'drawer-section');
-            profSec.appendChild(el('h3', null, 'PROFILE'));
-            const grid = el('div', 'profile-grid');
-            const items = [
-                ['JOINED', fmtDate(u.created_at)],
-                ['FIRST SEEN', fmtDate(stats.first_seen)],
-                ['LAST ACTIVE', stats.last_active ? relDays(stats.last_active) : '-'],
-                ['ACTIVE DAYS', String(stats.active_days)],
-                ['AUTH', u.google ? 'Google' : 'Password'],
-                ['TIER', (u.tier || '').toUpperCase()],
-                ['CREDITS', String(u.lead_credits)],
-                ['STRIPE', u.has_stripe ? 'Yes' : 'No'],
-            ];
-            items.forEach(([label, val]) => {
-                const item = el('div', 'profile-item');
-                item.appendChild(el('div', 'p-label', label));
-                item.appendChild(el('div', 'p-val', val));
-                grid.appendChild(item);
-            });
-            profSec.appendChild(grid);
-            drawerBody.appendChild(profSec);
-
-            // Scan cap control
-            const capSec = el('div', 'drawer-section');
-            capSec.appendChild(el('h3', null, 'SCAN CAP'));
-            const capCtl = el('div', 'cap-control');
-            capCtl.appendChild(el('span', null, (u.total_scans || 0) + ' scans /'));
-            const input = document.createElement('input');
-            input.type = 'number'; input.min = '0'; input.value = u.scan_limit ?? 50;
-            const setBtn = el('button', 'drawer-close', '[ SET ]');
-            const capStatus = el('span', 'muted', '');
-            setBtn.addEventListener('click', async () => {
-                setBtn.disabled = true; setBtn.textContent = '[ ... ]';
-                try {
-                    const r = await fetch('/api/admin/set-scan-limit', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                        body: JSON.stringify({ email: u.email, scan_limit: parseInt(input.value, 10) }),
-                    });
-                    if (!r.ok) throw new Error();
-                    setBtn.textContent = '[ SAVED ]';
-                    // reflect in the in-memory list + table
-                    const row = users.find(x => x.email === u.email);
-                    if (row) row.scan_limit = parseInt(input.value, 10);
-                    render();
-                } catch { setBtn.textContent = '[ ERROR ]'; }
-                finally {
-                    setBtn.disabled = false;
-                    setTimeout(() => { setBtn.textContent = '[ SET ]'; }, 1500);
-                }
-            });
-            capCtl.append(input, setBtn, capStatus);
-            capSec.appendChild(capCtl);
-            drawerBody.appendChild(capSec);
-
-            // Activity stats
-            const actSec = el('div', 'drawer-section');
-            actSec.appendChild(el('h3', null, 'ACTIVITY'));
-            const actGrid = el('div', 'profile-grid');
-            [
-                ['TOTAL SEARCHES', String(stats.total_searches)],
-                ['LEADS PULLED', (stats.total_results || 0).toLocaleString()],
-            ].forEach(([label, val]) => {
-                const item = el('div', 'profile-item');
-                item.appendChild(el('div', 'p-label', label));
-                item.appendChild(el('div', 'p-val', val));
-                actGrid.appendChild(item);
-            });
-            actSec.appendChild(actGrid);
-            drawerBody.appendChild(actSec);
-
-            // Favorite categories
-            const catSec = el('div', 'drawer-section');
-            catSec.appendChild(el('h3', null, 'FAVORITE CATEGORIES'));
-            const cats = (stats.top_categories || []).slice(0, 10);
-            if (cats.length === 0) {
-                catSec.appendChild(el('div', 'muted', 'No searches yet.'));
-            } else {
-                const max = cats[0].count || 1;
-                cats.forEach(c => {
-                    const row = el('div', 'cat-row');
-                    row.appendChild(el('span', 'cat-name', c.category));
-                    const track = el('div', 'cat-bar-track');
-                    const fill = el('div', 'cat-bar-fill');
-                    fill.style.width = Math.max(4, Math.round((c.count / max) * 100)) + '%';
-                    track.appendChild(fill);
-                    row.appendChild(track);
-                    row.appendChild(el('span', 'cat-count', '×' + c.count));
-                    catSec.appendChild(row);
-                });
-            }
-            drawerBody.appendChild(catSec);
-
-            // Search locations map
-            const mapSec = el('div', 'drawer-section');
-            mapSec.appendChild(el('h3', null, 'SEARCH LOCATIONS'));
-            const geo = searches.filter(s => typeof s.lat === 'number' && typeof s.lng === 'number');
-            if (geo.length === 0) {
-                mapSec.appendChild(el('div', 'map-empty', 'No location data for this user.'));
-                drawerBody.appendChild(mapSec);
-            } else {
-                const mapDiv = document.createElement('div'); mapDiv.id = 'user-map';
-                mapSec.appendChild(mapDiv);
-                drawerBody.appendChild(mapSec);
-                setTimeout(() => renderMap(geo), 260); // after drawer transition
-            }
-
-            // Full search history
-            const histSec = el('div', 'drawer-section');
-            histSec.appendChild(el('h3', null, `SEARCH HISTORY (${searches.length})`));
-            if (searches.length === 0) {
-                histSec.appendChild(el('div', 'muted', 'No searches yet.'));
-            } else {
-                const list = el('div', 'search-list');
-                searches.forEach(s => {
-                    const item = el('div', 'search-item');
-                    item.appendChild(el('span', 's-when', fmtDateTime(s.created_at)));
-                    item.appendChild(el('span', 's-cat', s.category || '-'));
-                    item.appendChild(el('span', 'muted', s.radius_meters ? (s.radius_meters / 1000).toFixed(0) + 'km' : '-'));
-                    item.appendChild(el('span', 's-res', String(s.results ?? 0)));
-                    list.appendChild(item);
-                });
-                histSec.appendChild(list);
-            }
-            drawerBody.appendChild(histSec);
-        }
-
-        function renderMap(geo) {
-            const mapDiv = document.getElementById('user-map');
-            if (!mapDiv) return;
-            if (!drawerMap) {
-                drawerMap = L.map('user-map', { attributionControl: false, zoomControl: true });
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 19,
-                }).addTo(drawerMap);
-            }
-            if (mapLayer) { mapLayer.remove(); }
-            mapLayer = L.layerGroup().addTo(drawerMap);
-            const pts = [];
-            geo.forEach(s => {
-                const m = L.circleMarker([s.lat, s.lng], {
-                    radius: 5, color: '#33ff00', weight: 1, fillColor: '#33ff00', fillOpacity: 0.5,
-                });
-                m.bindPopup(`${s.category || '?'} — ${s.results ?? 0} leads`);
-                m.addTo(mapLayer);
-                pts.push([s.lat, s.lng]);
-            });
-            drawerMap.invalidateSize();
-            if (pts.length === 1) drawerMap.setView(pts[0], 11);
-            else drawerMap.fitBounds(pts, { padding: [24, 24] });
-        }
 
         // ── Global sections: top categories + recent searches ──────
         let searches = [];

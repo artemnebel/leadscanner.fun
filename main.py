@@ -26,6 +26,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text, func
 
 from database import User, PlacesCache, SearchLog, SavedClient, get_db, init_db
+from send_promo import (
+    build_html as build_promo_html,
+    build_text as build_promo_text,
+    SUBJECT as PROMO_SUBJECT,
+    FROM_ADDR as PROMO_FROM_ADDR,
+    REPLY_TO as PROMO_REPLY_TO,
+)
 
 load_dotenv()
 load_dotenv(".env.local", override=True)  # local overrides — not committed
@@ -324,6 +331,10 @@ async def serve_terms(request: Request):
 @app.get("/admin")
 async def serve_admin(request: Request):
     return templates.TemplateResponse("admin.html", _ctx(request))
+
+@app.get("/admin/users")
+async def serve_admin_users(request: Request):
+    return templates.TemplateResponse("admin-users.html", _ctx(request))
 
 @app.api_route("/sitemap.xml", methods=["GET", "HEAD"])
 async def serve_sitemap():
@@ -724,6 +735,74 @@ async def admin_reconcile_promo(user=Depends(get_current_user), db: Session = De
         "already_marked": already,
         "not_received": [{"email": a, "status": status_by_email[a]} for a in not_received],
     }
+
+class SendPromoBody(BaseModel):
+    emails: list[str]
+
+@app.post("/api/admin/send-promo")
+async def admin_send_promo(
+    body: SendPromoBody,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Send the founding-user promo email to a hand-picked list of users and stamp
+    promo_sent_at on each successful send so they're suppressed from future blasts.
+    A 200 from Resend only means the send was accepted — reconcile-promo later
+    corrects promo_status from the delivery log."""
+    if not user or user.email != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    api_key = os.getenv("RESEND_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=400, detail="RESEND_API_KEY not set in the server environment.")
+
+    # de-dupe (case-insensitive), preserve order
+    seen, recipients = set(), []
+    for e in body.emails:
+        e = (e or "").strip()
+        k = e.lower()
+        if e and k not in seen:
+            seen.add(k)
+            recipients.append(e)
+    if not recipients:
+        raise HTTPException(status_code=400, detail="No recipients selected.")
+
+    html_body = build_promo_html()
+    text_body = build_promo_text()
+    sent, failed, results = 0, 0, []
+    async with httpx.AsyncClient(timeout=30) as client:
+        for e in recipients:
+            ok, err = False, None
+            try:
+                r = await client.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    json={
+                        "from": PROMO_FROM_ADDR,
+                        "to": [e],
+                        "reply_to": PROMO_REPLY_TO,
+                        "subject": PROMO_SUBJECT,
+                        "html": html_body,
+                        "text": text_body,
+                    },
+                )
+                ok = r.status_code == 200
+                if not ok:
+                    err = f"HTTP {r.status_code}"
+            except Exception as ex:
+                err = str(ex)
+            if ok:
+                sent += 1
+                target = db.query(User).filter(func.lower(User.email) == e.lower()).first()
+                if target:
+                    target.promo_sent_at = datetime.utcnow()
+                    target.promo_status = "sent"
+                results.append({"email": e, "ok": True})
+            else:
+                failed += 1
+                results.append({"email": e, "ok": False, "error": err})
+            await asyncio.sleep(0.4)  # stay under Resend's rate limit
+    db.commit()
+    return {"sent": sent, "failed": failed, "results": results}
 
 @app.get("/api/admin/stats")
 async def admin_stats(user=Depends(get_current_user), db: Session = Depends(get_db)):
