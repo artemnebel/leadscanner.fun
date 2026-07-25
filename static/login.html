@@ -25,6 +25,20 @@
 <body class="page">
     <div id="crt-overlay"></div>
 
+    <div class="auth-loader-overlay" id="auth-loader" aria-hidden="true">
+        <div class="ai-matrix-loader">
+            <div class="digit">0</div>
+            <div class="digit">1</div>
+            <div class="digit">0</div>
+            <div class="digit">1</div>
+            <div class="digit">1</div>
+            <div class="digit">0</div>
+            <div class="digit">0</div>
+            <div class="digit">1</div>
+            <div class="glow"></div>
+        </div>
+    </div>
+
     <header id="top-bar">
         <div id="logo">
             <span id="logo-blink">█</span>
@@ -120,9 +134,12 @@
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
             const errEl = document.getElementById('auth-error');
+            const loader = document.getElementById('auth-loader');
             btn.textContent = '[ AUTHENTICATING... ]';
             btn.disabled = true;
             errEl.style.display = 'none';
+            loader.classList.add('show');
+            const minShow = new Promise(r => setTimeout(r, 2500));  // let the animation play
 
             const email    = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -135,6 +152,7 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
+                    loader.classList.remove('show');
                     errEl.textContent = data.detail === 'GOOGLE_ACCOUNT'
                         ? '> This account was created with Google. Use the "Continue with Google" button below.'
                         : '> ERR: ' + (data.detail || 'Login failed.');
@@ -145,8 +163,10 @@
                 }
                 localStorage.setItem('ls_token', data.token);
                 localStorage.removeItem('ls_user');
+                await minShow;   // keep the matrix loader up for a few seconds before entering
                 window.location.href = '/?launched=1';
             } catch {
+                loader.classList.remove('show');
                 errEl.textContent = '> ERR: Network error.';
                 errEl.style.display = 'block';
                 btn.textContent = '[ AUTHENTICATE ]';
