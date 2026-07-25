@@ -90,12 +90,12 @@ PACK_CREDITS = {pid: credits for pid, credits in PACK_CREDITS.items() if pid}
 FREE_MONTHLY_LEADS = 500
 
 # ── Plan gating (new pricing) ──────────────────────────────────────────────
-# Free plan: ~5mi radius, 10 scans per rolling 5h window, up to 5 saved clients.
+# Free plan: ~5mi radius, 5 scans per rolling 24h window, up to 5 saved clients.
 # Pro plan:  ~15mi radius, no daily cap, unlimited saved clients.
 FREE_RADIUS_M          = 8_000     # ~5mi
 PRO_RADIUS_M           = 24_140    # ~15mi
-FREE_DAILY_SCANS       = 10
-FREE_SCAN_WINDOW_HOURS = 5         # after using the free scans, wait this long to refill
+FREE_DAILY_SCANS       = 5
+FREE_SCAN_WINDOW_HOURS = 24        # free tier: 5 scans per rolling 24h window, then wait to refill
 FREE_PORTAL_LIMIT      = 5
 PAID_TIERS = {"pro", "starter", "business", "unlimited"}
 
@@ -1524,7 +1524,7 @@ async def search_leads(
 
     reset_usage_if_needed(user, db)
 
-    # Free-tier scan window: N scans per rolling 5h window, then a wait wall that steers
+    # Free-tier scan window: N scans per rolling 24h window, then a wait wall that steers
     # toward Pro. Pro/admin have no cap (daily_scan_limit is None). The window is anchored
     # at the first scan and resets once FREE_SCAN_WINDOW_HOURS have elapsed.
     daily_limit = feats["daily_scan_limit"]
@@ -1620,7 +1620,7 @@ async def search_leads(
 
     user.scans_used = (user.scans_used or 0) + 1  # one /api/search call = one scan (analytics)
     user.total_scans = (user.total_scans or 0) + 1  # lifetime counter (analytics)
-    user.daily_scans = (user.daily_scans or 0) + 1  # rolling 5h window — free-tier cooldown
+    user.daily_scans = (user.daily_scans or 0) + 1  # rolling 24h window — free-tier cooldown
     consume_leads(user, leads_count)
     # Log the query for the admin panel. Analytics only — never fail a search over it.
     try:
