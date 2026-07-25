@@ -1072,6 +1072,28 @@ body.page #top-bar {
     border-color: #666;
 }
 
+.facebook-btn {
+    display: block;
+    width: 100%;
+    padding: 0.65rem 1rem;
+    margin-top: 0.75rem;
+    background: #1877f2;
+    border: 1px solid #1877f2;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s;
+    box-sizing: border-box;
+}
+
+.facebook-btn:hover {
+    background: #166fe0;
+    border-color: #166fe0;
+}
+
 .auth-footer {
     text-align: center;
     margin-top: 1.25rem;

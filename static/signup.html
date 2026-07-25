@@ -36,7 +36,9 @@
         .signup-lg .auth-btn    { font-size: 1.08rem; padding: 0.78rem 1.2rem; }
         .signup-lg .auth-divider{ font-size: 0.96rem; margin: 1.5rem 0; }
         .signup-lg .google-btn  { font-size: 1.02rem; padding: 0.78rem 1.2rem; }
-        .signup-lg .google-btn svg { width: 22px; height: 22px; }
+        .signup-lg .google-btn svg,
+        .signup-lg .facebook-btn svg { width: 22px; height: 22px; }
+        .signup-lg .facebook-btn { font-size: 1.02rem; padding: 0.78rem 1.2rem; }
         .signup-lg .auth-footer { font-size: 0.96rem; margin-top: 1.5rem; }
     </style>
 </head>
@@ -94,6 +96,13 @@
                     <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
                 </svg>
                 Continue with Google
+            </a>
+
+            <a href="/api/auth/facebook" class="facebook-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:8px">
+                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                </svg>
+                Continue with Facebook
             </a>
 
             <p class="auth-footer">Already have an account? <a href="/login">[ LOGIN ]</a></p>

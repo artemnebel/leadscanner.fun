@@ -43,6 +43,8 @@ JWT_SECRET            = os.getenv("JWT_SECRET", "changeme")
 JWT_ALGORITHM         = "HS256"
 GOOGLE_CLIENT_ID      = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET  = os.getenv("GOOGLE_CLIENT_SECRET")
+FACEBOOK_APP_ID       = os.getenv("FACEBOOK_APP_ID")
+FACEBOOK_APP_SECRET   = os.getenv("FACEBOOK_APP_SECRET")
 STRIPE_SECRET_KEY     = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 BASE_URL              = os.getenv("BASE_URL", "http://localhost:8000")
@@ -949,6 +951,75 @@ async def google_callback(
         db.refresh(user)
     elif not user.google_id:
         user.google_id = g_id
+        db.commit()
+
+    jwt_token = create_jwt(user.id)
+    return RedirectResponse(f"/?token={jwt_token}")
+
+# ── Facebook OAuth ─────────────────────────────────────────────────────────────
+FACEBOOK_OAUTH_VERSION = "v19.0"
+
+@app.get("/api/auth/facebook")
+async def facebook_login():
+    if not FACEBOOK_APP_ID or not FACEBOOK_APP_SECRET:
+        raise HTTPException(status_code=500, detail="Facebook login not configured.")
+    redirect_uri = f"{BASE_URL}/api/auth/facebook/callback"
+    params = urlencode({
+        "client_id": FACEBOOK_APP_ID,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "email public_profile",
+    })
+    return RedirectResponse(
+        f"https://www.facebook.com/{FACEBOOK_OAUTH_VERSION}/dialog/oauth?{params}"
+    )
+
+@app.get("/api/auth/facebook/callback")
+async def facebook_callback(
+    code: str | None = None,
+    error: str | None = None,
+    db: Session = Depends(get_db),
+):
+    if error or not code:
+        return RedirectResponse("/?auth_error=facebook_failed")
+    redirect_uri = f"{BASE_URL}/api/auth/facebook/callback"
+    async with httpx.AsyncClient() as client:
+        token_resp = await client.get(
+            f"https://graph.facebook.com/{FACEBOOK_OAUTH_VERSION}/oauth/access_token",
+            params={
+                "client_id": FACEBOOK_APP_ID,
+                "client_secret": FACEBOOK_APP_SECRET,
+                "redirect_uri": redirect_uri,
+                "code": code,
+            },
+        )
+        access_token = token_resp.json().get("access_token")
+        if not access_token:
+            return RedirectResponse("/?auth_error=facebook_failed")
+
+        userinfo_resp = await client.get(
+            "https://graph.facebook.com/me",
+            params={"fields": "id,name,email", "access_token": access_token},
+        )
+        userinfo = userinfo_resp.json()
+
+    fb_id = userinfo.get("id")
+    email = userinfo.get("email")
+    if not fb_id:
+        return RedirectResponse("/?auth_error=facebook_failed")
+    # Facebook doesn't always return an email (no email on the account, or the user
+    # unchecked the email permission). We need one to create/link the account.
+    if not email:
+        return RedirectResponse("/?auth_error=facebook_no_email")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        user = User(email=email, facebook_id=fb_id)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif not user.facebook_id:
+        user.facebook_id = fb_id
         db.commit()
 
     jwt_token = create_jwt(user.id)
