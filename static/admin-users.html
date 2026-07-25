@@ -22,6 +22,10 @@
     <link rel="shortcut icon" href="/favicon.ico"/>
     <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
     <style>
+        /* Full-width, full-height layout — overrides the global 900px page cap
+           so all columns fit without horizontal scrolling. */
+        .page-content { max-width: none; }
+
         /* ── Back link ─────────────────────────────────────────────── */
         .back-link {
             display: inline-block;
@@ -86,7 +90,7 @@
         #send-promo-detail .promo-fail { margin-right: 4px; }
 
         /* ── Table ─────────────────────────────────────────────────── */
-        .table-scroll { max-height: 620px; overflow-y: auto; overflow-x: auto; border: 1px solid #111; }
+        .table-scroll { max-height: calc(100vh - 300px); min-height: 420px; overflow-y: auto; overflow-x: auto; border: 1px solid #111; }
         .admin-table {
             width: 100%;
             border-collapse: collapse;
