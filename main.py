@@ -740,6 +740,48 @@ async def admin_reconcile_promo(user=Depends(get_current_user), db: Session = De
         "not_received": [{"email": a, "status": status_by_email[a]} for a in not_received],
     }
 
+class DeleteUserBody(BaseModel):
+    email: str
+
+@app.post("/api/admin/delete-user")
+async def admin_delete_user(
+    body: DeleteUserBody,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Permanently delete a user and purge their saved clients and search logs so
+    nothing is left orphaned. Does not touch Stripe — an active subscription must
+    be cancelled there separately."""
+    if not user or user.email != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Forbidden.")
+    email = (body.email or "").strip()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email required.")
+    target = db.query(User).filter(User.email == email).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found.")
+    if target.email == ADMIN_EMAIL:
+        raise HTTPException(status_code=400, detail="Cannot delete the admin account.")
+
+    clients_deleted = (
+        db.query(SavedClient)
+        .filter(SavedClient.user_id == target.id)
+        .delete(synchronize_session=False)
+    )
+    logs_deleted = (
+        db.query(SearchLog)
+        .filter(SearchLog.user_email == target.email)
+        .delete(synchronize_session=False)
+    )
+    db.delete(target)
+    db.commit()
+    return {
+        "ok": True,
+        "email": email,
+        "saved_clients_deleted": clients_deleted,
+        "search_logs_deleted": logs_deleted,
+    }
+
 class SendPromoBody(BaseModel):
     emails: list[str]
 

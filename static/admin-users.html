@@ -128,7 +128,15 @@
         tr.user-row:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
         .col-num { text-align: right; }
         .col-check { width: 1%; text-align: center; }
+        .col-actions { text-align: right; width: 1%; }
         td.cell-email { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+        .row-del {
+            background: var(--bg); border: 1px solid var(--muted); color: var(--muted);
+            font-family: inherit; font-size: 0.72rem; letter-spacing: 0.04em;
+            padding: 3px 9px; cursor: pointer; white-space: nowrap;
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+        .row-del:hover { border-color: var(--red); color: var(--red); }
         .row-check, .all-check {
             width: 15px; height: 15px; cursor: pointer;
             accent-color: var(--green);
@@ -208,6 +216,7 @@
                                 <th class="sortable" data-sort="created_at">JOINED</th>
                                 <th class="sortable" data-sort="promo_sent_at" title="When the founding-user promo email was sent to this user">PROMO</th>
                                 <th>FLAGS</th>
+                                <th class="col-actions">ACTIONS</th>
                             </tr>
                         </thead>
                         <tbody id="user-table-body"></tbody>
@@ -340,9 +349,16 @@
                 if (capped) parts.push('<span class="flag-cap">[CAP]</span>');
                 flags.innerHTML = parts.join(' ');  // trusted static strings
 
-                // Clicking a row (anywhere but the checkbox) opens the full-page detail.
+                const actions = document.createElement('td'); actions.className = 'col-actions';
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button'; delBtn.className = 'row-del'; delBtn.textContent = '[ DEL ]';
+                delBtn.title = 'Delete this user';
+                delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteUser(u); });
+                actions.appendChild(delBtn);
+
+                // Clicking a row (anywhere but the checkbox/delete) opens the full-page detail.
                 const goDetail = () => { window.location.href = '/admin/user?email=' + encodeURIComponent(u.email); };
-                tr.append(checkTd, num, email, tier, scans, leads, searches, active, joined, promo, flags);
+                tr.append(checkTd, num, email, tier, scans, leads, searches, active, joined, promo, flags, actions);
                 tr.addEventListener('click', goDetail);
                 tr.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goDetail(); }
@@ -382,6 +398,27 @@
             clearTimeout(filterTimer);
             filterTimer = setTimeout(() => { filterText = e.target.value.trim().toLowerCase(); render(); }, 150);
         });
+
+        // ── Delete a user ──────────────────────────────────────────
+        async function deleteUser(u) {
+            let msg = `Delete ${u.email}?\n\nThis permanently removes their account, saved clients, and search history. This cannot be undone.`;
+            if (u.has_stripe) msg += `\n\nNOTE: this user has a Stripe billing record — deleting here does NOT cancel any active subscription in Stripe.`;
+            if (!confirm(msg)) return;
+            try {
+                const r = await fetch('/api/admin/delete-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ email: u.email }),
+                });
+                const data = await r.json();
+                if (!r.ok) throw new Error(data.detail || ('HTTP ' + r.status));
+                users = users.filter(x => x.email !== u.email);
+                selected.delete(u.email);
+                render();
+            } catch (e) {
+                alert('Delete failed: ' + e.message);
+            }
+        }
 
         // ── Send promo to selected users ───────────────────────────
         const sendDetail = document.getElementById('send-promo-detail');
