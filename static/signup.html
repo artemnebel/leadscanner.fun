@@ -21,6 +21,24 @@
     <link rel="icon" href="/favicon.ico"/>
     <link rel="shortcut icon" href="/favicon.ico"/>
     <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <style>
+        /* Signup page only: scale the auth box + controls ~20% larger so it's
+           easier to read and interact with (shared auth classes are left as-is
+           for login / forgot / reset). */
+        /* width (not just max-width) — .page-content is a flex child that
+           shrink-wraps, so max-width never binds; min() keeps it responsive. */
+        .signup-lg .auth-box    { width: min(504px, 92vw); max-width: 504px; padding: 2.4rem; }
+        .signup-lg .auth-intro  { font-size: 1.02rem; margin-bottom: 1.5rem; }
+        .signup-lg .auth-form   { gap: 1.2rem; }
+        .signup-lg .form-group  { gap: 0.42rem; }
+        .signup-lg .form-label  { font-size: 0.9rem; }
+        .signup-lg .form-input  { font-size: 1.08rem; padding: 0.66rem 0.9rem; }
+        .signup-lg .auth-btn    { font-size: 1.08rem; padding: 0.78rem 1.2rem; }
+        .signup-lg .auth-divider{ font-size: 0.96rem; margin: 1.5rem 0; }
+        .signup-lg .google-btn  { font-size: 1.02rem; padding: 0.78rem 1.2rem; }
+        .signup-lg .google-btn svg { width: 22px; height: 22px; }
+        .signup-lg .auth-footer { font-size: 0.96rem; margin-top: 1.5rem; }
+    </style>
 </head>
 <body class="page">
     <div id="crt-overlay"></div>
@@ -46,7 +64,7 @@
         </div>
     </nav>
 
-    <main class="page-content">
+    <main class="page-content signup-lg">
         <h1 class="page-title">&gt; REGISTER.EXE</h1>
 
         <div class="auth-box">
