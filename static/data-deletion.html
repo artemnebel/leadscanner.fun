@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1EHSVC4QBJ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-1EHSVC4QBJ');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Deletion - Lead Scanner</title>
+    <meta name="description" content="How to delete your Lead Scanner account and all associated data.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
+    <link rel="icon" href="/favicon.ico"/>
+    <link rel="shortcut icon" href="/favicon.ico"/>
+    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+</head>
+<body class="page">
+
+    <div id="crt-overlay"></div>
+
+    <header id="top-bar">
+        <div id="logo">
+            <span id="logo-blink">█</span>
+            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <div class="nav-left">
+            <a href="/" class="nav-link">[ HOME ]</a>
+            <a href="/about" class="nav-link">[ ABOUT ]</a>
+            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
+            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
+        </div>
+        <div class="nav-right">
+            <a href="/contact" class="nav-link">[ CONTACT ]</a>
+            <a href="/pricing" class="nav-link">[ PRICING ]</a>
+            <a href="/login" class="nav-link" id="nav-auth-link">[ LOGIN ]</a>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <h1 class="page-title">&gt; DATA_DELETION.TXT</h1>
+        <p class="page-subtitle">Last updated: July 2026</p>
+
+        <div class="page-section">
+            <h2>&gt; OVERVIEW</h2>
+            <p>You can request deletion of your Lead Scanner account and all associated data at any time. This page explains what we store and exactly how to have it permanently removed. This applies to every account, whether you signed up with an email and password, Google, or Facebook.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; WHAT_WE_STORE</h2>
+            <p>For each account we store:</p>
+            <p>
+                &gt; Your <strong>email address</strong><br>
+                &gt; A <strong>bcrypt-hashed password</strong> (email sign-ups only — never plaintext)<br>
+                &gt; Your <strong>Google or Facebook account ID</strong> (social sign-ins only — used to log you in)<br>
+                &gt; <strong>Usage data</strong>: subscription tier, lead/scan counts, and reset dates<br>
+                &gt; Your <strong>Stripe customer ID</strong> (paid plans only)<br>
+                &gt; Any <strong>saved clients</strong> you added to your client portal<br>
+                &gt; A log of your <strong>search queries</strong> (category, location, result count)
+            </p>
+            <p>We do not store the actual leads or search results you generate — those are returned directly to your browser.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; HOW_TO_DELETE_YOUR_DATA</h2>
+            <p><strong>Step 1.</strong> Send a deletion request one of two ways, <em>from or naming the email address on your account</em> so we can verify it's you:</p>
+            <p>
+                &gt; Email <a href="mailto:artem.nebel07@gmail.com?subject=Delete%20my%20data">artem.nebel07@gmail.com</a> with the subject <strong>"Delete my data"</strong>, or<br>
+                &gt; Use the <a href="/contact">contact page</a> with the subject <strong>"Delete my account"</strong>.
+            </p>
+            <p><strong>Step 2.</strong> We verify the request and <strong>permanently delete</strong> your account and everything tied to it from our database — usually within a few days, and no later than <strong>30 days</strong>. We'll confirm by email once it's done.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; WHAT_GETS_DELETED</h2>
+            <p>A deletion request removes <strong>all</strong> of the following, permanently and irreversibly:</p>
+            <p>
+                &gt; Your account record (email, hashed password, Google/Facebook link)<br>
+                &gt; All usage and subscription records<br>
+                &gt; Every saved client in your client portal<br>
+                &gt; Your entire search history
+            </p>
+            <p>If you have an active paid subscription, please cancel it first (or ask us to), since deletion removes the link to your Stripe billing record. Payment records held by Stripe are governed by <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's privacy policy</a>.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; FACEBOOK_LOGIN_USERS</h2>
+            <p>If you signed in with Facebook, you can also revoke Lead Scanner's access from Facebook directly: <strong>Facebook → Settings &amp; Privacy → Settings → Apps and Websites</strong>, then remove Lead Scanner. Revoking access stops future logins but does not delete data we already hold — to erase that, follow the deletion steps above.</p>
+        </div>
+
+        <div class="page-section">
+            <h2>&gt; RELATED</h2>
+            <p>See our <a href="/privacy">privacy policy</a> for full details on what we collect and how it's used, or reach us on the <a href="/contact">contact page</a> with any questions.</p>
+        </div>
+    </main>
+
+    <script src="/static/auth.js?v={{ version }}"></script>
+</body>
+</html>

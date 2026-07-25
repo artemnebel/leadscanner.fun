@@ -328,6 +328,10 @@ async def serve_privacy(request: Request):
 async def serve_terms(request: Request):
     return templates.TemplateResponse("terms.html", _ctx(request))
 
+@app.get("/data-deletion")
+async def serve_data_deletion(request: Request):
+    return templates.TemplateResponse("data-deletion.html", _ctx(request))
+
 @app.get("/admin")
 async def serve_admin(request: Request):
     return templates.TemplateResponse("admin.html", _ctx(request))
