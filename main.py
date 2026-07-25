@@ -268,7 +268,14 @@ def plan_payload(user: User) -> dict:
 # ── Page routes ───────────────────────────────────────────────────────────────
 
 def _ctx(request: Request):
-    return {"request": request, "version": APP_VERSION}
+    # facebook_enabled gates the "Continue with Facebook" button in templates so it
+    # only shows once the app's FB credentials are configured (e.g. on Render). Keeps
+    # a broken button off production while Facebook setup/verification is pending.
+    return {
+        "request": request,
+        "version": APP_VERSION,
+        "facebook_enabled": bool(FACEBOOK_APP_ID and FACEBOOK_APP_SECRET),
+    }
 
 @app.get("/")
 async def serve_index(request: Request):
