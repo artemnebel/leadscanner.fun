@@ -27,19 +27,17 @@
            for login / forgot / reset). */
         /* width (not just max-width) — .page-content is a flex child that
            shrink-wraps, so max-width never binds; min() keeps it responsive. */
-        .signup-lg .auth-box    { width: min(504px, 92vw); max-width: 504px; padding: 2.4rem; }
-        .signup-lg .auth-intro  { font-size: 1.02rem; margin-bottom: 1.5rem; }
-        .signup-lg .auth-form   { gap: 1.2rem; }
-        .signup-lg .form-group  { gap: 0.42rem; }
-        .signup-lg .form-label  { font-size: 0.9rem; }
-        .signup-lg .form-input  { font-size: 1.08rem; padding: 0.66rem 0.9rem; }
-        .signup-lg .auth-btn    { font-size: 1.08rem; padding: 0.78rem 1.2rem; }
-        .signup-lg .auth-divider{ font-size: 0.96rem; margin: 1.5rem 0; }
-        .signup-lg .google-btn  { font-size: 1.02rem; padding: 0.78rem 1.2rem; }
-        .signup-lg .google-btn svg,
-        .signup-lg .facebook-btn svg { width: 22px; height: 22px; }
-        .signup-lg .facebook-btn { font-size: 1.02rem; padding: 0.78rem 1.2rem; }
-        .signup-lg .auth-footer { font-size: 0.96rem; margin-top: 1.5rem; }
+        .signup-lg .auth-box      { width: min(504px, 92vw); max-width: 504px; padding: 2.4rem; }
+        .signup-lg .auth-intro    { font-size: 1.02rem; margin-bottom: 1.5rem; }
+        .signup-lg .auth-form     { gap: 1.2rem; }
+        .signup-lg .form-group    { gap: 0.42rem; }
+        .signup-lg .form-label    { font-size: 0.9rem; }
+        .signup-lg .form-input    { font-size: 1.08rem; padding: 0.66rem 0.9rem; }
+        .signup-lg .auth-btn      { font-size: 1.08rem; padding: 0.78rem 1.2rem; }
+        .signup-lg .auth-divider  { font-size: 0.96rem; margin: 1.5rem 0; }
+        .signup-lg .social-tile   { padding: 0.9rem 1rem; }
+        .signup-lg .social-tile svg { width: 26px; height: 26px; }
+        .signup-lg .auth-footer   { font-size: 0.96rem; margin-top: 1.5rem; }
     </style>
 </head>
 <body class="page">
@@ -74,6 +72,35 @@
 
             <div id="auth-error" class="auth-error" style="display:none"></div>
 
+            <div class="social-row">
+                <a href="/api/auth/google" class="social-tile" aria-label="Sign up with Google" title="Sign up with Google">
+                    <svg width="22" height="22" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.259c-.806.54-1.837.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                        <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                    </svg>
+                </a>
+                {% if facebook_enabled %}
+                <a href="/api/auth/facebook" class="social-tile fb" aria-label="Sign up with Facebook" title="Sign up with Facebook">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                    </svg>
+                </a>
+                {% else %}
+                <button type="button" class="social-tile fb disabled" id="fb-disabled" aria-label="Facebook sign-up unavailable" title="Facebook sign-up isn't available right now">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                    </svg>
+                </button>
+                {% endif %}
+            </div>
+            {% if not facebook_enabled %}
+            <p class="social-note" id="fb-note" style="display:none">&gt; Facebook sign-up isn't available right now — use Google or email for now.</p>
+            {% endif %}
+
+            <div class="auth-divider"><span>── OR ──</span></div>
+
             <form id="signup-form" class="auth-form">
                 <div class="form-group">
                     <label class="form-label">&gt; EMAIL</label>
@@ -81,37 +108,41 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">&gt; PASSWORD</label>
-                    <input type="password" id="password" class="form-input" placeholder="••••••••" required autocomplete="new-password" minlength="8">
+                    <div class="password-wrap">
+                        <input type="password" id="password" class="form-input" placeholder="••••••••" required autocomplete="new-password" minlength="8">
+                        <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Show password"></button>
+                    </div>
                 </div>
                 <button type="submit" class="auth-btn" id="submit-btn">[ CREATE ACCOUNT ]</button>
             </form>
-
-            <div class="auth-divider"><span>── OR ──</span></div>
-
-            <a href="/api/auth/google" class="google-btn">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:8px">
-                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.259c-.806.54-1.837.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
-                    <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-                </svg>
-                Continue with Google
-            </a>
-
-            {% if facebook_enabled %}
-            <a href="/api/auth/facebook" class="facebook-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:8px">
-                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
-                </svg>
-                Continue with Facebook
-            </a>
-            {% endif %}
 
             <p class="auth-footer">Already have an account? <a href="/login">[ LOGIN ]</a></p>
         </div>
     </main>
 
     <script>
+        // Password show/hide toggle
+        (function () {
+            const EYE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+            const EYE_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+            const toggle = document.getElementById('pw-toggle');
+            const input = document.getElementById('password');
+            toggle.innerHTML = EYE;
+            toggle.addEventListener('click', () => {
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                toggle.innerHTML = show ? EYE_OFF : EYE;
+                toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            });
+        })();
+
+        // Facebook sign-up is shown but not wired up yet — tell the user on click.
+        (function () {
+            const fb = document.getElementById('fb-disabled');
+            const note = document.getElementById('fb-note');
+            if (fb && note) fb.addEventListener('click', () => { note.style.display = 'block'; });
+        })();
+
         document.getElementById('signup-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
