@@ -1181,6 +1181,16 @@ body.page #top-bar {
     text-decoration: none;
 }
 
+.auth-legal {
+    margin-top: 1.25rem;
+    font-size: 0.68rem;
+    line-height: 1.7;
+    color: var(--muted);
+    text-align: center;
+}
+.auth-legal a { color: var(--muted); text-decoration: underline; }
+.auth-legal a:hover { color: var(--green); }
+
 .auth-error {
     background: rgba(255, 51, 51, 0.08);
     border: 1px solid var(--red);
