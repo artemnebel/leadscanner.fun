@@ -22,9 +22,11 @@
     <link rel="shortcut icon" href="/favicon.ico"/>
     <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
     <style>
-        /* Full-width, full-height layout — overrides the global 900px page cap
-           so all columns fit without horizontal scrolling. */
-        .page-content { max-width: none; }
+        /* Full-width, full-height layout — overrides the global 900px page cap.
+           body is a flex column, and .page-content's `margin: 0 auto` makes it
+           shrink-wrap + center as a flex item, so the auto margin must go too
+           (not just max-width) for it to stretch edge-to-edge. */
+        .page-content { max-width: none; margin: 0; }
 
         /* ── Back link ─────────────────────────────────────────────── */
         .back-link {
