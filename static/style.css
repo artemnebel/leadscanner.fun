@@ -1125,6 +1125,22 @@ body.page #top-bar {
     letter-spacing: 0.04em;
 }
 
+/* ── Larger auth card (login + signup) ── */
+/* width (not just max-width): .page-content is a flex child that shrink-wraps,
+   so max-width never binds; min() keeps it responsive on small screens. */
+.auth-lg .auth-box       { width: min(504px, 92vw); max-width: 504px; padding: 2.4rem; }
+.auth-lg .auth-intro     { font-size: 1.02rem; margin-bottom: 1.5rem; }
+.auth-lg .auth-form      { gap: 1.2rem; }
+.auth-lg .form-group     { gap: 0.42rem; }
+.auth-lg .form-label     { font-size: 0.9rem; }
+.auth-lg .form-input     { font-size: 1.08rem; padding: 0.66rem 0.9rem; }
+.auth-lg .auth-btn       { font-size: 1.08rem; padding: 0.78rem 1.2rem; }
+.auth-lg .auth-divider   { font-size: 0.96rem; margin: 1.5rem 0; }
+.auth-lg .social-tile    { padding: 0.9rem 1rem; }
+.auth-lg .social-tile svg { width: 26px; height: 26px; }
+.auth-lg .forgot-link    { font-size: 0.9rem; }
+.auth-lg .auth-footer    { font-size: 0.96rem; margin-top: 1.5rem; }
+
 /* ── Password field with show/hide toggle ── */
 .password-wrap { position: relative; display: flex; }
 .password-wrap .form-input { flex: 1; width: 100%; padding-right: 2.6rem; }
