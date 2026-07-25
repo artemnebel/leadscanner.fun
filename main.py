@@ -336,6 +336,10 @@ async def serve_admin(request: Request):
 async def serve_admin_users(request: Request):
     return templates.TemplateResponse("admin-users.html", _ctx(request))
 
+@app.get("/admin/user")
+async def serve_admin_user_detail(request: Request):
+    return templates.TemplateResponse("admin-user-detail.html", _ctx(request))
+
 @app.api_route("/sitemap.xml", methods=["GET", "HEAD"])
 async def serve_sitemap():
     return FileResponse("static/sitemap.xml", media_type="application/xml")

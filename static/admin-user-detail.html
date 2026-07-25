@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1EHSVC4QBJ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-1EHSVC4QBJ');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User - Lead Scanner Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
+    <link rel="icon" href="/favicon.ico"/>
+    <link rel="shortcut icon" href="/favicon.ico"/>
+    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <style>
+        .back-link {
+            display: inline-block;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.78rem;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.75rem;
+        }
+        .back-link:hover { color: var(--green); }
+        .detail-title { word-break: break-all; }
+
+        /* ── Cards ─────────────────────────────────────────────────── */
+        .detail-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 0.9rem;
+            margin-bottom: 1.25rem;
+        }
+        .card {
+            border: 1px solid var(--muted);
+            background: #060a06;
+            padding: 1rem 1.1rem;
+        }
+        .card.full { margin-bottom: 1.25rem; }
+        .card h3 {
+            font-size: 0.72rem; color: var(--muted); letter-spacing: 0.12em;
+            border-bottom: 1px solid #111; padding-bottom: 6px; margin: 0 0 0.9rem;
+        }
+        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1rem; }
+        .profile-item .p-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; }
+        .profile-item .p-val { font-size: 0.9rem; color: var(--green); font-variant-numeric: tabular-nums; }
+
+        .cap-control { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .cap-control input {
+            width: 90px; background: var(--bg); border: 1px solid var(--muted);
+            color: var(--green); font-family: inherit; padding: 6px 8px;
+        }
+        .cap-control input:focus { outline: none; border-color: var(--green); }
+        .cap-btn {
+            background: none; border: 1px solid var(--muted); color: var(--green);
+            font-family: inherit; font-size: 0.8rem; padding: 6px 12px; cursor: pointer;
+        }
+        .cap-btn:hover { border-color: var(--green); color: var(--amber); }
+
+        .cat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 0.82rem; }
+        .cat-name { flex: 0 0 40%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cat-bar-track { flex: 1; height: 12px; background: #0f1f0f; border: 1px solid var(--muted); }
+        .cat-bar-fill { height: 100%; background: var(--green); }
+        .cat-count { flex: 0 0 auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+        #user-map { height: 360px; width: 100%; border: 1px solid var(--muted); background: #060a06; }
+        .map-empty { font-size: 0.8rem; color: var(--muted); padding: 1.5rem; text-align: center; border: 1px dashed var(--muted); }
+
+        /* ── History table ─────────────────────────────────────────── */
+        .table-scroll { max-height: 520px; overflow-y: auto; overflow-x: auto; border: 1px solid #111; }
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .admin-table th {
+            text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--green);
+            color: var(--muted); letter-spacing: 0.08em; font-weight: 700; white-space: nowrap;
+            position: sticky; top: 0; background: var(--bg); z-index: 2;
+        }
+        .admin-table td {
+            padding: 7px 10px; border-bottom: 1px solid #111; color: var(--green);
+            font-variant-numeric: tabular-nums; white-space: nowrap;
+        }
+        .admin-table tbody tr:nth-child(even) td { background: #070c07; }
+        .col-num { text-align: right; }
+        .muted   { color: var(--muted); }
+        .amber   { color: var(--amber); }
+        .detail-loading { padding: 2rem 0; color: var(--muted); }
+
+        @media (max-width: 560px) { .profile-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body class="page">
+    <div id="crt-overlay"></div>
+
+    <header id="top-bar">
+        <div id="logo">
+            <span id="logo-blink">█</span>
+            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <div class="nav-left">
+            <a href="/" class="nav-link">[ HOME ]</a>
+            <a href="/about" class="nav-link">[ ABOUT ]</a>
+            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
+            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
+        </div>
+        <div class="nav-right">
+            <a href="/contact" class="nav-link">[ CONTACT ]</a>
+            <a href="/pricing" class="nav-link">[ PRICING ]</a>
+            <a href="/dashboard" class="nav-link" id="nav-auth-link">[ ACCOUNT ]</a>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <a href="/admin/users" class="back-link">[ ← BACK TO USERS ]</a>
+        <h1 class="page-title detail-title" id="page-title">&gt; USER</h1>
+
+        <div id="detail-loading" class="detail-loading">LOADING...</div>
+        <div id="detail-content" style="display:none"></div>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/static/auth.js?v={{ version }}"></script>
+    <script>
+    (async function() {
+        const token = getToken();
+        if (!token) { window.location.href = '/login'; return; }
+
+        const email = new URLSearchParams(window.location.search).get('email');
+        if (!email) { window.location.href = '/admin/users'; return; }
+
+        const titleEl = document.getElementById('page-title');
+        titleEl.textContent = '> ' + email;
+        document.title = email + ' - Lead Scanner Admin';
+
+        // ── Helpers ────────────────────────────────────────────────
+        const parseDate = (s) => s ? new Date(s.replace(' ', 'T')) : null;
+        const DAY = 86400000;
+        const now = Date.now();
+        const fmtDate = (s) => s ? s.slice(0, 10) : '-';
+        const fmtDateTime = (s) => s ? s.slice(0, 16).replace('T', ' ') : '-';
+        const relDays = (s) => {
+            const d = parseDate(s); if (!d) return '-';
+            const days = Math.floor((now - d.getTime()) / DAY);
+            return days <= 0 ? 'today' : days === 1 ? '1d ago' : days + 'd ago';
+        };
+        function el(tag, cls, text) {
+            const n = document.createElement(tag);
+            if (cls) n.className = cls;
+            if (text != null) n.textContent = text;
+            return n;
+        }
+
+        // ── Fetch detail ───────────────────────────────────────────
+        let data;
+        try {
+            const res = await fetch('/api/admin/user-detail?email=' + encodeURIComponent(email), {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.status === 401 || res.status === 403) { window.location.href = '/login'; return; }
+            if (res.status === 404) {
+                document.getElementById('detail-loading').textContent = 'User not found.';
+                return;
+            }
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            data = await res.json();
+        } catch (err) {
+            document.getElementById('detail-loading').textContent = 'ERROR: could not load profile.';
+            return;
+        }
+
+        document.getElementById('detail-loading').style.display = 'none';
+        const root = document.getElementById('detail-content');
+        root.style.display = 'block';
+        render(data);
+
+        function render(data) {
+            const { user: u, stats, searches } = data;
+            root.innerHTML = '';
+
+            // ── Top cards: profile / scan cap / activity ───────────
+            const cards = el('div', 'detail-cards');
+
+            // Profile
+            const profCard = el('div', 'card');
+            profCard.appendChild(el('h3', null, 'PROFILE'));
+            const grid = el('div', 'profile-grid');
+            [
+                ['JOINED', fmtDate(u.created_at)],
+                ['FIRST SEEN', fmtDate(stats.first_seen)],
+                ['LAST ACTIVE', stats.last_active ? relDays(stats.last_active) : '-'],
+                ['ACTIVE DAYS', String(stats.active_days)],
+                ['AUTH', u.google ? 'Google' : 'Password'],
+                ['TIER', (u.tier || '').toUpperCase()],
+                ['CREDITS', String(u.lead_credits)],
+                ['STRIPE', u.has_stripe ? 'Yes' : 'No'],
+            ].forEach(([label, val]) => {
+                const item = el('div', 'profile-item');
+                item.appendChild(el('div', 'p-label', label));
+                item.appendChild(el('div', 'p-val', val));
+                grid.appendChild(item);
+            });
+            profCard.appendChild(grid);
+            cards.appendChild(profCard);
+
+            // Scan cap
+            const capCard = el('div', 'card');
+            capCard.appendChild(el('h3', null, 'SCAN CAP'));
+            const capCtl = el('div', 'cap-control');
+            capCtl.appendChild(el('span', 'muted', (u.total_scans || 0) + ' scans /'));
+            const input = document.createElement('input');
+            input.type = 'number'; input.min = '0'; input.value = u.scan_limit ?? 50;
+            const setBtn = el('button', 'cap-btn', '[ SET ]');
+            setBtn.addEventListener('click', async () => {
+                setBtn.disabled = true; setBtn.textContent = '[ ... ]';
+                try {
+                    const r = await fetch('/api/admin/set-scan-limit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ email: u.email, scan_limit: parseInt(input.value, 10) }),
+                    });
+                    if (!r.ok) throw new Error();
+                    setBtn.textContent = '[ SAVED ]';
+                } catch { setBtn.textContent = '[ ERROR ]'; }
+                finally {
+                    setBtn.disabled = false;
+                    setTimeout(() => { setBtn.textContent = '[ SET ]'; }, 1500);
+                }
+            });
+            capCtl.append(input, setBtn);
+            capCard.appendChild(capCtl);
+            cards.appendChild(capCard);
+
+            // Activity
+            const actCard = el('div', 'card');
+            actCard.appendChild(el('h3', null, 'ACTIVITY'));
+            const actGrid = el('div', 'profile-grid');
+            [
+                ['TOTAL SEARCHES', String(stats.total_searches)],
+                ['LEADS PULLED', (stats.total_results || 0).toLocaleString()],
+            ].forEach(([label, val]) => {
+                const item = el('div', 'profile-item');
+                item.appendChild(el('div', 'p-label', label));
+                item.appendChild(el('div', 'p-val', val));
+                actGrid.appendChild(item);
+            });
+            actCard.appendChild(actGrid);
+            cards.appendChild(actCard);
+
+            root.appendChild(cards);
+
+            // ── Favorite categories ────────────────────────────────
+            const catCard = el('div', 'card full');
+            catCard.appendChild(el('h3', null, 'FAVORITE CATEGORIES'));
+            const cats = (stats.top_categories || []).slice(0, 12);
+            if (cats.length === 0) {
+                catCard.appendChild(el('div', 'muted', 'No searches yet.'));
+            } else {
+                const max = cats[0].count || 1;
+                cats.forEach(c => {
+                    const row = el('div', 'cat-row');
+                    row.appendChild(el('span', 'cat-name', c.category));
+                    const track = el('div', 'cat-bar-track');
+                    const fill = el('div', 'cat-bar-fill');
+                    fill.style.width = Math.max(4, Math.round((c.count / max) * 100)) + '%';
+                    track.appendChild(fill);
+                    row.appendChild(track);
+                    row.appendChild(el('span', 'cat-count', '×' + c.count));
+                    catCard.appendChild(row);
+                });
+            }
+            root.appendChild(catCard);
+
+            // ── Search locations map ───────────────────────────────
+            const mapCard = el('div', 'card full');
+            mapCard.appendChild(el('h3', null, 'SEARCH LOCATIONS'));
+            const geo = searches.filter(s => typeof s.lat === 'number' && typeof s.lng === 'number');
+            if (geo.length === 0) {
+                mapCard.appendChild(el('div', 'map-empty', 'No location data for this user.'));
+                root.appendChild(mapCard);
+            } else {
+                const mapDiv = document.createElement('div'); mapDiv.id = 'user-map';
+                mapCard.appendChild(mapDiv);
+                root.appendChild(mapCard);
+                setTimeout(() => renderMap(geo), 60);
+            }
+
+            // ── Search history (full-width table) ──────────────────
+            const histCard = el('div', 'card full');
+            histCard.appendChild(el('h3', null, `SEARCH HISTORY (${searches.length})`));
+            if (searches.length === 0) {
+                histCard.appendChild(el('div', 'muted', 'No searches yet.'));
+            } else {
+                const scroll = el('div', 'table-scroll');
+                const table = el('table', 'admin-table');
+                const thead = document.createElement('thead');
+                const htr = document.createElement('tr');
+                ['#', 'WHEN', 'CATEGORY', 'RADIUS', 'RESULTS'].forEach((h, i) => {
+                    const th = document.createElement('th');
+                    if (i === 4) th.className = 'col-num';
+                    th.textContent = h;
+                    htr.appendChild(th);
+                });
+                thead.appendChild(htr);
+                table.appendChild(thead);
+                const tbody = document.createElement('tbody');
+                searches.forEach((s, i) => {
+                    const tr = document.createElement('tr');
+                    tr.append(
+                        el('td', 'muted', String(i + 1)),
+                        el('td', 'muted', fmtDateTime(s.created_at)),
+                        el('td', null, s.category || '-'),
+                        el('td', 'muted', s.radius_meters ? (s.radius_meters / 1000).toFixed(0) + 'km' : '-'),
+                        el('td', 'col-num amber', String(s.results ?? 0)),
+                    );
+                    tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+                scroll.appendChild(table);
+                histCard.appendChild(scroll);
+            }
+            root.appendChild(histCard);
+        }
+
+        let userMap = null, mapLayer = null;
+        function renderMap(geo) {
+            const mapDiv = document.getElementById('user-map');
+            if (!mapDiv) return;
+            if (!userMap) {
+                userMap = L.map('user-map', { attributionControl: false, zoomControl: true });
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19,
+                }).addTo(userMap);
+            }
+            if (mapLayer) { mapLayer.remove(); }
+            mapLayer = L.layerGroup().addTo(userMap);
+            const pts = [];
+            geo.forEach(s => {
+                const m = L.circleMarker([s.lat, s.lng], {
+                    radius: 5, color: '#33ff00', weight: 1, fillColor: '#33ff00', fillOpacity: 0.5,
+                });
+                m.bindPopup(`${s.category || '?'} — ${s.results ?? 0} leads`);
+                m.addTo(mapLayer);
+                pts.push([s.lat, s.lng]);
+            });
+            userMap.invalidateSize();
+            if (pts.length === 1) userMap.setView(pts[0], 11);
+            else userMap.fitBounds(pts, { padding: [24, 24] });
+        }
+    })();
+    </script>
+</body>
+</html>

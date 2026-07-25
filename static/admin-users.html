@@ -15,7 +15,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
@@ -140,89 +139,6 @@
         .promo-ok      { color: var(--green); }
         .promo-fail    { color: var(--red); font-weight: 700; }
         .promo-pending { color: var(--amber); }
-
-        /* ── Drawer ────────────────────────────────────────────────── */
-        .drawer-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.55);
-            opacity: 0; visibility: hidden;
-            transition: opacity 0.2s ease, visibility 0.2s ease;
-            z-index: 900;
-        }
-        .drawer-overlay.open { opacity: 1; visibility: visible; }
-        .drawer {
-            position: fixed; top: 0; right: 0; bottom: 0;
-            width: min(480px, 100%);
-            background: var(--bg);
-            border-left: 1px solid var(--green);
-            box-shadow: -4px 0 24px rgba(0,0,0,0.6);
-            transform: translateX(100%);
-            transition: transform 0.22s ease-out;
-            z-index: 950;
-            display: flex; flex-direction: column;
-            overflow-y: auto;
-        }
-        .drawer.open { transform: translateX(0); }
-        .drawer-header {
-            position: sticky; top: 0;
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 1rem;
-            padding: 1rem 1.25rem;
-            background: var(--bg);
-            border-bottom: 1px solid var(--muted);
-        }
-        .drawer-title { color: var(--amber); font-weight: 700; font-size: 0.9rem; word-break: break-all; }
-        .drawer-close {
-            background: none; border: 1px solid var(--muted); color: var(--green);
-            font-family: inherit; font-size: 0.8rem; padding: 4px 10px; cursor: pointer;
-            flex-shrink: 0;
-        }
-        .drawer-close:hover { border-color: var(--green); color: var(--amber); }
-        .drawer-body { padding: 1rem 1.25rem 2rem; }
-        .drawer-section { margin-bottom: 1.5rem; }
-        .drawer-section h3 {
-            font-size: 0.72rem; color: var(--muted); letter-spacing: 0.12em;
-            border-bottom: 1px solid #111; padding-bottom: 4px; margin-bottom: 0.75rem;
-        }
-        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; }
-        .profile-item .p-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; }
-        .profile-item .p-val { font-size: 0.85rem; color: var(--green); font-variant-numeric: tabular-nums; }
-
-        .cap-control { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .cap-control input {
-            width: 80px; background: var(--bg); border: 1px solid var(--muted);
-            color: var(--green); font-family: inherit; padding: 5px 8px;
-        }
-        .cap-control input:focus { outline: none; border-color: var(--green); }
-
-        .cat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; }
-        .cat-name { flex: 0 0 42%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cat-bar-track { flex: 1; height: 10px; background: #0f1f0f; border: 1px solid var(--muted); }
-        .cat-bar-fill { height: 100%; background: var(--green); }
-        .cat-count { flex: 0 0 auto; color: var(--muted); font-variant-numeric: tabular-nums; }
-
-        #user-map { height: 200px; width: 100%; border: 1px solid var(--muted); background: #060a06; }
-        .map-empty { font-size: 0.75rem; color: var(--muted); padding: 1rem; text-align: center; border: 1px dashed var(--muted); }
-
-        .search-list { max-height: 320px; overflow-y: auto; border: 1px solid #111; }
-        .search-item {
-            display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px;
-            padding: 6px 10px; border-bottom: 1px solid #111; font-size: 0.76rem;
-            font-variant-numeric: tabular-nums; align-items: baseline;
-        }
-        .search-item:last-child { border-bottom: none; }
-        .search-item .s-when { color: var(--muted); }
-        .search-item .s-cat { color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .search-item .s-res { color: var(--amber); }
-
-        .drawer-loading { padding: 2rem 1.25rem; color: var(--muted); }
-
-        @media (prefers-reduced-motion: reduce) {
-            .drawer, .drawer-overlay, tr.user-row { transition: none; }
-        }
-        @media (max-width: 560px) {
-            .profile-grid { grid-template-columns: 1fr; }
-        }
     </style>
 </head>
 <body class="page">
@@ -295,17 +211,6 @@
         </div>
     </main>
 
-    <!-- User detail drawer -->
-    <div class="drawer-overlay" id="drawer-overlay"></div>
-    <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="User profile" tabindex="-1">
-        <div class="drawer-header">
-            <span class="drawer-title" id="drawer-title">&gt; USER</span>
-            <button class="drawer-close" id="drawer-close">[ CLOSE ]</button>
-        </div>
-        <div class="drawer-body" id="drawer-body"></div>
-    </aside>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="/static/auth.js?v={{ version }}"></script>
     <script>
     (async function() {
@@ -331,7 +236,6 @@
         const DAY = 86400000;
         const now = Date.now();
         const fmtDate = (s) => s ? s.slice(0, 10) : '-';
-        const fmtDateTime = (s) => s ? s.slice(0, 16).replace('T', ' ') : '-';
         const relDays = (s) => {
             const d = parseDate(s); if (!d) return '-';
             const days = Math.floor((now - d.getTime()) / DAY);
@@ -430,10 +334,12 @@
                 if (capped) parts.push('<span class="flag-cap">[CAP]</span>');
                 flags.innerHTML = parts.join(' ');  // trusted static strings
 
+                // Clicking a row (anywhere but the checkbox) opens the full-page detail.
+                const goDetail = () => { window.location.href = '/admin/user?email=' + encodeURIComponent(u.email); };
                 tr.append(checkTd, num, email, tier, scans, leads, searches, active, joined, promo, flags);
-                tr.addEventListener('click', () => openDrawer(u.email));
+                tr.addEventListener('click', goDetail);
                 tr.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(u.email); }
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goDetail(); }
                 });
                 tbody.appendChild(tr);
             });
@@ -625,206 +531,6 @@
         });
 
         render();
-
-        // ── Drawer ─────────────────────────────────────────────────
-        const overlay = document.getElementById('drawer-overlay');
-        const drawer = document.getElementById('drawer');
-        const drawerBody = document.getElementById('drawer-body');
-        const drawerTitle = document.getElementById('drawer-title');
-        let drawerMap = null, mapLayer = null;
-
-        function closeDrawer() {
-            drawer.classList.remove('open');
-            overlay.classList.remove('open');
-        }
-        overlay.addEventListener('click', closeDrawer);
-        document.getElementById('drawer-close').addEventListener('click', closeDrawer);
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
-
-        function el(tag, cls, text) {
-            const n = document.createElement(tag);
-            if (cls) n.className = cls;
-            if (text != null) n.textContent = text;
-            return n;
-        }
-
-        async function openDrawer(email) {
-            drawerTitle.textContent = '> ' + email;
-            drawerBody.innerHTML = '<div class="drawer-loading">LOADING...</div>';
-            drawer.classList.add('open');
-            overlay.classList.add('open');
-            drawer.focus();
-
-            let data;
-            try {
-                const res = await fetch('/api/admin/user-detail?email=' + encodeURIComponent(email), {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                data = await res.json();
-            } catch (err) {
-                drawerBody.innerHTML = '<div class="drawer-loading">ERROR: could not load profile.</div>';
-                return;
-            }
-            renderDrawer(data);
-        }
-
-        function renderDrawer(data) {
-            const { user: u, stats, searches } = data;
-            drawerBody.innerHTML = '';
-
-            // Profile summary
-            const profSec = el('div', 'drawer-section');
-            profSec.appendChild(el('h3', null, 'PROFILE'));
-            const grid = el('div', 'profile-grid');
-            const items = [
-                ['JOINED', fmtDate(u.created_at)],
-                ['FIRST SEEN', fmtDate(stats.first_seen)],
-                ['LAST ACTIVE', stats.last_active ? relDays(stats.last_active) : '-'],
-                ['ACTIVE DAYS', String(stats.active_days)],
-                ['AUTH', u.google ? 'Google' : 'Password'],
-                ['TIER', (u.tier || '').toUpperCase()],
-                ['CREDITS', String(u.lead_credits)],
-                ['STRIPE', u.has_stripe ? 'Yes' : 'No'],
-            ];
-            items.forEach(([label, val]) => {
-                const item = el('div', 'profile-item');
-                item.appendChild(el('div', 'p-label', label));
-                item.appendChild(el('div', 'p-val', val));
-                grid.appendChild(item);
-            });
-            profSec.appendChild(grid);
-            drawerBody.appendChild(profSec);
-
-            // Scan cap control
-            const capSec = el('div', 'drawer-section');
-            capSec.appendChild(el('h3', null, 'SCAN CAP'));
-            const capCtl = el('div', 'cap-control');
-            capCtl.appendChild(el('span', null, (u.total_scans || 0) + ' scans /'));
-            const input = document.createElement('input');
-            input.type = 'number'; input.min = '0'; input.value = u.scan_limit ?? 50;
-            const setBtn = el('button', 'drawer-close', '[ SET ]');
-            const capStatus = el('span', 'muted', '');
-            setBtn.addEventListener('click', async () => {
-                setBtn.disabled = true; setBtn.textContent = '[ ... ]';
-                try {
-                    const r = await fetch('/api/admin/set-scan-limit', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                        body: JSON.stringify({ email: u.email, scan_limit: parseInt(input.value, 10) }),
-                    });
-                    if (!r.ok) throw new Error();
-                    setBtn.textContent = '[ SAVED ]';
-                    // reflect in the in-memory list + table
-                    const row = users.find(x => x.email === u.email);
-                    if (row) row.scan_limit = parseInt(input.value, 10);
-                    render();
-                } catch { setBtn.textContent = '[ ERROR ]'; }
-                finally {
-                    setBtn.disabled = false;
-                    setTimeout(() => { setBtn.textContent = '[ SET ]'; }, 1500);
-                }
-            });
-            capCtl.append(input, setBtn, capStatus);
-            capSec.appendChild(capCtl);
-            drawerBody.appendChild(capSec);
-
-            // Activity stats
-            const actSec = el('div', 'drawer-section');
-            actSec.appendChild(el('h3', null, 'ACTIVITY'));
-            const actGrid = el('div', 'profile-grid');
-            [
-                ['TOTAL SEARCHES', String(stats.total_searches)],
-                ['LEADS PULLED', (stats.total_results || 0).toLocaleString()],
-            ].forEach(([label, val]) => {
-                const item = el('div', 'profile-item');
-                item.appendChild(el('div', 'p-label', label));
-                item.appendChild(el('div', 'p-val', val));
-                actGrid.appendChild(item);
-            });
-            actSec.appendChild(actGrid);
-            drawerBody.appendChild(actSec);
-
-            // Favorite categories
-            const catSec = el('div', 'drawer-section');
-            catSec.appendChild(el('h3', null, 'FAVORITE CATEGORIES'));
-            const cats = (stats.top_categories || []).slice(0, 10);
-            if (cats.length === 0) {
-                catSec.appendChild(el('div', 'muted', 'No searches yet.'));
-            } else {
-                const max = cats[0].count || 1;
-                cats.forEach(c => {
-                    const row = el('div', 'cat-row');
-                    row.appendChild(el('span', 'cat-name', c.category));
-                    const track = el('div', 'cat-bar-track');
-                    const fill = el('div', 'cat-bar-fill');
-                    fill.style.width = Math.max(4, Math.round((c.count / max) * 100)) + '%';
-                    track.appendChild(fill);
-                    row.appendChild(track);
-                    row.appendChild(el('span', 'cat-count', '×' + c.count));
-                    catSec.appendChild(row);
-                });
-            }
-            drawerBody.appendChild(catSec);
-
-            // Search locations map
-            const mapSec = el('div', 'drawer-section');
-            mapSec.appendChild(el('h3', null, 'SEARCH LOCATIONS'));
-            const geo = searches.filter(s => typeof s.lat === 'number' && typeof s.lng === 'number');
-            if (geo.length === 0) {
-                mapSec.appendChild(el('div', 'map-empty', 'No location data for this user.'));
-                drawerBody.appendChild(mapSec);
-            } else {
-                const mapDiv = document.createElement('div'); mapDiv.id = 'user-map';
-                mapSec.appendChild(mapDiv);
-                drawerBody.appendChild(mapSec);
-                setTimeout(() => renderMap(geo), 260); // after drawer transition
-            }
-
-            // Full search history
-            const histSec = el('div', 'drawer-section');
-            histSec.appendChild(el('h3', null, `SEARCH HISTORY (${searches.length})`));
-            if (searches.length === 0) {
-                histSec.appendChild(el('div', 'muted', 'No searches yet.'));
-            } else {
-                const list = el('div', 'search-list');
-                searches.forEach(s => {
-                    const item = el('div', 'search-item');
-                    item.appendChild(el('span', 's-when', fmtDateTime(s.created_at)));
-                    item.appendChild(el('span', 's-cat', s.category || '-'));
-                    item.appendChild(el('span', 'muted', s.radius_meters ? (s.radius_meters / 1000).toFixed(0) + 'km' : '-'));
-                    item.appendChild(el('span', 's-res', String(s.results ?? 0)));
-                    list.appendChild(item);
-                });
-                histSec.appendChild(list);
-            }
-            drawerBody.appendChild(histSec);
-        }
-
-        function renderMap(geo) {
-            const mapDiv = document.getElementById('user-map');
-            if (!mapDiv) return;
-            if (!drawerMap) {
-                drawerMap = L.map('user-map', { attributionControl: false, zoomControl: true });
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 19,
-                }).addTo(drawerMap);
-            }
-            if (mapLayer) { mapLayer.remove(); }
-            mapLayer = L.layerGroup().addTo(drawerMap);
-            const pts = [];
-            geo.forEach(s => {
-                const m = L.circleMarker([s.lat, s.lng], {
-                    radius: 5, color: '#33ff00', weight: 1, fillColor: '#33ff00', fillOpacity: 0.5,
-                });
-                m.bindPopup(`${s.category || '?'} — ${s.results ?? 0} leads`);
-                m.addTo(mapLayer);
-                pts.push([s.lat, s.lng]);
-            });
-            drawerMap.invalidateSize();
-            if (pts.length === 1) drawerMap.setView(pts[0], 11);
-            else drawerMap.fitBounds(pts, { padding: [24, 24] });
-        }
     })();
     </script>
 </body>
