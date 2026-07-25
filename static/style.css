@@ -1371,10 +1371,8 @@ body.page #top-bar {
     inset: 0;
     z-index: 500;
     background: var(--bg);
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;   /* single-screen hero only — no scrolling, START is the only way forward */
     transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.75s;
-    scroll-behavior: smooth;
 }
 
 #landing-overlay.launching {
