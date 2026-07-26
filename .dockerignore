@@ -1,0 +1,22 @@
+# Keep secrets and junk out of the image build context.
+# NOTE: this only affects the image build (COPY . .). The dev bind-mount in
+# docker-compose still exposes the host tree at runtime, which is why the
+# compose file ALSO masks .env / .env.local inside the container.
+.git
+.gitignore
+.env
+.env.local
+.env.docker
+.env.docker.example
+leads.db
+*.db
+__pycache__/
+*.pyc
+*.pyo
+*.csv
+*.sql
+.claude/
+*.md
+.venv/
+venv/
+node_modules/

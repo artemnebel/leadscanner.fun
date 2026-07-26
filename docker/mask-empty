@@ -1,0 +1,3 @@
+# Intentionally (almost) empty. Mounted over /app/.env and /app/.env.local in the
+# dev container so the app never reads host env files — dev env comes only from
+# .env.docker. Do not delete; docker-compose mounts this path.

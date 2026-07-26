@@ -1,0 +1,40 @@
+# Local Docker dev stack for Lead Scanner. Fully isolated from production:
+#   - its own Postgres (named volume `pgdata`)
+#   - env ONLY from .env.docker (gitignored); host .env/.env.local are masked
+#     inside the container so prod/live secrets never leak into dev.
+# Start with:  docker compose up --build
+
+services:
+  web:
+    build: .
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./:/app                                 # live code -> hot reload
+      - ./docker/mask-empty:/app/.env:ro        # hide host .env from the container
+      - ./docker/mask-empty:/app/.env.local:ro  # hide host .env.local from the container
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: leadscanner
+      POSTGRES_PASSWORD: leadscanner
+      POSTGRES_DB: leadscanner
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"   # host 5433 -> container 5432 (optional DB inspection)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leadscanner"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

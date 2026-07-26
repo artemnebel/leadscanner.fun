@@ -1,5 +1,6 @@
 .env
 .env.local
+.env.docker
 __pycache__/
 *.pyc
 .claude/
