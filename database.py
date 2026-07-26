@@ -26,6 +26,7 @@ class User(Base):
     password_hash = Column(String, nullable=True)   # null for Google-only accounts
     google_id = Column(String, nullable=True, unique=True)
     facebook_id = Column(String, nullable=True, unique=True)  # Facebook user id for social login
+    github_id = Column(String, nullable=True, unique=True)    # GitHub user id for social login
     tier = Column(String, default="free")           # legacy: free | starter | pro | business | unlimited (grandfathered subs)
     scans_used = Column(Integer, default=0)         # legacy, unused for new pricing
     total_scans = Column(Integer, default=0)        # lifetime scan count — never resets; backs the hidden scan cap
@@ -105,6 +106,7 @@ def init_db():
         ("promo_sent_at", "TIMESTAMP"),
         ("promo_status", "VARCHAR"),
         ("facebook_id", "VARCHAR"),
+        ("github_id", "VARCHAR"),
     ]
     with engine.connect() as conn:
         for col, typedef in migrations:

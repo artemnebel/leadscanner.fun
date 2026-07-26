@@ -45,6 +45,8 @@ GOOGLE_CLIENT_ID      = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET  = os.getenv("GOOGLE_CLIENT_SECRET")
 FACEBOOK_APP_ID       = os.getenv("FACEBOOK_APP_ID")
 FACEBOOK_APP_SECRET   = os.getenv("FACEBOOK_APP_SECRET")
+GITHUB_CLIENT_ID      = os.getenv("GITHUB_CLIENT_ID")
+GITHUB_CLIENT_SECRET  = os.getenv("GITHUB_CLIENT_SECRET")
 STRIPE_SECRET_KEY     = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 BASE_URL              = os.getenv("BASE_URL", "http://localhost:8000")
@@ -275,6 +277,7 @@ def _ctx(request: Request):
         "request": request,
         "version": APP_VERSION,
         "facebook_enabled": bool(FACEBOOK_APP_ID and FACEBOOK_APP_SECRET),
+        "github_enabled": bool(GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET),
     }
 
 @app.get("/")
@@ -1055,6 +1058,80 @@ async def facebook_callback(
         db.refresh(user)
     elif not user.facebook_id:
         user.facebook_id = fb_id
+        db.commit()
+
+    jwt_token = create_jwt(user.id)
+    return RedirectResponse(f"/?token={jwt_token}")
+
+# ── GitHub OAuth ───────────────────────────────────────────────────────────────
+GITHUB_API_HEADERS = {"Accept": "application/json", "User-Agent": "LeadScanner"}
+
+@app.get("/api/auth/github")
+async def github_login():
+    if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="GitHub login not configured.")
+    redirect_uri = f"{BASE_URL}/api/auth/github/callback"
+    params = urlencode({
+        "client_id": GITHUB_CLIENT_ID,
+        "redirect_uri": redirect_uri,
+        "scope": "read:user user:email",
+        "allow_signup": "true",
+    })
+    return RedirectResponse(f"https://github.com/login/oauth/authorize?{params}")
+
+@app.get("/api/auth/github/callback")
+async def github_callback(
+    code: str | None = None,
+    error: str | None = None,
+    db: Session = Depends(get_db),
+):
+    if error or not code:
+        return RedirectResponse("/?auth_error=github_failed")
+    redirect_uri = f"{BASE_URL}/api/auth/github/callback"
+    async with httpx.AsyncClient() as client:
+        token_resp = await client.post(
+            "https://github.com/login/oauth/access_token",
+            headers=GITHUB_API_HEADERS,
+            data={
+                "client_id": GITHUB_CLIENT_ID,
+                "client_secret": GITHUB_CLIENT_SECRET,
+                "code": code,
+                "redirect_uri": redirect_uri,
+            },
+        )
+        access_token = token_resp.json().get("access_token")
+        if not access_token:
+            return RedirectResponse("/?auth_error=github_failed")
+
+        auth_headers = {**GITHUB_API_HEADERS, "Authorization": f"Bearer {access_token}"}
+        gh = (await client.get("https://api.github.com/user", headers=auth_headers)).json()
+        gh_id = str(gh.get("id")) if gh.get("id") is not None else None
+        email = gh.get("email")
+        # GitHub omits the email when it's set to private — fetch the verified primary.
+        if not email:
+            try:
+                emails = (await client.get("https://api.github.com/user/emails", headers=auth_headers)).json()
+            except Exception:
+                emails = []
+            if isinstance(emails, list):
+                chosen = (next((e for e in emails if e.get("primary") and e.get("verified")), None)
+                          or next((e for e in emails if e.get("verified")), None))
+                if chosen:
+                    email = chosen.get("email")
+
+    if not gh_id:
+        return RedirectResponse("/?auth_error=github_failed")
+    if not email:
+        return RedirectResponse("/?auth_error=github_no_email")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        user = User(email=email, github_id=gh_id)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif not user.github_id:
+        user.github_id = gh_id
         db.commit()
 
     jwt_token = create_jwt(user.id)
