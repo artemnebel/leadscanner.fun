@@ -41,6 +41,13 @@ body {
     );
 }
 
+/* Lift auth inputs & social tiles above the CRT scanline overlay so its lines
+   don't show through them (most visible on the light inputs & the blue FB tile). */
+.form-input,
+.password-wrap,
+.social-tile { position: relative; z-index: 100000; }
+.pw-toggle { z-index: 100001; }
+
 /* ===== ANIMATIONS ===== */
 @keyframes blink {
     0%, 49% { opacity: 1; }
@@ -1199,7 +1206,7 @@ body.page #top-bar {
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 2000;
+    z-index: 100002;   /* above the lifted inputs/tiles (100000) and CRT overlay */
 }
 .auth-loader-overlay.show { display: flex; }
 
