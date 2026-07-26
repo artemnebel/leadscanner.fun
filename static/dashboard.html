@@ -78,6 +78,23 @@
             </div>
 
             <div class="page-section">
+                <h2>&gt; PASSWORD</h2>
+                <p id="pw-blurb" style="font-size:0.9rem;opacity:0.85"></p>
+                <div id="pw-msg" style="display:none;margin-top:0.6rem;font-size:0.85rem"></div>
+                <form id="set-pw-form" class="auth-form" style="max-width:420px;margin-top:0.75rem">
+                    <div class="form-group" id="current-pw-group" style="display:none">
+                        <label class="form-label">&gt; CURRENT PASSWORD</label>
+                        <input type="password" id="current-pw" class="form-input" autocomplete="current-password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">&gt; NEW PASSWORD</label>
+                        <input type="password" id="new-pw" class="form-input" minlength="8" autocomplete="new-password" placeholder="at least 8 characters">
+                    </div>
+                    <button type="submit" class="auth-btn" id="set-pw-btn">[ SET PASSWORD ]</button>
+                </form>
+            </div>
+
+            <div class="page-section">
                 <h2>&gt; MY CLIENTS</h2>
                 <p>Save leads into your personal client portal — call them, log notes, and track status from new to won.</p>
                 <a href="/clients" class="auth-btn" style="text-decoration:none;margin-top:0.5rem;display:inline-block">[ OPEN CLIENT PORTAL ]</a>
@@ -146,6 +163,67 @@
                     el.style.display = 'block';
                 }
             }
+
+            // ── Password: set (Google-only accounts) or change ──
+            let hasPassword = !!user.has_password;
+            const pwBlurb = document.getElementById('pw-blurb');
+            const pwCurrentGroup = document.getElementById('current-pw-group');
+            const pwBtn = document.getElementById('set-pw-btn');
+            function renderPwSection() {
+                if (hasPassword) {
+                    pwBlurb.textContent = 'Change your Lead Scanner password.';
+                    pwCurrentGroup.style.display = 'flex';
+                    pwBtn.textContent = '[ CHANGE PASSWORD ]';
+                } else {
+                    pwBlurb.textContent = user.google
+                        ? 'You signed up with Google, so you have no password yet. Set one to also log in with your email and password.'
+                        : 'Set a password to log in with your email and password.';
+                    pwCurrentGroup.style.display = 'none';
+                    pwBtn.textContent = '[ SET PASSWORD ]';
+                }
+            }
+            renderPwSection();
+
+            document.getElementById('set-pw-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const msg = document.getElementById('pw-msg');
+                const newPw = document.getElementById('new-pw').value;
+                const curPw = document.getElementById('current-pw').value;
+                msg.style.display = 'none';
+                if (newPw.length < 8) {
+                    msg.style.color = 'var(--red)';
+                    msg.textContent = '> Password must be at least 8 characters.';
+                    msg.style.display = 'block';
+                    return;
+                }
+                pwBtn.disabled = true;
+                pwBtn.textContent = '[ SAVING... ]';
+                try {
+                    const payload = { password: newPw };
+                    if (hasPassword) payload.current_password = curPw;
+                    const res = await fetch('/api/auth/set-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify(payload),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.detail || 'Could not save password.');
+                    hasPassword = true;
+                    localStorage.removeItem('ls_user');  // force a fresh profile next load
+                    document.getElementById('new-pw').value = '';
+                    document.getElementById('current-pw').value = '';
+                    msg.style.color = 'var(--green)';
+                    msg.textContent = '> Password saved. You can now log in with your email and password.';
+                    msg.style.display = 'block';
+                } catch (err) {
+                    msg.style.color = 'var(--red)';
+                    msg.textContent = '> ' + err.message;
+                    msg.style.display = 'block';
+                } finally {
+                    pwBtn.disabled = false;
+                    renderPwSection();
+                }
+            });
         })();
 
         async function openPortal() {

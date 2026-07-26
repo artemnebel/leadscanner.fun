@@ -154,7 +154,7 @@
                 if (!res.ok) {
                     loader.classList.remove('show');
                     errEl.textContent = data.detail === 'GOOGLE_ACCOUNT'
-                        ? '> This account was created with Google. Use the "Continue with Google" button below.'
+                        ? '> This account uses Google sign-in and has no password yet. Use "Continue with Google" above — or set a password from your dashboard (or via "Forgot password") to enable email login.'
                         : '> ERR: ' + (data.detail || 'Login failed.');
                     errEl.style.display = 'block';
                     btn.textContent = '[ AUTHENTICATE ]';

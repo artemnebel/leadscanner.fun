@@ -510,6 +510,32 @@ async def reset_password(request: Request, body: ResetPasswordBody, db: Session 
     db.commit()
     return {"ok": True}
 
+class SetPasswordBody(BaseModel):
+    password: str
+    current_password: str | None = None
+
+@app.post("/api/auth/set-password")
+@limiter.limit("10/minute")
+async def set_password(
+    request: Request,
+    body: SetPasswordBody,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Let a logged-in user set (or change) their password. Google-only accounts
+    have no password yet, so they can set one directly to enable email + password
+    login. Accounts that already have a password must confirm the current one."""
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    if len(body.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+    if user.password_hash:
+        if not body.current_password or not verify_password(body.current_password, user.password_hash):
+            raise HTTPException(status_code=400, detail="Current password is incorrect.")
+    user.password_hash = hash_password(body.password)
+    db.commit()
+    return {"ok": True, "has_password": True}
+
 @app.get("/api/healthz")
 async def healthz(db: Session = Depends(get_db)):
     try:
@@ -528,6 +554,8 @@ async def me(user=Depends(get_current_user)):
         "email": user.email,
         "tier": effective_tier,
         "is_admin": is_admin,
+        "has_password": bool(user.password_hash),  # false for Google-only accounts
+        "google": bool(user.google_id),
         "plan": plan_payload(user),
         "usage": usage_info(user),
     }
