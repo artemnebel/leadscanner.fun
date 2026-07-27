@@ -1753,6 +1753,91 @@ async def search_leads(
     }
 
 
+# ── Landing-page demo search ──────────────────────────────────────────────────
+# Public (no auth) but tightly bounded: one cached Places call per scan (no
+# grid tiling), hard IP rate limit, few results, and masked phone numbers so
+# the demo can't be scraped for free leads.
+
+DEMO_RADIUS_M = 24_140   # fixed 15 miles — matches the demo map circle
+DEMO_MAX_LEADS = 5
+
+
+class DemoSearchRequest(BaseModel):
+    category: str
+    lat: float
+    lng: float
+
+
+def _mask_phone(phone: str) -> str:
+    """Keep the first 3 digits (area code), mask the rest: (717) •••-••••"""
+    seen = 0
+    out = []
+    for ch in phone:
+        if ch.isdigit():
+            seen += 1
+            out.append(ch if seen <= 3 else "•")
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+@app.post("/api/demo-search")
+@limiter.limit("3/minute")
+async def demo_search(request: Request, req: DemoSearchRequest, db: Session = Depends(get_db)):
+    if not API_KEY:
+        raise HTTPException(status_code=500, detail="GOOGLE_MAPS_API_KEY not set in .env file")
+
+    category = req.category.strip()[:60] or "plumbers"
+    if not (-90 <= req.lat <= 90 and -180 <= req.lng <= 180):
+        raise HTTPException(status_code=400, detail="Invalid coordinates")
+
+    # Single Places call (max_pages=1) through the shared 30-day cache — repeat
+    # demo scans of the same area/category cost nothing.
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        places = await get_nearby_places(
+            client, db, req.lat, req.lng, DEMO_RADIUS_M, category, max_pages=1
+        )
+
+    # Same lead filter as the real scan: open, no website, phone + reviews.
+    leads = []
+    for place in places:
+        if place.get("businessStatus") == "CLOSED_PERMANENTLY":
+            continue
+        if place.get("websiteUri"):
+            continue
+        phone = place.get("nationalPhoneNumber", "") or ""
+        review_count = place.get("userRatingCount") or 0
+        if not phone or review_count == 0:
+            continue
+        leads.append(
+            {
+                "name": place.get("displayName", {}).get("text", "Unknown"),
+                "city": place.get("formattedAddress", ""),
+                "phone": _mask_phone(phone),
+                "rating": place.get("rating"),
+                "reviews": review_count,
+            }
+        )
+
+    total = len(leads)
+
+    # Log for the admin panel like a normal search — analytics only.
+    try:
+        db.add(SearchLog(
+            user_email="(demo)",
+            category=category,
+            lat=req.lat,
+            lng=req.lng,
+            radius_meters=DEMO_RADIUS_M,
+            results=total,
+        ))
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    return {"leads": leads[:DEMO_MAX_LEADS], "total": total}
+
+
 if __name__ == "__main__":
     import uvicorn
 
