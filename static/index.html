@@ -203,9 +203,27 @@
 
     /* Cube removed — center the hero text in the middle of the panel */
     .lp-frame .land-hero { justify-content: center; text-align: center; }
-    .lp-frame .land-hero-left { max-width: 640px; }
-    .lp-frame .land-sub { margin-left: auto; margin-right: auto; }
+    .lp-frame .land-hero-left { max-width: 620px; }
+    .lp-frame .land-headline { font-size: clamp(2rem, 4.6vw, 3.3rem); margin-bottom: 1.1rem; }
+    .lp-frame .land-sub { margin: 0 auto 2rem; max-width: 460px; font-size: 15px; }
     .lp-frame .land-bullets { align-items: center; }
+
+    /* Prominent, filled primary CTA (better conversion than the outline default) */
+    .lp-frame .land-free-cta {
+        background: var(--green); color: var(--bg);
+        border-color: var(--green);
+        font-size: 14px; letter-spacing: 0.06em;
+        padding: 14px 34px;
+        box-shadow: 0 0 26px rgba(51,255,0,0.35);
+    }
+    .lp-frame .land-free-cta:hover {
+        background: #5cff33; color: var(--bg);
+        box-shadow: 0 0 34px rgba(51,255,0,0.55);
+    }
+    .lp-frame .land-hero-trust {
+        color: rgba(122,200,122,0.7); font-size: 12px; letter-spacing: 0.02em;
+        margin: 16px 0 0;
+    }
 
     @media (max-width: 640px) {
         .lp-frame { margin: 6px 10px 10px; border-radius: 22px; }
@@ -443,9 +461,10 @@
         <div class="lp-frame">
         <section class="land-hero">
             <div class="land-hero-left">
-                <h1 class="land-headline">Find businesses without a website</h1>
-                <p class="land-sub">Scan any city. Find local businesses with no website. Export leads in seconds. Free to start — no card required.</p>
-                <a href="/signup" class="land-free-cta" id="land-start-btn">[ Demo ]</a>
+                <h1 class="land-headline">Find local businesses without a website</h1>
+                <p class="land-sub">Scan any city and pull businesses that have no website, with phone numbers ready to call.</p>
+                <a href="/signup" class="land-free-cta" id="land-start-btn">Start scanning free</a>
+                <p class="land-hero-trust">No credit card. 5 free scans every day.</p>
             </div>
         </section>
         </div>
