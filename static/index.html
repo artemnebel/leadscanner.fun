@@ -176,57 +176,33 @@
         .lp-nav { padding: 0 1.25rem; }
     }
 
-    /* ===== Landing hero — inset rounded blue panel on a white page ===== */
-    #landing-overlay { background: #ffffff; overflow-y: auto; overflow-x: hidden; }
+    /* ===== White edges around the ORIGINAL hero: white page behind, hero
+       inset in a rounded dark panel with white gaps left/right/bottom.
+       Nothing inside the hero is changed. ===== */
+    #landing-overlay { background: #ffffff; }
 
-    .lp-hero {
-        margin: 76px 16px 16px;                  /* clears the 68px nav; white gap L/R/bottom */
-        min-height: calc(100vh - 92px);
+    .lp-frame {
+        margin: 76px 16px 16px;              /* clears the 68px nav; white gap L/R/bottom */
+        height: calc(100vh - 92px);          /* 76 top + 16 bottom = full locked screen */
         border-radius: 30px;
-        background:
-            radial-gradient(1100px 520px at 72% -8%, rgba(255,255,255,0.30), transparent 60%),
-            linear-gradient(180deg, #3b82f6 0%, #1f63dd 42%, #0c3aa6 100%);
-        display: flex; align-items: center; justify-content: center; text-align: center;
-        padding: 40px 24px 72px; box-sizing: border-box; overflow: hidden;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background: var(--bg);
+        overflow: hidden;
+        position: relative;
     }
-    .lp-hero-inner { width: 100%; max-width: 760px; }
-    .lp-hero-title {
-        color: #fff; font-size: clamp(34px, 5vw, 60px); font-weight: 800;
-        letter-spacing: -0.02em; line-height: 1.05; margin: 0 0 16px;
+    /* Landing sits above #crt-overlay, so re-add the scanlines inside the panel
+       to keep the hero looking exactly as before. */
+    .lp-frame::after {
+        content: '';
+        position: absolute; inset: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.055) 2px, rgba(0,0,0,0.055) 4px);
     }
-    .lp-hero-sub {
-        color: rgba(255,255,255,0.88); font-size: clamp(15px, 1.6vw, 19px);
-        font-weight: 500; margin: 0 auto 30px; max-width: 560px; line-height: 1.5;
-    }
-    .lp-hero-search {
-        display: flex; align-items: center; gap: 8px;
-        background: #fff; border-radius: 18px; padding: 10px 10px 10px 20px;
-        max-width: 640px; margin: 0 auto; box-shadow: 0 18px 50px rgba(6,26,80,0.28);
-    }
-    .lp-hero-input {
-        flex: 1; border: none; outline: none; background: none;
-        font-family: inherit; font-size: 16px; color: #12203a; padding: 12px 0;
-    }
-    .lp-hero-input::placeholder { color: #9aa3b2; }
-    .lp-hero-go {
-        flex-shrink: 0; width: 44px; height: 44px; border: none; cursor: pointer;
-        border-radius: 12px; background: #2f6fe4; color: #fff;
-        display: flex; align-items: center; justify-content: center; transition: background 0.15s;
-    }
-    .lp-hero-go:hover { background: #1f5ad0; }
-    .lp-hero-go svg { width: 20px; height: 20px; }
-    .lp-hero-pills { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 18px auto 0; }
-    .lp-hero-pill {
-        background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.30);
-        color: #fff; font-size: 14px; font-weight: 600; text-decoration: none;
-        padding: 8px 16px; border-radius: 999px; transition: background 0.15s;
-    }
-    .lp-hero-pill:hover { background: rgba(255,255,255,0.26); }
-    .lp-hero-trust { color: rgba(255,255,255,0.72); font-size: 13px; font-weight: 500; margin-top: 40px; }
+    /* Hero fills the panel instead of the full viewport */
+    .lp-frame .land-hero { min-height: 100%; height: 100%; }
 
     @media (max-width: 640px) {
-        .lp-hero { margin: 72px 10px 10px; border-radius: 22px; padding: 32px 16px 56px; }
+        .lp-frame { margin: 72px 10px 10px; border-radius: 22px; }
     }
     </style>
 </head>
@@ -315,29 +291,37 @@
             </div>
         </nav>
 
-        <!-- HERO -->
-        <section class="lp-hero">
-            <div class="lp-hero-inner">
-                <h1 class="lp-hero-title">Find clients without a website</h1>
-                <p class="lp-hero-sub">Scan any city and pull phone numbers for local businesses that don't have a website — in seconds.</p>
-
-                <form class="lp-hero-search" action="/signup" method="get">
-                    <input type="text" class="lp-hero-input" placeholder="Try &ldquo;plumbers in Austin&rdquo;…" aria-label="Business category and city">
-                    <button type="submit" class="lp-hero-go" aria-label="Start scanning">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                    </button>
-                </form>
-
-                <div class="lp-hero-pills">
-                    <a class="lp-hero-pill" href="/signup">Plumbers</a>
-                    <a class="lp-hero-pill" href="/signup">Roofers</a>
-                    <a class="lp-hero-pill" href="/signup">Dentists</a>
-                    <a class="lp-hero-pill" href="/signup">Landscapers</a>
+        <!-- HERO (original, unchanged — just framed with white edges) -->
+        <div class="lp-frame">
+        <section class="land-hero">
+            <div class="land-hero-left">
+                <div class="land-tagline">// FREE LEAD GENERATION TOOL v1.0</div>
+                <h1 class="land-headline">&gt; FIND_CLIENTS.EXE<span class="land-headline-kw">Find local businesses without a website — free lead generation tool</span></h1>
+                <p class="land-sub">Scan any city. Find local businesses with no website. Export leads in seconds. Free to start — no card required.</p>
+                <ul class="land-bullets">
+                    <li><span class="land-bi">[+]</span> Free to start — no card required</li>
+                    <li><span class="land-bi">[+]</span> Phone number &amp; Maps link per lead</li>
+                    <li><span class="land-bi">[+]</span> Export as CSV, JSON, or XLSX</li>
+                    <li><span class="land-bi">[+]</span> Multi-zone bulk scanning <span style="opacity:0.6">(Pro)</span></li>
+                </ul>
+                <a href="/signup" class="land-free-cta" id="land-start-btn">[ START ]</a>
+            </div>
+            <div class="land-hero-right">
+                <div class="land-cube-wrap">
+                    <div class="land-cube-scene">
+                        <div id="land-cube">
+                            <div class="cube-face face-front">START</div>
+                            <div class="cube-face face-back">&gt;_</div>
+                            <div class="cube-face face-left">&#9608;</div>
+                            <div class="cube-face face-right">[ ]</div>
+                            <div class="cube-face face-top">+--+</div>
+                            <div class="cube-face face-bottom">+--+</div>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="lp-hero-trust">Built for web designers, agencies, freelancers &amp; cold callers</div>
             </div>
         </section>
+        </div>
 
     </div>
     <!-- ===== END LANDING OVERLAY ===== -->
@@ -482,9 +466,33 @@
             sessionStorage.setItem('ls_launched', '1');
         }
 
-        // Terminal-header logo still reveals the landing when viewing the app.
+        document.getElementById('land-cube').addEventListener('click', function() {
+            if (localStorage.getItem('ls_token')) {
+                launch();
+            } else {
+                window.location.href = '/login';
+            }
+        });
+        document.getElementById('land-start-btn').addEventListener('click', function(e) {
+            if (localStorage.getItem('ls_token')) { e.preventDefault(); launch(); }
+            // else follow the href to /signup naturally
+        });
         document.getElementById('logo-text').addEventListener('click', showLanding);
         document.getElementById('logo-blink').addEventListener('click', showLanding);
+
+        // Continuous 360-degree auto-rotation
+        (function() {
+            const cube = document.getElementById('land-cube');
+            let rotY = 30;
+            const rotX = 20;
+
+            function tick() {
+                rotY += 0.4;
+                cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+                requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        })();
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.mini.min.js"></script>
