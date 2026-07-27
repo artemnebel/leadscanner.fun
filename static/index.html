@@ -244,9 +244,25 @@
     }
     #demo-map { width: 100%; height: 100%; background: #0a0a0a; }
 
+    /* Search input + scan button overlaid top-left on the demo map,
+       reusing the app's .input-wrap / .btn-term terminal styles. */
+    .lp-demo-controls {
+        position: absolute; top: 14px; left: 14px; z-index: 1000;  /* above leaflet panes */
+        display: flex; align-items: center; gap: 8px;
+        font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    }
+    .lp-demo-controls .input-wrap {
+        flex: 0 1 auto; width: min(300px, 55vw);
+        background: rgba(10,10,10,0.92);
+    }
+    .lp-demo-controls .btn-term { background: rgba(10,10,10,0.92); }
+    .lp-demo-controls .btn-term:hover { background: var(--green); }
+
     @media (max-width: 640px) {
         .lp-demo { padding: 56px 14px 64px; }
         .lp-demo-box { height: 400px; border-radius: 22px; }
+        .lp-demo-controls { left: 10px; right: 10px; top: 10px; }
+        .lp-demo-controls .input-wrap { flex: 1; width: auto; }
     }
     </style>
 </head>
@@ -352,6 +368,13 @@
             <a href="/signup" class="lp-demo-cta">Start For Free</a>
             <div class="lp-demo-box">
                 <div id="demo-map"></div>
+                <div class="lp-demo-controls">
+                    <div class="input-wrap">
+                        <span class="prompt">&gt;</span>
+                        <input type="text" id="demo-category-input" placeholder="type business category"/>
+                    </div>
+                    <button id="demo-scan-btn" class="btn-term btn-primary">[ SCAN ]</button>
+                </div>
             </div>
         </section>
 
