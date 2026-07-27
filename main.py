@@ -1758,7 +1758,10 @@ async def search_leads(
 # tiling) and a hard IP rate limit. Result gating (caps / login-to-unlock)
 # is intentionally NOT applied here yet — to be added later.
 
-DEMO_RADIUS_M = 24_140   # fixed 15 miles — matches the demo map circle
+DEMO_RADIUS_M = 8_047    # fixed 5 miles — a single Places call covers this well
+                         # (one 8km sub-circle), so results spread across the whole
+                         # circle instead of clustering at the center. Matches the
+                         # Free plan's radius, too.
 
 
 class DemoSearchRequest(BaseModel):

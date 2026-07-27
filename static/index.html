@@ -453,7 +453,7 @@
         <!-- ===== DEMO SECTION (white gap + rounded map box) ===== -->
         <section class="lp-demo">
             <h2 class="lp-demo-title">See It Scan In Real Time</h2>
-            <p class="lp-demo-sub">Drop a pin on any city and Lead Scanner sweeps a 15-mile radius for local businesses without a website.</p>
+            <p class="lp-demo-sub">Drop a pin on any city and Lead Scanner sweeps a 5-mile radius for local businesses without a website.</p>
             <a href="/signup" class="lp-demo-cta">Start For Free</a>
             <div class="lp-demo-box">
                 <div id="demo-map"></div>
@@ -629,7 +629,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Landing demo map — same look as the app (dark tiles + dashed green
-        // scan circle), fixed 15-mile scanning area.
+        // scan circle), fixed 5-mile scanning area.
         (function () {
             const el = document.getElementById('demo-map');
             if (!el || typeof L === 'undefined') return;
@@ -641,13 +641,13 @@
                 const map = L.map('demo-map', {
                     zoomControl: false,
                     attributionControl: false,
-                }).setView(center, 9);    // start zoomed out so more area is visible; wheel/pinch zoom + drag panning like the real app
+                }).setView(center, 11);   // frames the 5-mile circle on load; wheel/pinch zoom + drag panning like the real app
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                     subdomains: 'abcd',
                     maxZoom: 20,
                 }).addTo(map);
                 const circle = L.circle(center, {
-                    radius: 24140,                           // 15 miles in meters
+                    radius: 8047,                            // 5 miles in meters
                     color: '#33ff00',
                     fillColor: '#33ff00',
                     fillOpacity: 0.05,
@@ -730,7 +730,7 @@
                 busy = true;
                 btn.classList.add('loading');
                 btn.textContent = 'SCANNING';
-                show('<div class="lp-demo-note">Sweeping a 15-mile radius…</div>', 'Scanning…');
+                show('<div class="lp-demo-note">Sweeping a 5-mile radius…</div>', 'Scanning…');
 
                 try {
                     const res = await fetch('/api/demo-search', {
