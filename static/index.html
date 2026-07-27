@@ -31,6 +31,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- MicroPost design system fonts (landing only) -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
@@ -102,258 +104,178 @@
     }
     </script>
     <style>
-    /* ===== Landing rebrand — white top nav (scoped .lp-* so it never touches
-       the terminal styles used on the other pages). ===== */
-    #landing-overlay { z-index: 100000; }  /* above #crt-overlay so the nav is clean */
+    /* ===== Landing rebrand — MicroPost design system (scoped .lp-* / #landing-overlay,
+       never touches the terminal styles used on the other pages). ===== */
+    #landing-overlay {
+        z-index: 100000;                 /* above #crt-overlay so the nav is clean */
+        background: #F9FAFB; overflow-y: auto; overflow-x: hidden;
+        color: #111827;
+        --mp-primary:#3B82F6; --mp-primary-hover:#2563EB; --mp-primary-active:#1D4ED8;
+        --mp-ink:#111827; --mp-ink-soft:#374151; --mp-gray:#6B7280; --mp-muted:#9CA3AF;
+        --mp-tertiary:#F3F4F6; --mp-bg:#F9FAFB; --mp-surface:#FFFFFF; --mp-border:#E5E7EB;
+        --mp-warning:#F59E0B; --mp-error:#EF4444; --mp-success:#10B981;
+        --mp-head:'Space Grotesk','DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+        --mp-body:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+        --mp-mono:'Roboto Mono',ui-monospace,monospace;
+        font-family: var(--mp-body);
+    }
 
+    /* Buttons (MicroPost pill) */
+    .lp-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px;
+        font-family: var(--mp-body); font-weight:600; text-decoration:none; cursor:pointer;
+        border:none; border-radius:9999px; transition: background .15s, box-shadow .15s, transform .1s; }
+    .lp-btn-primary { background: var(--mp-primary); color:#fff; font-size:14px; padding:13px 28px;
+        box-shadow: 0 2px 8px rgba(59,130,246,.25); }
+    .lp-btn-primary:hover { background: var(--mp-primary-hover); }
+    .lp-btn-primary:active { background: var(--mp-primary-active); transform: translateY(1px); }
+    .lp-btn-secondary { background: var(--mp-tertiary); color: var(--mp-ink); font-size:14px; padding:13px 28px; }
+    .lp-btn-secondary:hover { background:#E5E7EB; }
+
+    /* Top nav */
     .lp-nav {
-        position: sticky; top: 0; z-index: 500;   /* stays pinned; sits above all scrolling content */
+        position: sticky; top: 0; z-index: 500;
         display: flex; align-items: center;
-        height: 68px; padding: 0 2.5rem;
-        background: #ffffff; border-bottom: 1px solid #ececf1;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        height: 64px; padding: 0 2.5rem;
+        background: var(--mp-surface); border-bottom: 1px solid var(--mp-border);
+        font-family: var(--mp-body);
     }
-    .lp-logo { display: flex; align-items: center; gap: 11px; text-decoration: none; flex-shrink: 0; }
-    .lp-logo-mark {
-        width: 34px; height: 34px; border-radius: 8px;
-        background: #0a0a0a; color: #33ff00;
-        display: flex; align-items: center; justify-content: center;
-        font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; letter-spacing: -1px;
-    }
-    .lp-logo-word { color: #0a0a0a; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+    .lp-logo { display:flex; align-items:center; gap:10px; text-decoration:none; flex-shrink:0; }
+    .lp-logo-mark { width:36px; height:36px; border-radius:12px; background: var(--mp-primary);
+        display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(59,130,246,.30); }
+    .lp-logo-mark svg { width:20px; height:20px; }
+    .lp-logo-word { font-family: var(--mp-head); color: var(--mp-ink); font-size:20px; font-weight:700; letter-spacing:-0.02em; }
 
-    .lp-menu { display: flex; align-items: center; gap: 2px; margin-left: 2.25rem; }
-    .lp-item { position: relative; }
-    .lp-link {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 9px 14px; border-radius: 9px;
-        color: #33374d; font-size: 15px; font-weight: 500; font-family: inherit;
-        text-decoration: none; background: none; border: none; cursor: pointer;
-        transition: background 0.15s, color 0.15s;
-    }
-    .lp-link:hover { background: #f4f4f7; color: #0a0a0a; }
-    .lp-caret { width: 12px; height: 12px; color: #9aa0b4; transition: transform 0.18s; }
+    .lp-menu { display:flex; align-items:center; gap:2px; margin-left:2rem; }
+    .lp-item { position:relative; }
+    .lp-link { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:9999px;
+        color: var(--mp-gray); font-size:14px; font-weight:600; font-family:inherit; text-decoration:none;
+        background:none; border:none; cursor:pointer; transition: background .15s, color .15s; }
+    .lp-link:hover { background: var(--mp-tertiary); color: var(--mp-ink); }
+    .lp-caret { width:12px; height:12px; color: var(--mp-muted); transition: transform .18s; }
     .lp-item:hover .lp-caret, .lp-item:focus-within .lp-caret { transform: rotate(180deg); }
 
-    .lp-dropdown {
-        position: absolute; top: calc(100% + 10px); left: 0;
-        background: #fff; border: 1px solid #ececf1; border-radius: 14px;
-        box-shadow: 0 20px 48px rgba(20,20,40,0.14); padding: 18px 20px;
-        opacity: 0; visibility: hidden; transform: translateY(6px);
-        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
-    }
-    .lp-item:hover .lp-dropdown, .lp-item:focus-within .lp-dropdown {
-        opacity: 1; visibility: visible; transform: translateY(0);
-    }
-    .lp-dd-cols { display: flex; gap: 26px; }
-    .lp-dd-col { min-width: 170px; }
-    .lp-dd-group-label {
-        font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
-        color: #9aa0b4; margin: 2px 0 8px 10px;
-    }
-    .lp-dd-link {
-        display: block; padding: 8px 10px; border-radius: 9px;
-        text-decoration: none; color: #1c2033; font-size: 14.5px; font-weight: 600;
-        transition: background 0.13s;
-    }
-    .lp-dd-link small { display: block; font-weight: 500; color: #8b90a3; font-size: 12.5px; margin-top: 1px; }
-    .lp-dd-link:hover { background: #f4f4f7; }
+    .lp-dropdown { position:absolute; top:calc(100% + 10px); left:0; background: var(--mp-surface);
+        border:1px solid var(--mp-border); border-radius:16px;
+        box-shadow: 0 16px 48px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.06);
+        padding:18px 20px; opacity:0; visibility:hidden; transform: translateY(6px);
+        transition: opacity .16s, transform .16s, visibility .16s; }
+    .lp-item:hover .lp-dropdown, .lp-item:focus-within .lp-dropdown { opacity:1; visibility:visible; transform:translateY(0); }
+    .lp-dd-cols { display:flex; gap:26px; }
+    .lp-dd-col { min-width:170px; }
+    .lp-dd-group-label { font-family: var(--mp-body); font-size:10px; font-weight:700; letter-spacing:0.08em;
+        text-transform:uppercase; color: var(--mp-muted); margin:2px 0 8px 10px; }
+    .lp-dd-link { display:block; padding:8px 10px; border-radius:12px; text-decoration:none;
+        color: var(--mp-ink); font-size:14px; font-weight:600; transition: background .13s; }
+    .lp-dd-link small { display:block; font-weight:400; color: var(--mp-gray); font-size:12px; margin-top:1px; }
+    .lp-dd-link:hover { background: var(--mp-bg); }
 
-    .lp-right { margin-left: auto; display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
-    .lp-login {
-        color: #1c2033; font-size: 15px; font-weight: 600; text-decoration: none;
-        padding: 9px 14px; border-radius: 9px; transition: background 0.15s;
-    }
-    .lp-login:hover { background: #f4f4f7; }
-    .lp-cta {
-        background: #0a0a0a; color: #fff; font-size: 15px; font-weight: 600; text-decoration: none;
-        padding: 10px 20px; border-radius: 10px; transition: background 0.15s;
-    }
-    .lp-cta:hover { background: #23232b; }
+    .lp-right { margin-left:auto; display:flex; align-items:center; gap:.6rem; flex-shrink:0; }
+    .lp-login { color: var(--mp-gray); font-size:14px; font-weight:600; text-decoration:none;
+        padding:8px 16px; border-radius:9999px; transition: background .15s, color .15s; }
+    .lp-login:hover { background: var(--mp-tertiary); color: var(--mp-ink); }
+    .lp-cta { background: var(--mp-primary); color:#fff; font-size:14px; font-weight:600; text-decoration:none;
+        padding:9px 20px; border-radius:9999px; box-shadow:0 2px 8px rgba(59,130,246,.25); transition: background .15s; }
+    .lp-cta:hover { background: var(--mp-primary-hover); }
 
-    @media (max-width: 900px) {
-        .lp-menu { display: none; }
-        .lp-nav { padding: 0 1.25rem; }
-    }
+    @media (max-width:900px){ .lp-menu{display:none;} .lp-nav{padding:0 1.25rem;} }
 
-    /* ===== White edges around the ORIGINAL hero: white page behind, hero
-       inset in a rounded dark panel with white gaps left/right/bottom.
-       Nothing inside the hero is changed. ===== */
-    #landing-overlay { background: #ffffff; overflow-y: auto; overflow-x: hidden; }
+    /* ===== Hero (MicroPost) ===== */
+    .lp-hero { min-height: calc(100vh - 64px); display:flex; align-items:center; justify-content:center;
+        text-align:center; padding: 48px 24px 72px; position:relative; overflow:hidden; }
+    .lp-hero::before { content:''; position:absolute; inset:0; pointer-events:none;
+        background: radial-gradient(720px 440px at 50% -6%, rgba(59,130,246,.12), transparent 70%); }
+    .lp-hero-inner { position:relative; max-width:760px; }
+    .lp-hero-eyebrow { display:inline-block; font-family: var(--mp-body); font-size:10px; font-weight:700;
+        letter-spacing:0.08em; text-transform:uppercase; color: var(--mp-primary);
+        background: rgba(59,130,246,.10); padding:6px 12px; border-radius:9999px; margin-bottom:22px; }
+    .lp-hero-title { font-family: var(--mp-head); color: var(--mp-ink); font-size: clamp(38px,6vw,64px);
+        font-weight:700; letter-spacing:-0.02em; line-height:1.08; margin:0 0 20px; }
+    .lp-hero-sub { font-family: var(--mp-body); color: var(--mp-gray); font-size: clamp(16px,1.7vw,19px);
+        line-height:1.55; max-width:560px; margin:0 auto 32px; }
+    .lp-hero-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .lp-hero-note { margin-top:20px; font-family: var(--mp-body); font-size:13px; color: var(--mp-muted); }
 
-    .lp-frame {
-        margin: 8px 16px 16px;               /* nav (68px) is in-flow above; small gap + white L/R/bottom */
-        height: calc(100vh - 92px);          /* 68 nav + 8 top + 16 bottom = full first screen */
-        border-radius: 30px;
-        background: var(--bg);
-        overflow: hidden;
-        position: relative;
-    }
-    /* Landing sits above #crt-overlay, so re-add the scanlines inside the panel
-       to keep the hero looking exactly as before. */
-    .lp-frame::after {
-        content: '';
-        position: absolute; inset: 0;
-        pointer-events: none;
-        border-radius: inherit;
-        background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.055) 2px, rgba(0,0,0,0.055) 4px);
-    }
-    /* Hero fills the panel instead of the full viewport */
-    .lp-frame .land-hero { min-height: 100%; height: 100%; }
+    /* ===== Demo section ===== */
+    .lp-demo { text-align:center; padding: 40px 24px 96px; font-family: var(--mp-body); }
+    .lp-demo-title { font-family: var(--mp-head); color: var(--mp-ink); font-size: clamp(28px,4vw,40px);
+        font-weight:700; letter-spacing:-0.02em; line-height:1.15; margin:0 0 14px; }
+    .lp-demo-sub { color: var(--mp-gray); font-size: clamp(15px,1.6vw,18px); max-width:560px;
+        margin:0 auto 28px; line-height:1.55; }
+    .lp-demo-cta { display:inline-block; background: var(--mp-primary); color:#fff; font-family: var(--mp-body);
+        font-size:14px; font-weight:600; text-decoration:none; padding:13px 28px; border-radius:9999px;
+        box-shadow:0 2px 8px rgba(59,130,246,.25); transition: background .15s; }
+    .lp-demo-cta:hover { background: var(--mp-primary-hover); }
 
-    /* Cube removed — center the hero text in the middle of the panel */
-    .lp-frame .land-hero { justify-content: center; text-align: center; }
-    .lp-frame .land-hero-left { max-width: 640px; }
-    .lp-frame .land-sub { margin-left: auto; margin-right: auto; }
-    .lp-frame .land-bullets { align-items: center; }
+    .lp-demo-box { max-width:1040px; height:560px; margin:44px auto 0; border-radius:20px; overflow:hidden;
+        border:1px solid var(--mp-border); box-shadow: 0 16px 48px rgba(17,24,39,.12), 0 4px 12px rgba(17,24,39,.05);
+        position:relative; z-index:0; background:#0f172a; }
+    #demo-map { width:100%; height:100%; background:#0f172a; }
 
-    @media (max-width: 640px) {
-        .lp-frame { margin: 6px 10px 10px; border-radius: 22px; }
-    }
+    /* Scan results — MicroPost table */
+    .lp-demo-leads { max-width:1040px; margin:24px auto 0; text-align:left; }
+    .lp-demo-leads-head { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; margin:0 4px 14px; }
+    .lp-demo-leads-count { font-family: var(--mp-head); color: var(--mp-ink); font-size:18px; font-weight:700; }
+    .lp-demo-table-wrap { border:1px solid var(--mp-border); border-radius:16px; overflow:hidden;
+        box-shadow: 0 1px 2px rgba(0,0,0,.04); background: var(--mp-surface); }
+    .lp-demo-table-scroll { overflow-x:auto; }
+    .lp-demo-table { width:100%; border-collapse:collapse; font-size:14px; }
+    .lp-demo-table thead th { text-align:left; background: var(--mp-bg); color: var(--mp-gray);
+        font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:12px 16px;
+        border-bottom:1px solid var(--mp-border); white-space:nowrap; }
+    .lp-demo-table td { padding:13px 16px; border-bottom:1px solid var(--mp-tertiary); vertical-align:middle; color: var(--mp-ink-soft); }
+    .lp-demo-table tbody tr:last-child td { border-bottom:none; }
+    .lp-demo-table tbody tr:hover { background: var(--mp-bg); }
+    .lp-demo-table .col-num { color: var(--mp-muted); font-variant-numeric:tabular-nums; width:40px; }
+    .lp-demo-name { color: var(--mp-ink); font-weight:600; text-decoration:none; }
+    .lp-demo-name:hover { color: var(--mp-primary); text-decoration:underline; }
+    .lp-demo-name .ext { display:inline-block; margin-left:5px; color: var(--mp-muted); font-weight:400; }
+    .lp-demo-table .col-rating { white-space:nowrap; }
+    .lp-demo-table .star { color: var(--mp-warning); }
+    .lp-demo-table .col-reviews { color: var(--mp-gray); font-variant-numeric:tabular-nums; }
+    .lp-demo-table .col-phone { font-family: var(--mp-mono); font-weight:500; white-space:nowrap; color: var(--mp-ink); }
+    .lp-demo-table .col-loc { color: var(--mp-gray); max-width:280px; }
+    .lp-demo-table .col-loc span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lp-demo-note { text-align:center; color: var(--mp-gray); font-size:14px; line-height:1.5; padding:22px 18px; }
+    .lp-demo-note a { color: var(--mp-primary); font-weight:600; text-decoration:none; }
+    .lp-demo-note a:hover { text-decoration:underline; }
 
-    /* ===== Demo section — white gap with text, then a rounded map box ===== */
-    .lp-demo {
-        background: #ffffff; text-align: center;
-        padding: 84px 24px 96px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
-    .lp-demo-title {
-        color: #0a0a0a; font-size: clamp(30px, 4vw, 46px); font-weight: 800;
-        letter-spacing: -0.02em; line-height: 1.1; margin: 0 0 16px;
-    }
-    .lp-demo-sub {
-        color: #6b7080; font-size: clamp(15px, 1.6vw, 18px); font-weight: 500;
-        max-width: 560px; margin: 0 auto 28px; line-height: 1.55;
-    }
-    .lp-demo-cta {
-        display: inline-block; background: #0a0a0a; color: #fff;
-        font-size: 16px; font-weight: 600; text-decoration: none;
-        padding: 14px 30px; border-radius: 999px; transition: background 0.15s;
-    }
-    .lp-demo-cta:hover { background: #23232b; }
+    /* Result pin + popup (light) */
+    .lp-demo-pin svg { display:block; }
+    .lp-demo-popup .leaflet-popup-content-wrapper { background: var(--mp-surface); border:1px solid var(--mp-border);
+        border-radius:12px; box-shadow: 0 16px 48px rgba(17,24,39,.18); }
+    .lp-demo-popup .leaflet-popup-content { margin:10px 14px; font-family: var(--mp-body); }
+    .lp-demo-popup .leaflet-popup-tip { background: var(--mp-surface); border:1px solid var(--mp-border); }
+    .lp-demo-popup a { color: var(--mp-primary); font-size:13px; font-weight:600; text-decoration:none; }
+    .lp-demo-popup a:hover { text-decoration:underline; }
+    .lp-demo-popup .leaflet-popup-close-button { color: var(--mp-muted); }
 
-    .lp-demo-box {
-        max-width: 1040px;                 /* smaller than the hero panel */
-        height: 560px;
-        margin: 52px auto 0;
-        border-radius: 30px;
-        overflow: hidden;
-        border: 1px solid #ececf1;
-        box-shadow: 0 24px 60px rgba(20,20,40,0.12);
-        position: relative;
-        z-index: 0;   /* own stacking context so the search pill / map panes
-                         stay under the sticky nav when scrolled beneath it */
-    }
-    #demo-map { width: 100%; height: 100%; background: #0a0a0a; }
-
-    /* Scan results shown below the map as a spreadsheet table. */
-    .lp-demo-leads { max-width: 1040px; margin: 24px auto 0; text-align: left; }
-    .lp-demo-leads-head {
-        display: flex; align-items: baseline; justify-content: space-between;
-        gap: 16px; flex-wrap: wrap; margin: 0 4px 14px;
-    }
-    .lp-demo-leads-count { color: #0a0a0a; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
-
-    .lp-demo-table-wrap {
-        border: 1px solid #e7e8ee; border-radius: 14px; overflow: hidden;
-        box-shadow: 0 2px 12px rgba(20,20,40,0.05); background: #fff;
-    }
-    .lp-demo-table-scroll { overflow-x: auto; }
-    .lp-demo-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .lp-demo-table thead th {
-        text-align: left; background: #f7f8fa; color: #6b7080;
-        font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-        padding: 12px 16px; border-bottom: 1px solid #e7e8ee; white-space: nowrap;
-    }
-    .lp-demo-table td { padding: 13px 16px; border-bottom: 1px solid #f0f1f4; vertical-align: middle; color: #33374d; }
-    .lp-demo-table tbody tr:last-child td { border-bottom: none; }
-    .lp-demo-table tbody tr:hover { background: #fafbfc; }
-    .lp-demo-table .col-num { color: #b6bac6; font-variant-numeric: tabular-nums; width: 40px; }
-    .lp-demo-name { color: #0a0a0a; font-weight: 700; text-decoration: none; }
-    .lp-demo-name:hover { color: #1f63dd; text-decoration: underline; }
-    .lp-demo-name .ext { display: inline-block; margin-left: 5px; color: #b6bac6; font-weight: 400; }
-    .lp-demo-table .col-rating { white-space: nowrap; }
-    .lp-demo-table .star { color: #f5a623; }
-    .lp-demo-table .col-reviews { color: #8b90a3; font-variant-numeric: tabular-nums; }
-    .lp-demo-table .col-phone { font-family: 'JetBrains Mono', monospace; font-weight: 600; white-space: nowrap; }
-    .lp-demo-table .col-loc { color: #8b90a3; max-width: 280px; }
-    .lp-demo-table .col-loc span {
-        display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-
-    .lp-demo-note {
-        text-align: center; color: #6b7080; font-size: 14px; line-height: 1.5; padding: 22px 18px;
-    }
-    .lp-demo-note a { color: #1f63dd; font-weight: 700; text-decoration: none; }
-    .lp-demo-note a:hover { text-decoration: underline; }
-    .lp-demo-scan.loading { opacity: 0.6; pointer-events: none; }
-
-    /* Result pin + its popup */
-    .lp-demo-pin svg { display: block; }
-    .lp-demo-popup .leaflet-popup-content-wrapper {
-        background: #0a0a0a; border: 1px solid rgba(51,255,0,0.4); border-radius: 8px;
-        box-shadow: 0 6px 24px rgba(0,0,0,0.5);
-    }
-    .lp-demo-popup .leaflet-popup-content { margin: 10px 14px; font-family: 'JetBrains Mono', monospace; }
-    .lp-demo-popup .leaflet-popup-tip { background: #0a0a0a; border: 1px solid rgba(51,255,0,0.4); }
-    .lp-demo-popup a {
-        color: var(--green); font-size: 13px; font-weight: 700; text-decoration: none;
-        text-shadow: var(--glow-sm);
-    }
-    .lp-demo-popup a:hover { text-decoration: underline; }
-    .lp-demo-popup .leaflet-popup-close-button { color: rgba(51,255,0,0.6); }
-
-    /* Search bar overlaid top-left on the demo map: one rounded dark-glass
-       pill holding the prompt, input and a solid green SCAN button. */
-    .lp-demo-controls {
-        position: absolute; top: 16px; left: 16px; z-index: 1000;  /* above leaflet panes */
-    }
-    .lp-demo-search {
-        display: flex; align-items: center;
-        width: min(380px, 60vw);
-        padding: 6px 6px 6px 16px;
-        background: rgba(8, 12, 8, 0.72);
-        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(51, 255, 0, 0.28);
-        border-radius: 16px;
-        box-shadow: 0 10px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(51,255,0,0.08);
-        font-family: 'JetBrains Mono', monospace;
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .lp-demo-search:focus-within {
-        border-color: rgba(51, 255, 0, 0.7);
-        box-shadow: 0 10px 32px rgba(0,0,0,0.5), 0 0 16px rgba(51,255,0,0.22);
-    }
-    .lp-demo-prompt {
-        color: var(--amber); font-weight: 700; margin-right: 9px;
-        text-shadow: var(--amber-glow); user-select: none;
-    }
-    .lp-demo-search input {
-        flex: 1; min-width: 0;
-        background: transparent; border: none; outline: none;
-        color: var(--green); caret-color: var(--green);
-        font-family: inherit; font-size: 14px;
-        padding: 9px 8px 9px 0;
-    }
-    .lp-demo-search input::placeholder { color: rgba(51, 255, 0, 0.35); }
-    .lp-demo-scan {
-        flex-shrink: 0; border: none; cursor: pointer;
-        background: var(--green); color: #0a0a0a;
-        font-family: inherit; font-size: 12.5px; font-weight: 700; letter-spacing: 0.09em;
-        padding: 10px 20px; border-radius: 11px;
-        box-shadow: 0 0 14px rgba(51, 255, 0, 0.35);
-        transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
-    }
-    .lp-demo-scan:hover { background: #5cff33; box-shadow: 0 0 24px rgba(51, 255, 0, 0.55); }
+    /* Floating search bar over the map */
+    .lp-demo-controls { position:absolute; top:16px; left:16px; z-index:1000; }
+    .lp-demo-search { display:flex; align-items:center; width:min(380px,60vw); padding:5px 5px 5px 14px;
+        background: var(--mp-surface); border:1px solid var(--mp-border); border-radius:12px;
+        box-shadow: 0 8px 24px rgba(17,24,39,.18); font-family: var(--mp-body);
+        transition: box-shadow .2s, border-color .2s; }
+    .lp-demo-search:focus-within { border-color: var(--mp-primary);
+        box-shadow: 0 8px 24px rgba(17,24,39,.18), 0 0 0 3px rgba(59,130,246,.15); }
+    .lp-demo-prompt { display:flex; align-items:center; color: var(--mp-muted); margin-right:8px; }
+    .lp-demo-prompt svg { width:16px; height:16px; }
+    .lp-demo-search input { flex:1; min-width:0; background:transparent; border:none; outline:none;
+        color: var(--mp-ink); font-family:inherit; font-size:14px; padding:8px 8px 8px 0; }
+    .lp-demo-search input::placeholder { color: var(--mp-muted); }
+    .lp-demo-scan { flex-shrink:0; border:none; cursor:pointer; background: var(--mp-primary); color:#fff;
+        font-family:inherit; font-size:13px; font-weight:600; letter-spacing:0.02em; padding:9px 18px;
+        border-radius:9999px; transition: background .15s, transform .1s; }
+    .lp-demo-scan:hover { background: var(--mp-primary-hover); }
     .lp-demo-scan:active { transform: translateY(1px); }
+    .lp-demo-scan.loading { opacity:.6; pointer-events:none; }
 
-    @media (max-width: 640px) {
-        .lp-demo { padding: 56px 14px 64px; }
-        .lp-demo-box { height: 400px; border-radius: 22px; }
-        .lp-demo-controls { left: 10px; right: 10px; top: 10px; }
-        .lp-demo-search { width: auto; }
-        .lp-demo-table { font-size: 13px; }
-        .lp-demo-table thead th, .lp-demo-table td { padding: 10px 12px; }
+    @media (max-width:640px){
+        .lp-demo { padding:40px 16px 64px; }
+        .lp-demo-box { height:400px; border-radius:16px; }
+        .lp-demo-controls { left:10px; right:10px; top:10px; }
+        .lp-demo-search { width:auto; }
+        .lp-demo-table { font-size:13px; }
+        .lp-demo-table thead th, .lp-demo-table td { padding:10px 12px; }
     }
     </style>
 </head>
@@ -364,8 +286,13 @@
 
         <!-- ===== LANDING NAV (rebrand) ===== -->
         <nav class="lp-nav">
-            <a href="/" class="lp-logo">
-                <span class="lp-logo-mark">&gt;_</span>
+            <a href="/" class="lp-logo" aria-label="Lead Scanner home">
+                <span class="lp-logo-mark">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/>
+                        <circle cx="12" cy="10" r="2.6" fill="#fff" stroke="none"/>
+                    </svg>
+                </span>
             </a>
 
             <div class="lp-menu">
@@ -441,19 +368,22 @@
             </div>
         </nav>
 
-        <!-- HERO (original, unchanged — just framed with white edges) -->
-        <div class="lp-frame">
-        <section class="land-hero">
-            <div class="land-hero-left">
-                <h1 class="land-headline">Find businesses without a website</h1>
-                <p class="land-sub">Scan any city. Find local businesses with no website. Export leads in seconds. Free to start — no card required.</p>
-                <a href="/signup" class="land-free-cta" id="land-start-btn">[ Demo ]</a>
+        <!-- ===== HERO (MicroPost redesign) ===== -->
+        <section class="lp-hero">
+            <div class="lp-hero-inner">
+                <span class="lp-hero-eyebrow">Lead generation, simplified</span>
+                <h1 class="lp-hero-title">Find businesses without a website</h1>
+                <p class="lp-hero-sub">Scan any city and instantly surface local businesses with no website — phone numbers included, ready to export.</p>
+                <div class="lp-hero-actions">
+                    <a href="/signup" class="lp-btn lp-btn-primary" id="land-start-btn">Start for free</a>
+                    <a href="#demo" class="lp-btn lp-btn-secondary">See it live</a>
+                </div>
+                <div class="lp-hero-note">No credit card required · 5 free scans a day</div>
             </div>
         </section>
-        </div>
 
-        <!-- ===== DEMO SECTION (white gap + rounded map box) ===== -->
-        <section class="lp-demo">
+        <!-- ===== DEMO SECTION (live map + scan results) ===== -->
+        <section class="lp-demo" id="demo">
             <h2 class="lp-demo-title">See It Scan In Real Time</h2>
             <p class="lp-demo-sub">Drop a pin on any city and Lead Scanner sweeps a 5-mile radius for local businesses without a website.</p>
             <a href="/signup" class="lp-demo-cta">Start For Free</a>
@@ -461,9 +391,9 @@
                 <div id="demo-map"></div>
                 <div class="lp-demo-controls">
                     <div class="lp-demo-search">
-                        <span class="lp-demo-prompt">&gt;</span>
+                        <span class="lp-demo-prompt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
                         <input type="text" id="demo-category-input" placeholder="Restaurants"/>
-                        <button id="demo-scan-btn" class="lp-demo-scan">SCAN</button>
+                        <button id="demo-scan-btn" class="lp-demo-scan">Scan</button>
                     </div>
                 </div>
             </div>
@@ -650,22 +580,21 @@
                 }).addTo(map);
                 const circle = L.circle(center, {
                     radius: 8047,                            // 5 miles in meters
-                    color: '#33ff00',
-                    fillColor: '#33ff00',
-                    fillOpacity: 0.05,
+                    color: '#3B82F6',
+                    fillColor: '#3B82F6',
+                    fillOpacity: 0.08,
                     weight: 2,
                     dashArray: '6 4',
                 }).addTo(map);
 
-                // Same terminal-crosshair drag handle as the real app —
-                // drag it and the scan circle follows.
+                // Crosshair drag handle (blue) — drag it and the scan circle follows.
                 const dragIcon = L.divIcon({
                     className: '',
                     html: `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
-                        <rect x="21" y="2" width="2" height="40" fill="#33ff00" opacity="0.8"/>
-                        <rect x="2" y="21" width="40" height="2" fill="#33ff00" opacity="0.8"/>
-                        <rect x="16" y="16" width="12" height="12" fill="rgba(51,255,0,0.12)" stroke="#33ff00" stroke-width="1"/>
-                        <rect x="19" y="19" width="6" height="6" fill="#33ff00" opacity="0.6"/>
+                        <rect x="21" y="2" width="2" height="40" fill="#3B82F6" opacity="0.85"/>
+                        <rect x="2" y="21" width="40" height="2" fill="#3B82F6" opacity="0.85"/>
+                        <rect x="16" y="16" width="12" height="12" fill="rgba(59,130,246,0.15)" stroke="#3B82F6" stroke-width="1"/>
+                        <rect x="19" y="19" width="6" height="6" fill="#3B82F6" opacity="0.7"/>
                     </svg>`,
                     iconSize: [44, 44],
                     iconAnchor: [22, 22],
@@ -692,12 +621,12 @@
             window._initDemoMap();
         })();
 
-        // Result pin — a glowing dot.
+        // Result pin — a blue dot (MicroPost primary).
         window._demoOrangePin = (typeof L !== 'undefined') ? L.divIcon({
             className: 'lp-demo-pin',
             html: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-                <circle cx="8" cy="8" r="7" fill="#ff2200" opacity="0.25"/>
-                <circle cx="8" cy="8" r="4" fill="#ff2200" stroke="#0a0a0a" stroke-width="1.5"/>
+                <circle cx="8" cy="8" r="7" fill="#3B82F6" opacity="0.25"/>
+                <circle cx="8" cy="8" r="4" fill="#3B82F6" stroke="#ffffff" stroke-width="1.5"/>
             </svg>`,
             iconSize: [16, 16],
             iconAnchor: [8, 8],
@@ -731,7 +660,7 @@
 
                 busy = true;
                 btn.classList.add('loading');
-                btn.textContent = 'SCANNING';
+                btn.textContent = 'Scanning…';
                 show('<div class="lp-demo-note">Sweeping a 5-mile radius…</div>', 'Scanning…');
 
                 try {
@@ -752,7 +681,7 @@
                 } finally {
                     busy = false;
                     btn.classList.remove('loading');
-                    btn.textContent = 'SCAN';
+                    btn.textContent = 'Scan';
                 }
             }
 
@@ -771,8 +700,8 @@
                             if (l.lat == null || l.lng == null) return;
                             const m = L.marker([l.lat, l.lng], { icon: window._demoOrangePin }).addTo(layer);
                             const label = l.maps_url
-                                ? '<a href="' + esc(l.maps_url) + '" target="_blank" rel="noopener">&gt; ' + esc(l.name) + '</a>'
-                                : '<span style="color:#33ff00">&gt; ' + esc(l.name) + '</span>';
+                                ? '<a href="' + esc(l.maps_url) + '" target="_blank" rel="noopener">' + esc(l.name) + '</a>'
+                                : '<span style="color:#111827;font-weight:600">' + esc(l.name) + '</span>';
                             m.bindPopup(label, { className: 'lp-demo-popup', closeButton: true });
                         });
                     }
