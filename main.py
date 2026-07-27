@@ -1809,6 +1809,7 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
         review_count = place.get("userRatingCount") or 0
         if not phone or review_count == 0:
             continue
+        geo = place.get("location", {})
         leads.append(
             {
                 "name": place.get("displayName", {}).get("text", "Unknown"),
@@ -1816,6 +1817,8 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
                 "phone": _mask_phone(phone),
                 "rating": place.get("rating"),
                 "reviews": review_count,
+                "lat": geo.get("latitude"),
+                "lng": geo.get("longitude"),
             }
         )
 
