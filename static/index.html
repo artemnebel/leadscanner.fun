@@ -101,11 +101,166 @@
       ]
     }
     </script>
+    <style>
+    /* ===== Landing rebrand — white top nav (scoped .lp-* so it never touches
+       the terminal styles used on the other pages). ===== */
+    #landing-overlay { z-index: 100000; }  /* above #crt-overlay so the nav is clean */
+
+    .lp-nav {
+        position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+        display: flex; align-items: center;
+        height: 68px; padding: 0 2.5rem;
+        background: #ffffff; border-bottom: 1px solid #ececf1;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    .lp-logo { display: flex; align-items: center; gap: 11px; text-decoration: none; flex-shrink: 0; }
+    .lp-logo-mark {
+        width: 34px; height: 34px; border-radius: 8px;
+        background: #0a0a0a; color: #33ff00;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; letter-spacing: -1px;
+    }
+    .lp-logo-word { color: #0a0a0a; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+
+    .lp-menu { display: flex; align-items: center; gap: 2px; margin-left: 2.25rem; }
+    .lp-item { position: relative; }
+    .lp-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 9px 14px; border-radius: 9px;
+        color: #33374d; font-size: 15px; font-weight: 500; font-family: inherit;
+        text-decoration: none; background: none; border: none; cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+    }
+    .lp-link:hover { background: #f4f4f7; color: #0a0a0a; }
+    .lp-caret { width: 12px; height: 12px; color: #9aa0b4; transition: transform 0.18s; }
+    .lp-item:hover .lp-caret, .lp-item:focus-within .lp-caret { transform: rotate(180deg); }
+
+    .lp-dropdown {
+        position: absolute; top: calc(100% + 10px); left: 0;
+        background: #fff; border: 1px solid #ececf1; border-radius: 14px;
+        box-shadow: 0 20px 48px rgba(20,20,40,0.14); padding: 18px 20px;
+        opacity: 0; visibility: hidden; transform: translateY(6px);
+        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+    }
+    .lp-item:hover .lp-dropdown, .lp-item:focus-within .lp-dropdown {
+        opacity: 1; visibility: visible; transform: translateY(0);
+    }
+    .lp-dd-cols { display: flex; gap: 26px; }
+    .lp-dd-col { min-width: 170px; }
+    .lp-dd-group-label {
+        font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+        color: #9aa0b4; margin: 2px 0 8px 10px;
+    }
+    .lp-dd-link {
+        display: block; padding: 8px 10px; border-radius: 9px;
+        text-decoration: none; color: #1c2033; font-size: 14.5px; font-weight: 600;
+        transition: background 0.13s;
+    }
+    .lp-dd-link small { display: block; font-weight: 500; color: #8b90a3; font-size: 12.5px; margin-top: 1px; }
+    .lp-dd-link:hover { background: #f4f4f7; }
+
+    .lp-right { margin-left: auto; display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+    .lp-login {
+        color: #1c2033; font-size: 15px; font-weight: 600; text-decoration: none;
+        padding: 9px 14px; border-radius: 9px; transition: background 0.15s;
+    }
+    .lp-login:hover { background: #f4f4f7; }
+    .lp-cta {
+        background: #0a0a0a; color: #fff; font-size: 15px; font-weight: 600; text-decoration: none;
+        padding: 10px 20px; border-radius: 10px; transition: background 0.15s;
+    }
+    .lp-cta:hover { background: #23232b; }
+
+    @media (max-width: 900px) {
+        .lp-menu { display: none; }
+        .lp-nav { padding: 0 1.25rem; }
+    }
+    </style>
 </head>
 <body>
 
     <!-- ===== LANDING OVERLAY ===== -->
     <div id="landing-overlay">
+
+        <!-- ===== LANDING NAV (rebrand) ===== -->
+        <nav class="lp-nav">
+            <a href="/" class="lp-logo">
+                <span class="lp-logo-mark">&gt;_</span>
+                <span class="lp-logo-word">leadscanner</span>
+            </a>
+
+            <div class="lp-menu">
+                <div class="lp-item">
+                    <button type="button" class="lp-link">Products
+                        <svg class="lp-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="lp-dropdown">
+                        <div class="lp-dd-cols">
+                            <div class="lp-dd-col">
+                                <div class="lp-dd-group-label">Find leads</div>
+                                <a class="lp-dd-link" href="/how-it-works">Map Scanning<small>Businesses with no website</small></a>
+                                <a class="lp-dd-link" href="/how-it-works">Multi-Zone Scan<small>Sweep several areas at once</small></a>
+                            </div>
+                            <div class="lp-dd-col">
+                                <div class="lp-dd-group-label">Work leads</div>
+                                <a class="lp-dd-link" href="/how-it-works">Instant Export<small>CSV, JSON or XLSX</small></a>
+                                <a class="lp-dd-link" href="/clients">Client Portal<small>Save, call &amp; track leads</small></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lp-item">
+                    <button type="button" class="lp-link">Use Cases
+                        <svg class="lp-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="lp-dropdown">
+                        <div class="lp-dd-cols">
+                            <div class="lp-dd-col">
+                                <div class="lp-dd-group-label">By role</div>
+                                <a class="lp-dd-link" href="/">Web Designers</a>
+                                <a class="lp-dd-link" href="/">Freelancers</a>
+                                <a class="lp-dd-link" href="/">Marketers</a>
+                            </div>
+                            <div class="lp-dd-col">
+                                <div class="lp-dd-group-label">By business</div>
+                                <a class="lp-dd-link" href="/">Agencies</a>
+                                <a class="lp-dd-link" href="/">Founders</a>
+                                <a class="lp-dd-link" href="/cold-calling">Cold Callers</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lp-item">
+                    <button type="button" class="lp-link">Resources
+                        <svg class="lp-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="lp-dropdown">
+                        <div class="lp-dd-cols">
+                            <div class="lp-dd-col">
+                                <div class="lp-dd-group-label">Learn</div>
+                                <a class="lp-dd-link" href="/how-it-works">How It Works</a>
+                                <a class="lp-dd-link" href="/cold-calling">Cold-Calling Guide</a>
+                                <a class="lp-dd-link" href="/resources">Resources</a>
+                            </div>
+                            <div class="lp-dd-col">
+                                <div class="lp-dd-group-label">Company</div>
+                                <a class="lp-dd-link" href="/about">About</a>
+                                <a class="lp-dd-link" href="/contact">Contact</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="/pricing" class="lp-link">Pricing</a>
+            </div>
+
+            <div class="lp-right">
+                <a href="/login" class="lp-login">Login</a>
+                <a href="/signup" class="lp-cta">Get Started</a>
+            </div>
+        </nav>
 
         <!-- HERO -->
         <section class="land-hero">
