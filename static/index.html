@@ -107,7 +107,7 @@
     #landing-overlay { z-index: 100000; }  /* above #crt-overlay so the nav is clean */
 
     .lp-nav {
-        position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+        position: sticky; top: 0; z-index: 500;   /* stays pinned; sits above all scrolling content */
         display: flex; align-items: center;
         height: 68px; padding: 0 2.5rem;
         background: #ffffff; border-bottom: 1px solid #ececf1;
@@ -182,8 +182,8 @@
     #landing-overlay { background: #ffffff; overflow-y: auto; overflow-x: hidden; }
 
     .lp-frame {
-        margin: 76px 16px 16px;              /* clears the 68px nav; white gap L/R/bottom */
-        height: calc(100vh - 92px);          /* 76 top + 16 bottom = full locked screen */
+        margin: 8px 16px 16px;               /* nav (68px) is in-flow above; small gap + white L/R/bottom */
+        height: calc(100vh - 92px);          /* 68 nav + 8 top + 16 bottom = full first screen */
         border-radius: 30px;
         background: var(--bg);
         overflow: hidden;
@@ -208,7 +208,7 @@
     .lp-frame .land-bullets { align-items: center; }
 
     @media (max-width: 640px) {
-        .lp-frame { margin: 72px 10px 10px; border-radius: 22px; }
+        .lp-frame { margin: 6px 10px 10px; border-radius: 22px; }
     }
 
     /* ===== Demo section — white gap with text, then a rounded map box ===== */
@@ -241,6 +241,8 @@
         border: 1px solid #ececf1;
         box-shadow: 0 24px 60px rgba(20,20,40,0.12);
         position: relative;
+        z-index: 0;   /* own stacking context so the search pill / map panes
+                         stay under the sticky nav when scrolled beneath it */
     }
     #demo-map { width: 100%; height: 100%; background: #0a0a0a; }
 
