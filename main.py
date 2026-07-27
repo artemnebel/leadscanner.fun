@@ -1754,31 +1754,17 @@ async def search_leads(
 
 
 # ── Landing-page demo search ──────────────────────────────────────────────────
-# Public (no auth) but tightly bounded: one cached Places call per scan (no
-# grid tiling), hard IP rate limit, few results, and masked phone numbers so
-# the demo can't be scraped for free leads.
+# Public (no auth) but bounded: one cached Places call per scan (no grid
+# tiling) and a hard IP rate limit. Result gating (caps / login-to-unlock)
+# is intentionally NOT applied here yet — to be added later.
 
 DEMO_RADIUS_M = 24_140   # fixed 15 miles — matches the demo map circle
-DEMO_MAX_LEADS = 5
 
 
 class DemoSearchRequest(BaseModel):
     category: str
     lat: float
     lng: float
-
-
-def _mask_phone(phone: str) -> str:
-    """Keep the first 3 digits (area code), mask the rest: (717) •••-••••"""
-    seen = 0
-    out = []
-    for ch in phone:
-        if ch.isdigit():
-            seen += 1
-            out.append(ch if seen <= 3 else "•")
-        else:
-            out.append(ch)
-    return "".join(out)
 
 
 @app.post("/api/demo-search")
@@ -1814,7 +1800,8 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
             {
                 "name": place.get("displayName", {}).get("text", "Unknown"),
                 "city": place.get("formattedAddress", ""),
-                "phone": _mask_phone(phone),
+                "phone": phone,
+                "maps_url": place.get("googleMapsUri", ""),
                 "rating": place.get("rating"),
                 "reviews": review_count,
                 "lat": geo.get("latitude"),
@@ -1838,7 +1825,7 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
     except Exception:
         db.rollback()
 
-    return {"leads": leads[:DEMO_MAX_LEADS], "total": total}
+    return {"leads": leads, "total": total}
 
 
 if __name__ == "__main__":

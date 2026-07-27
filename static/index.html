@@ -244,52 +244,62 @@
     }
     #demo-map { width: 100%; height: 100%; background: #0a0a0a; }
 
-    /* Scan results shown below the map as clean cards on the white section. */
+    /* Scan results shown below the map as a spreadsheet table. */
     .lp-demo-leads { max-width: 1040px; margin: 24px auto 0; text-align: left; }
     .lp-demo-leads-head {
         display: flex; align-items: baseline; justify-content: space-between;
-        gap: 16px; flex-wrap: wrap; margin: 0 4px 16px;
+        gap: 16px; flex-wrap: wrap; margin: 0 4px 14px;
     }
     .lp-demo-leads-count { color: #0a0a0a; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
-    .lp-demo-leads-cta { color: #1f63dd; font-size: 14px; font-weight: 600; text-decoration: none; }
-    .lp-demo-leads-cta:hover { text-decoration: underline; }
 
-    .lp-demo-leads-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px;
+    .lp-demo-table-wrap {
+        border: 1px solid #e7e8ee; border-radius: 14px; overflow: hidden;
+        box-shadow: 0 2px 12px rgba(20,20,40,0.05); background: #fff;
     }
-    .lp-demo-leads-grid .lp-demo-note { grid-column: 1 / -1; }
-
-    .lp-lead {
-        background: #ffffff; border: 1px solid #e7e8ee; border-radius: 14px;
-        padding: 16px 18px; box-shadow: 0 2px 10px rgba(20,20,40,0.05);
-        transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+    .lp-demo-table-scroll { overflow-x: auto; }
+    .lp-demo-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .lp-demo-table thead th {
+        text-align: left; background: #f7f8fa; color: #6b7080;
+        font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+        padding: 12px 16px; border-bottom: 1px solid #e7e8ee; white-space: nowrap;
     }
-    .lp-lead:hover { box-shadow: 0 10px 28px rgba(20,20,40,0.10); transform: translateY(-2px); border-color: #d9dbe6; }
-    .lp-lead-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-    .lp-lead-name { color: #0a0a0a; font-size: 15px; font-weight: 700; line-height: 1.3; }
-    .lp-lead-badge {
-        flex-shrink: 0; font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em;
-        color: #b91c1c; background: #fee2e2; border-radius: 999px; padding: 4px 9px; white-space: nowrap;
+    .lp-demo-table td { padding: 13px 16px; border-bottom: 1px solid #f0f1f4; vertical-align: middle; color: #33374d; }
+    .lp-demo-table tbody tr:last-child td { border-bottom: none; }
+    .lp-demo-table tbody tr:hover { background: #fafbfc; }
+    .lp-demo-table .col-num { color: #b6bac6; font-variant-numeric: tabular-nums; width: 40px; }
+    .lp-demo-name { color: #0a0a0a; font-weight: 700; text-decoration: none; }
+    .lp-demo-name:hover { color: #1f63dd; text-decoration: underline; }
+    .lp-demo-name .ext { display: inline-block; margin-left: 5px; color: #b6bac6; font-weight: 400; }
+    .lp-demo-table .col-rating { white-space: nowrap; }
+    .lp-demo-table .star { color: #f5a623; }
+    .lp-demo-table .col-reviews { color: #8b90a3; font-variant-numeric: tabular-nums; }
+    .lp-demo-table .col-phone { font-family: 'JetBrains Mono', monospace; font-weight: 600; white-space: nowrap; }
+    .lp-demo-table .col-loc { color: #8b90a3; max-width: 280px; }
+    .lp-demo-table .col-loc span {
+        display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .lp-lead-meta { color: #8b90a3; font-size: 13px; margin-top: 6px; }
-    .lp-lead-meta .star { color: #f5a623; }
-    .lp-lead-phone {
-        display: flex; align-items: center; gap: 7px;
-        color: #33374d; font-size: 14px; font-weight: 600; margin-top: 12px;
-        font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;
-    }
-    .lp-lead-phone svg { width: 14px; height: 14px; color: #9aa0b4; flex-shrink: 0; }
 
     .lp-demo-note {
-        text-align: center; color: #6b7080; font-size: 14px; line-height: 1.5;
-        padding: 18px; border: 1px dashed #d9dbe6; border-radius: 14px; background: #fafbfc;
+        text-align: center; color: #6b7080; font-size: 14px; line-height: 1.5; padding: 22px 18px;
     }
     .lp-demo-note a { color: #1f63dd; font-weight: 700; text-decoration: none; }
     .lp-demo-note a:hover { text-decoration: underline; }
     .lp-demo-scan.loading { opacity: 0.6; pointer-events: none; }
 
-    /* Orange result pin — same look as the real app's map markers. */
+    /* Result pin + its popup */
     .lp-demo-pin svg { display: block; }
+    .lp-demo-popup .leaflet-popup-content-wrapper {
+        background: #0a0a0a; border: 1px solid rgba(51,255,0,0.4); border-radius: 8px;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+    }
+    .lp-demo-popup .leaflet-popup-content { margin: 10px 14px; font-family: 'JetBrains Mono', monospace; }
+    .lp-demo-popup .leaflet-popup-tip { background: #0a0a0a; border: 1px solid rgba(51,255,0,0.4); }
+    .lp-demo-popup a {
+        color: var(--green); font-size: 13px; font-weight: 700; text-decoration: none;
+        text-shadow: var(--glow-sm);
+    }
+    .lp-demo-popup a:hover { text-decoration: underline; }
+    .lp-demo-popup .leaflet-popup-close-button { color: rgba(51,255,0,0.6); }
 
     /* Search bar overlaid top-left on the demo map: one rounded dark-glass
        pill holding the prompt, input and a solid green SCAN button. */
@@ -340,7 +350,8 @@
         .lp-demo-box { height: 400px; border-radius: 22px; }
         .lp-demo-controls { left: 10px; right: 10px; top: 10px; }
         .lp-demo-search { width: auto; }
-        .lp-demo-leads-grid { grid-template-columns: 1fr; }
+        .lp-demo-table { font-size: 13px; }
+        .lp-demo-table thead th, .lp-demo-table td { padding: 10px 12px; }
     }
     </style>
 </head>
@@ -455,13 +466,12 @@
                 </div>
             </div>
 
-            <!-- Scan results, shown below the map -->
+            <!-- Scan results, shown below the map as a spreadsheet -->
             <div class="lp-demo-leads" id="demo-leads" hidden aria-live="polite">
                 <div class="lp-demo-leads-head">
                     <span class="lp-demo-leads-count" id="demo-leads-count">Results</span>
-                    <a href="/signup" class="lp-demo-leads-cta">Unlock full numbers &amp; export →</a>
                 </div>
-                <div class="lp-demo-leads-grid" id="demo-leads-grid"></div>
+                <div class="lp-demo-table-wrap" id="demo-leads-table"></div>
             </div>
         </section>
 
@@ -680,15 +690,16 @@
             window._initDemoMap();
         })();
 
-        // Orange result pin — identical to the real app's map markers.
+        // Result pin — a glowing dot.
         window._demoOrangePin = (typeof L !== 'undefined') ? L.divIcon({
             className: 'lp-demo-pin',
-            html: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
-                <rect x="0" y="0" width="18" height="18" fill="#ff2200" opacity="0.85"/>
-                <rect x="6" y="6" width="6" height="6" fill="#0a0a0a"/>
+            html: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                <circle cx="8" cy="8" r="7" fill="#ff2200" opacity="0.25"/>
+                <circle cx="8" cy="8" r="4" fill="#ff2200" stroke="#0a0a0a" stroke-width="1.5"/>
             </svg>`,
-            iconSize: [18, 18],
-            iconAnchor: [9, 9],
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+            popupAnchor: [0, -8],
         }) : null;
 
         // ── Demo scan: call the public /api/demo-search, drop pins, list below ──
@@ -697,20 +708,17 @@
             const input = document.getElementById('demo-category-input');
             const section = document.getElementById('demo-leads');
             const countEl = document.getElementById('demo-leads-count');
-            const grid = document.getElementById('demo-leads-grid');
+            const tableWrap = document.getElementById('demo-leads-table');
             if (!btn || !input || !section) return;
 
             const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => (
                 { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]
             ));
-            const phoneSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
 
             function show(html, countText) {
                 if (countText != null) countEl.textContent = countText;
-                grid.innerHTML = html;
+                tableWrap.innerHTML = html;
                 section.hidden = false;
-                section.querySelector('.lp-demo-leads-cta').style.visibility =
-                    (countText && countText.indexOf('found') !== -1) ? 'visible' : 'hidden';
             }
 
             let busy = false;
@@ -731,7 +739,7 @@
                         body: JSON.stringify({ category, lat: c.lat, lng: c.lng }),
                     });
                     if (res.status === 429) {
-                        show('<div class="lp-demo-note">Too many demo scans — give it a minute, or <a href="/signup">start for free</a> for unlimited.</div>', 'Rate limited');
+                        show('<div class="lp-demo-note">Too many demo scans — give it a minute and try again.</div>', 'Rate limited');
                         return;
                     }
                     if (!res.ok) throw new Error('scan failed');
@@ -750,7 +758,8 @@
                 const leads = data.leads || [];
                 const total = data.total || leads.length;
 
-                // Drop orange pins on the map, same as the real app.
+                // Drop dot pins on the map; each opens a popup linking to the
+                // business's Google profile.
                 const layer = window._demoResultsLayer;
                 const map = window._demoMap;
                 if (layer) {
@@ -758,7 +767,11 @@
                     if (window._demoOrangePin) {
                         leads.forEach(l => {
                             if (l.lat == null || l.lng == null) return;
-                            L.marker([l.lat, l.lng], { icon: window._demoOrangePin }).addTo(layer);
+                            const m = L.marker([l.lat, l.lng], { icon: window._demoOrangePin }).addTo(layer);
+                            const label = l.maps_url
+                                ? '<a href="' + esc(l.maps_url) + '" target="_blank" rel="noopener">&gt; ' + esc(l.name) + '</a>'
+                                : '<span style="color:#33ff00">&gt; ' + esc(l.name) + '</span>';
+                            m.bindPopup(label, { className: 'lp-demo-popup', closeButton: true });
                         });
                     }
                 }
@@ -770,25 +783,27 @@
                     return;
                 }
 
-                let html = '';
-                for (const l of leads) {
-                    const meta = [
-                        l.rating ? ('<span class="star">★</span> ' + esc(l.rating)) : null,
-                        l.reviews ? (esc(l.reviews) + ' reviews') : null,
-                    ].filter(Boolean).join(' · ');
-                    html += '<div class="lp-lead">'
-                        + '<div class="lp-lead-top">'
-                        +   '<div class="lp-lead-name">' + esc(l.name) + '</div>'
-                        +   '<span class="lp-lead-badge">NO WEBSITE</span>'
-                        + '</div>'
-                        + (meta ? '<div class="lp-lead-meta">' + meta + '</div>' : '')
-                        + '<div class="lp-lead-phone">' + phoneSvg + esc(l.phone) + '</div>'
-                        + '</div>';
-                }
-                const extra = total > leads.length
-                    ? ('+ ' + (total - leads.length) + ' more hidden. <a href="/signup">Start for free</a> to unlock full numbers &amp; export.')
-                    : ('Phone numbers are masked in the demo. <a href="/signup">Start for free</a> to reveal them &amp; export.');
-                html += '<div class="lp-demo-note">' + extra + '</div>';
+                let rows = '';
+                leads.forEach((l, i) => {
+                    const nameCell = l.maps_url
+                        ? '<a class="lp-demo-name" href="' + esc(l.maps_url) + '" target="_blank" rel="noopener">'
+                            + esc(l.name) + '<span class="ext">↗</span></a>'
+                        : '<span class="lp-demo-name">' + esc(l.name) + '</span>';
+                    const rating = l.rating ? ('<span class="star">★</span> ' + esc(l.rating)) : '—';
+                    rows += '<tr>'
+                        + '<td class="col-num">' + (i + 1) + '</td>'
+                        + '<td class="col-name">' + nameCell + '</td>'
+                        + '<td class="col-rating">' + rating + '</td>'
+                        + '<td class="col-reviews">' + (l.reviews ? esc(l.reviews) : '—') + '</td>'
+                        + '<td class="col-phone">' + esc(l.phone || '—') + '</td>'
+                        + '<td class="col-loc"><span>' + esc(l.city || '') + '</span></td>'
+                        + '</tr>';
+                });
+                const html = '<div class="lp-demo-table-scroll"><table class="lp-demo-table">'
+                    + '<thead><tr>'
+                    +   '<th class="col-num">#</th><th>Business</th><th>Rating</th>'
+                    +   '<th>Reviews</th><th>Phone</th><th>Location</th>'
+                    + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 
                 show(html, total + ' lead' + (total === 1 ? '' : 's') + ' found');
 
