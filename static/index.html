@@ -201,6 +201,12 @@
     /* Hero fills the panel instead of the full viewport */
     .lp-frame .land-hero { min-height: 100%; height: 100%; }
 
+    /* Cube removed — center the hero text in the middle of the panel */
+    .lp-frame .land-hero { justify-content: center; text-align: center; }
+    .lp-frame .land-hero-left { max-width: 640px; }
+    .lp-frame .land-sub { margin-left: auto; margin-right: auto; }
+    .lp-frame .land-bullets { align-items: center; }
+
     @media (max-width: 640px) {
         .lp-frame { margin: 72px 10px 10px; border-radius: 22px; }
     }
@@ -295,7 +301,7 @@
         <section class="land-hero">
             <div class="land-hero-left">
                 <div class="land-tagline">// FREE LEAD GENERATION TOOL v1.0</div>
-                <h1 class="land-headline">&gt; FIND_CLIENTS.EXE<span class="land-headline-kw">Find local businesses without a website — free lead generation tool</span></h1>
+                <h1 class="land-headline">&gt; Find businesses without a website</h1>
                 <p class="land-sub">Scan any city. Find local businesses with no website. Export leads in seconds. Free to start — no card required.</p>
                 <ul class="land-bullets">
                     <li><span class="land-bi">[+]</span> Free to start — no card required</li>
@@ -304,20 +310,6 @@
                     <li><span class="land-bi">[+]</span> Multi-zone bulk scanning <span style="opacity:0.6">(Pro)</span></li>
                 </ul>
                 <a href="/signup" class="land-free-cta" id="land-start-btn">[ START ]</a>
-            </div>
-            <div class="land-hero-right">
-                <div class="land-cube-wrap">
-                    <div class="land-cube-scene">
-                        <div id="land-cube">
-                            <div class="cube-face face-front">START</div>
-                            <div class="cube-face face-back">&gt;_</div>
-                            <div class="cube-face face-left">&#9608;</div>
-                            <div class="cube-face face-right">[ ]</div>
-                            <div class="cube-face face-top">+--+</div>
-                            <div class="cube-face face-bottom">+--+</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </section>
         </div>
@@ -465,33 +457,12 @@
             sessionStorage.setItem('ls_launched', '1');
         }
 
-        document.getElementById('land-cube').addEventListener('click', function() {
-            if (localStorage.getItem('ls_token')) {
-                launch();
-            } else {
-                window.location.href = '/login';
-            }
-        });
         document.getElementById('land-start-btn').addEventListener('click', function(e) {
             if (localStorage.getItem('ls_token')) { e.preventDefault(); launch(); }
             // else follow the href to /signup naturally
         });
         document.getElementById('logo-text').addEventListener('click', showLanding);
         document.getElementById('logo-blink').addEventListener('click', showLanding);
-
-        // Continuous 360-degree auto-rotation
-        (function() {
-            const cube = document.getElementById('land-cube');
-            let rotY = 30;
-            const rotX = 20;
-
-            function tick() {
-                rotY += 0.4;
-                cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
-                requestAnimationFrame(tick);
-            }
-            requestAnimationFrame(tick);
-        })();
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.mini.min.js"></script>
