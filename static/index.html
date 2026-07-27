@@ -536,6 +536,32 @@
                     dashArray: '6 4',
                 }).addTo(map);
                 map.fitBounds(circle.getBounds(), { padding: [40, 40] });
+
+                // Same terminal-crosshair drag handle as the real app —
+                // drag it and the scan circle follows.
+                const dragIcon = L.divIcon({
+                    className: '',
+                    html: `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
+                        <rect x="21" y="2" width="2" height="40" fill="#33ff00" opacity="0.8"/>
+                        <rect x="2" y="21" width="40" height="2" fill="#33ff00" opacity="0.8"/>
+                        <rect x="16" y="16" width="12" height="12" fill="rgba(51,255,0,0.12)" stroke="#33ff00" stroke-width="1"/>
+                        <rect x="19" y="19" width="6" height="6" fill="#33ff00" opacity="0.6"/>
+                    </svg>`,
+                    iconSize: [44, 44],
+                    iconAnchor: [22, 22],
+                });
+                const marker = L.marker(center, {
+                    draggable: true,
+                    icon: dragIcon,
+                    zIndexOffset: 1000,
+                }).addTo(map);
+                marker.on('drag', e => circle.setLatLng(e.target.getLatLng()));
+
+                // Click anywhere on the map to reposition, like the real app.
+                map.on('click', e => {
+                    marker.setLatLng(e.latlng);
+                    circle.setLatLng(e.latlng);
+                });
             };
             window._initDemoMap();
         })();
