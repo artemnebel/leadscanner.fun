@@ -244,25 +244,55 @@
     }
     #demo-map { width: 100%; height: 100%; background: #0a0a0a; }
 
-    /* Search input + scan button overlaid top-left on the demo map,
-       reusing the app's .input-wrap / .btn-term terminal styles. */
+    /* Search bar overlaid top-left on the demo map: one rounded dark-glass
+       pill holding the prompt, input and a solid green SCAN button. */
     .lp-demo-controls {
-        position: absolute; top: 14px; left: 14px; z-index: 1000;  /* above leaflet panes */
-        display: flex; align-items: center; gap: 8px;
-        font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        position: absolute; top: 16px; left: 16px; z-index: 1000;  /* above leaflet panes */
     }
-    .lp-demo-controls .input-wrap {
-        flex: 0 1 auto; width: min(300px, 55vw);
-        background: rgba(10,10,10,0.92);
+    .lp-demo-search {
+        display: flex; align-items: center;
+        width: min(380px, 60vw);
+        padding: 6px 6px 6px 16px;
+        background: rgba(8, 12, 8, 0.72);
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(51, 255, 0, 0.28);
+        border-radius: 16px;
+        box-shadow: 0 10px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(51,255,0,0.08);
+        font-family: 'JetBrains Mono', monospace;
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .lp-demo-controls .btn-term { background: rgba(10,10,10,0.92); }
-    .lp-demo-controls .btn-term:hover { background: var(--green); }
+    .lp-demo-search:focus-within {
+        border-color: rgba(51, 255, 0, 0.7);
+        box-shadow: 0 10px 32px rgba(0,0,0,0.5), 0 0 16px rgba(51,255,0,0.22);
+    }
+    .lp-demo-prompt {
+        color: var(--amber); font-weight: 700; margin-right: 9px;
+        text-shadow: var(--amber-glow); user-select: none;
+    }
+    .lp-demo-search input {
+        flex: 1; min-width: 0;
+        background: transparent; border: none; outline: none;
+        color: var(--green); caret-color: var(--green);
+        font-family: inherit; font-size: 14px;
+        padding: 9px 8px 9px 0;
+    }
+    .lp-demo-search input::placeholder { color: rgba(51, 255, 0, 0.35); }
+    .lp-demo-scan {
+        flex-shrink: 0; border: none; cursor: pointer;
+        background: var(--green); color: #0a0a0a;
+        font-family: inherit; font-size: 12.5px; font-weight: 700; letter-spacing: 0.09em;
+        padding: 10px 20px; border-radius: 11px;
+        box-shadow: 0 0 14px rgba(51, 255, 0, 0.35);
+        transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+    }
+    .lp-demo-scan:hover { background: #5cff33; box-shadow: 0 0 24px rgba(51, 255, 0, 0.55); }
+    .lp-demo-scan:active { transform: translateY(1px); }
 
     @media (max-width: 640px) {
         .lp-demo { padding: 56px 14px 64px; }
         .lp-demo-box { height: 400px; border-radius: 22px; }
         .lp-demo-controls { left: 10px; right: 10px; top: 10px; }
-        .lp-demo-controls .input-wrap { flex: 1; width: auto; }
+        .lp-demo-search { width: auto; }
     }
     </style>
 </head>
@@ -369,11 +399,11 @@
             <div class="lp-demo-box">
                 <div id="demo-map"></div>
                 <div class="lp-demo-controls">
-                    <div class="input-wrap">
-                        <span class="prompt">&gt;</span>
-                        <input type="text" id="demo-category-input" placeholder="type business category"/>
+                    <div class="lp-demo-search">
+                        <span class="lp-demo-prompt">&gt;</span>
+                        <input type="text" id="demo-category-input" placeholder="Plumbers"/>
+                        <button id="demo-scan-btn" class="lp-demo-scan">SCAN</button>
                     </div>
-                    <button id="demo-scan-btn" class="btn-term btn-primary">[ SCAN ]</button>
                 </div>
             </div>
         </section>
@@ -544,7 +574,7 @@
                 const map = L.map('demo-map', {
                     zoomControl: false,
                     attributionControl: false,
-                }).setView(center, 10);   // wheel/pinch zoom + drag panning, like the real app
+                }).setView(center, 9);    // start zoomed out so more area is visible; wheel/pinch zoom + drag panning like the real app
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                     subdomains: 'abcd',
                     maxZoom: 20,
@@ -557,7 +587,6 @@
                     weight: 2,
                     dashArray: '6 4',
                 }).addTo(map);
-                map.fitBounds(circle.getBounds(), { padding: [40, 40] });
 
                 // Same terminal-crosshair drag handle as the real app —
                 // drag it and the scan circle follows.
