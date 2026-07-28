@@ -353,6 +353,71 @@
         position: relative;
         padding: clamp(48px, 6vw, 80px) clamp(16px, 4vw, 48px) clamp(56px, 7vw, 96px);
     }
+
+    /* ===== FOOTER ===== */
+    .lp-footer {
+        background: #050505;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        padding: clamp(48px, 6vw, 76px) clamp(20px, 4vw, 60px) 0;
+    }
+    .lp-footer-inner {
+        max-width: 1320px; margin: 0 auto;
+        display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 2.7fr);
+        gap: clamp(32px, 5vw, 64px);
+        padding-bottom: clamp(36px, 4vw, 56px);
+    }
+    .lp-footer-logo { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; }
+    /* The nav's mark is dark-on-white; inverted here so it reads on the dark footer. */
+    .lp-footer-mark {
+        width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+        background: #111418; border: 1px solid rgba(255,255,255,0.10); color: #4ade80;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; letter-spacing: -1px;
+    }
+    .lp-footer-name { color: #fff; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
+    .lp-footer-tagline {
+        margin: 16px 0 0; max-width: 300px;
+        font-size: 14.5px; line-height: 1.6; color: #7c8798;
+    }
+
+    .lp-footer-cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+    .lp-footer-col { display: flex; flex-direction: column; gap: 11px; }
+    .lp-footer-h {
+        margin: 0 0 3px; color: #4ade80;
+        font: 500 12px 'JetBrains Mono', monospace;
+        letter-spacing: 0.14em; text-transform: uppercase;
+    }
+    .lp-footer-col a {
+        color: #98a2b3; text-decoration: none; font-size: 14.5px;
+        transition: color 0.15s ease;
+    }
+    .lp-footer-col a:hover { color: #fff; }
+    .lp-footer-col a:focus-visible { outline: 2px solid #4ade80; outline-offset: 3px; border-radius: 3px; }
+
+    .lp-footer-bottom {
+        max-width: 1320px; margin: 0 auto;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        padding: 22px 0 26px;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 18px; flex-wrap: wrap;
+        font-size: 13.5px; color: #7d8694;   /* 5.5:1 on #050505 */
+    }
+    .lp-footer-cta {
+        background: #3ee87b; color: #04150a; text-decoration: none;
+        font-size: 14px; font-weight: 700;
+        padding: 11px 22px; border-radius: 999px;
+        transition: background 0.15s ease;
+    }
+    .lp-footer-cta:hover { background: #5cf295; }
+    .lp-footer-cta:focus-visible { outline: 3px solid #bbf7d0; outline-offset: 3px; }
+
+    @media (max-width: 900px) {
+        .lp-footer-inner { grid-template-columns: 1fr; }
+        .lp-footer-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
+    }
+    @media (max-width: 520px) {
+        .lp-footer-bottom { flex-direction: column; align-items: flex-start; }
+    }
     .fc-grid {
         max-width: 1320px; margin: 0 auto;
         display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -712,7 +777,7 @@
         <!-- ===== DEMO SECTION (white gap + rounded map box) ===== -->
         <section class="lp-demo" id="demo">
             <h2 class="lp-demo-title">See It Scan In Real Time</h2>
-            <p class="lp-demo-sub">Drop a pin on any city and Lead Scanner sweeps a 5-mile radius for local businesses without a website.</p>
+            <p class="lp-demo-sub">Drop a pin on any city and Lead Scanner sweeps the radius for local businesses without a website.</p>
             <a href="/signup" class="lp-demo-cta">Start For Free</a>
             <div class="lp-demo-box">
                 <div id="demo-map"></div>
@@ -809,6 +874,52 @@
 
             </div>
         </section>
+
+        <!-- ===== FOOTER ===== -->
+        <footer class="lp-footer">
+            <div class="lp-footer-inner">
+                <div class="lp-footer-brand">
+                    <a href="/" class="lp-footer-logo">
+                        <span class="lp-footer-mark">&gt;_</span>
+                        <span class="lp-footer-name">Lead Scanner</span>
+                    </a>
+                    <p class="lp-footer-tagline">Find local businesses without a website, and turn them into clients.</p>
+                </div>
+
+                <nav class="lp-footer-cols" aria-label="Footer">
+                    <div class="lp-footer-col">
+                        <h2 class="lp-footer-h">Product</h2>
+                        <a href="#demo">Live demo</a>
+                        <a href="/how-it-works">How It Works</a>
+                        <a href="/pricing">Pricing</a>
+                    </div>
+                    <div class="lp-footer-col">
+                        <h2 class="lp-footer-h">Use Cases</h2>
+                        <a href="/">Agencies</a>
+                        <a href="/">Freelancers</a>
+                    </div>
+                    <div class="lp-footer-col">
+                        <h2 class="lp-footer-h">Company</h2>
+                        <a href="/about">About</a>
+                        <a href="/contact">Contact</a>
+                    </div>
+                    <div class="lp-footer-col">
+                        <h2 class="lp-footer-h">Legal</h2>
+                        <a href="/privacy">Privacy</a>
+                        <a href="/terms">Terms</a>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="lp-footer-bottom">
+                <span>&copy; <span id="lp-footer-year">2026</span> Lead Scanner. Made by Artem Nebel.</span>
+                <a href="/signup" class="lp-footer-cta">Start scanning</a>
+            </div>
+        </footer>
+        <script>
+            // Keeps the copyright from going stale on its own.
+            document.getElementById('lp-footer-year').textContent = new Date().getFullYear();
+        </script>
 
     </div>
     <!-- ===== END LANDING OVERLAY ===== -->
