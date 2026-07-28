@@ -1801,9 +1801,12 @@ DEMO_CONCURRENCY  = 8      # all tiles in flight at once keeps the demo snappy
 # bare coordinate: the map still shows how much was found, but the names and
 # numbers stay behind the signup. Enforced here rather than in the page so the
 # withheld details never reach the browser at all.
-DEMO_VISIBLE_LEADS = 10
+DEMO_VISIBLE_LEADS = 3
 
-DEMO_SCAN_LIMIT        = 3     # demo scans per IP before the signup wall
+# Demo scans per IP before the signup wall. Set DEMO_SCAN_LIMIT=0 in the env
+# to lift the cap entirely — that is how local dev scans without hitting the
+# wall, and .env.docker does exactly that. Production leaves it unset.
+DEMO_SCAN_LIMIT        = int(os.getenv("DEMO_SCAN_LIMIT", "3"))
 DEMO_SCAN_WINDOW_HOURS = 24    # rolling window the allowance refills over
 
 # IP -> timestamps of that IP's demo scans, trimmed to the rolling window.
@@ -1852,7 +1855,7 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
         raise HTTPException(status_code=500, detail="GOOGLE_MAPS_API_KEY not set in .env file")
 
     ip = _client_ip(request)
-    if _demo_scans_remaining(ip) <= 0:
+    if DEMO_SCAN_LIMIT > 0 and _demo_scans_remaining(ip) <= 0:
         raise HTTPException(status_code=429, detail="DEMO_LIMIT_REACHED")
 
     category = req.category.strip()[:60] or "plumbers"
@@ -1943,7 +1946,8 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
 
     # Burn one of this IP's demo scans. Charged only once the scan actually
     # succeeded, so a Places outage never costs the visitor an attempt.
-    _demo_scan_hits.setdefault(ip, []).append(datetime.utcnow())
+    if DEMO_SCAN_LIMIT > 0:
+        _demo_scan_hits.setdefault(ip, []).append(datetime.utcnow())
 
     # Log for the admin panel like a normal search — analytics only.
     try:
