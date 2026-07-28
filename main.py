@@ -1797,6 +1797,12 @@ DEMO_SUB_RADIUS_M = 4_000
 DEMO_MAX_PAGES    = 3      # 3 = every page the Places API will hand out
 DEMO_CONCURRENCY  = 8      # all tiles in flight at once keeps the demo snappy
 
+# How many leads the demo hands over in full. Everything past this ships as a
+# bare coordinate: the map still shows how much was found, but the names and
+# numbers stay behind the signup. Enforced here rather than in the page so the
+# withheld details never reach the browser at all.
+DEMO_VISIBLE_LEADS = 10
+
 DEMO_SCAN_LIMIT        = 3     # demo scans per IP before the signup wall
 DEMO_SCAN_WINDOW_HOURS = 24    # rolling window the allowance refills over
 
@@ -1926,6 +1932,15 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
 
     total = len(leads)
 
+    # Split into what the page may show and what it may only plot. Locked
+    # entries carry coordinates and nothing else, so the withheld names,
+    # phones and Maps links are never sent to the browser.
+    visible = leads[:DEMO_VISIBLE_LEADS]
+    locked = [
+        {"lat": lead["lat"], "lng": lead["lng"], "locked": True}
+        for lead in leads[DEMO_VISIBLE_LEADS:]
+    ]
+
     # Burn one of this IP's demo scans. Charged only once the scan actually
     # succeeded, so a Places outage never costs the visitor an attempt.
     _demo_scan_hits.setdefault(ip, []).append(datetime.utcnow())
@@ -1944,7 +1959,12 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
     except Exception:
         db.rollback()
 
-    return {"leads": leads, "total": total}
+    return {
+        "leads": visible + locked,
+        "total": total,
+        "visible": len(visible),
+        "locked": len(locked),
+    }
 
 
 if __name__ == "__main__":

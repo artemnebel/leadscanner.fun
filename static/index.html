@@ -299,6 +299,27 @@
         display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
 
+    /* Signup wall under the visible rows: the rest of the list is on the map
+       as grey dots, so the count is provable but the details are not. */
+    .lp-demo-unlock {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 18px; flex-wrap: wrap;
+        padding: 18px 20px; border-top: 1px solid #e7e8ee; background: #f7f8fa;
+    }
+    .lp-demo-unlock-text { color: #33374d; font-size: 14.5px; line-height: 1.5; }
+    .lp-demo-unlock-text strong { color: #0a0a0a; font-weight: 800; }
+    .lp-demo-unlock-cta {
+        flex-shrink: 0; display: inline-block;
+        background: #0a0a0a; color: #fff; font-size: 14.5px; font-weight: 700;
+        text-decoration: none; padding: 11px 22px; border-radius: 999px;
+        transition: background 0.15s;
+    }
+    .lp-demo-unlock-cta:hover { background: #23232b; }
+    @media (max-width: 640px) {
+        .lp-demo-unlock { flex-direction: column; align-items: stretch; text-align: center; }
+        .lp-demo-unlock-cta { text-align: center; }
+    }
+
     .lp-demo-note {
         text-align: center; color: #6b7080; font-size: 14px; line-height: 1.5; padding: 22px 18px;
     }
@@ -721,6 +742,18 @@
             popupAnchor: [0, -8],
         }) : null;
 
+        // Locked pin — the same dot drained of colour. Plotted but inert: no
+        // popup, no name, nothing to click.
+        window._demoLockedPin = (typeof L !== 'undefined') ? L.divIcon({
+            className: 'lp-demo-pin',
+            html: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                <circle cx="8" cy="8" r="7" fill="#8b8f9e" opacity="0.18"/>
+                <circle cx="8" cy="8" r="4" fill="#8b8f9e" stroke="#4a4d59" stroke-width="1.5"/>
+            </svg>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+        }) : null;
+
         // ── Demo scan: call the public /api/demo-search, drop pins, list below ──
         (function () {
             const btn = document.getElementById('demo-scan-btn');
@@ -794,15 +827,30 @@
             }
 
             function renderLeads(category, data) {
-                const leads = data.leads || [];
-                const total = data.total || leads.length;
+                const all = data.leads || [];
+                const total = data.total || all.length;
 
-                // Drop dot pins on the map; each opens a popup linking to the
-                // business's Google profile.
+                // The server sends the first few in full and the rest as bare
+                // coordinates. Red pin + row for the former, inert grey dot for
+                // the latter, so the map proves the count the wall claims.
+                const leads = all.filter(l => !l.locked);
+                const lockedLeads = all.filter(l => l.locked);
+
                 const layer = window._demoResultsLayer;
                 const map = window._demoMap;
                 if (layer) {
                     layer.clearLayers();
+                    if (window._demoLockedPin) {
+                        lockedLeads.forEach(l => {
+                            if (l.lat == null || l.lng == null) return;
+                            L.marker([l.lat, l.lng], {
+                                icon: window._demoLockedPin,
+                                interactive: false,      // nothing to click
+                                keyboard: false,
+                            }).addTo(layer);
+                        });
+                    }
+                    // Unlocked pins go on last so they sit above the grey ones.
                     if (window._demoOrangePin) {
                         leads.forEach(l => {
                             if (l.lat == null || l.lng == null) return;
@@ -815,7 +863,7 @@
                     }
                 }
 
-                if (!leads.length) {
+                if (!all.length) {
                     show('<div class="lp-demo-note">No website-less ' + esc(category) +
                         ' found here — try dragging the pin to a denser area, or another category.</div>',
                         '0 results');
@@ -838,11 +886,26 @@
                         + '<td class="col-loc"><span>' + esc(l.city || '') + '</span></td>'
                         + '</tr>';
                 });
+                // The remaining leads are on the map but not in the table. Name
+                // the number so the wall is a concrete offer, not a tease.
+                const hidden = lockedLeads.length;
+                const unlock = hidden ? (
+                    '<div class="lp-demo-unlock">'
+                    +   '<div class="lp-demo-unlock-text"><strong>' + hidden + ' more lead'
+                    +     (hidden === 1 ? '' : 's') + ' in this area.</strong> '
+                    +     'They are the grey dots on the map. Create a free account to see '
+                    +     (hidden === 1 ? 'its name and phone number.' : 'their names and phone numbers.')
+                    +   '</div>'
+                    +   '<a href="/signup" class="lp-demo-unlock-cta">See all ' + total + ' leads</a>'
+                    + '</div>'
+                ) : '';
+
                 const html = '<div class="lp-demo-table-scroll"><table class="lp-demo-table">'
                     + '<thead><tr>'
                     +   '<th class="col-num">#</th><th>Business</th><th>Rating</th>'
                     +   '<th>Reviews</th><th>Phone</th><th>Location</th>'
-                    + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+                    + '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+                    + unlock;
 
                 show(html, total + ' lead' + (total === 1 ? '' : 's') + ' found');
 
