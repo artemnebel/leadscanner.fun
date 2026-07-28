@@ -266,11 +266,6 @@
 
     /* Scan results shown below the map as a spreadsheet table. */
     .lp-demo-leads { max-width: 1040px; margin: 24px auto 0; text-align: left; }
-    .lp-demo-leads-head {
-        display: flex; align-items: baseline; justify-content: space-between;
-        gap: 16px; flex-wrap: wrap; margin: 0 4px 14px;
-    }
-    .lp-demo-leads-count { color: #0a0a0a; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
 
     .lp-demo-table-wrap {
         border: 1px solid #e7e8ee; border-radius: 14px; overflow: hidden;
@@ -302,23 +297,16 @@
     /* Signup wall under the visible rows: the rest of the list is on the map
        as grey dots, so the count is provable but the details are not. */
     .lp-demo-unlock {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 18px; flex-wrap: wrap;
+        display: flex; align-items: center; justify-content: center;
         padding: 18px 20px; border-top: 1px solid #e7e8ee; background: #f7f8fa;
     }
-    .lp-demo-unlock-text { color: #33374d; font-size: 14.5px; line-height: 1.5; }
-    .lp-demo-unlock-text strong { color: #0a0a0a; font-weight: 800; }
     .lp-demo-unlock-cta {
-        flex-shrink: 0; display: inline-block;
+        display: inline-block;
         background: #0a0a0a; color: #fff; font-size: 14.5px; font-weight: 700;
         text-decoration: none; padding: 11px 22px; border-radius: 999px;
         transition: background 0.15s;
     }
     .lp-demo-unlock-cta:hover { background: #23232b; }
-    @media (max-width: 640px) {
-        .lp-demo-unlock { flex-direction: column; align-items: stretch; text-align: center; }
-        .lp-demo-unlock-cta { text-align: center; }
-    }
 
     .lp-demo-note {
         text-align: center; color: #6b7080; font-size: 14px; line-height: 1.5; padding: 22px 18px;
@@ -508,9 +496,6 @@
 
             <!-- Scan results, shown below the map as a spreadsheet -->
             <div class="lp-demo-leads" id="demo-leads" hidden aria-live="polite">
-                <div class="lp-demo-leads-head">
-                    <span class="lp-demo-leads-count" id="demo-leads-count">Results</span>
-                </div>
                 <div class="lp-demo-table-wrap" id="demo-leads-table"></div>
             </div>
         </section>
@@ -759,7 +744,6 @@
             const btn = document.getElementById('demo-scan-btn');
             const input = document.getElementById('demo-category-input');
             const section = document.getElementById('demo-leads');
-            const countEl = document.getElementById('demo-leads-count');
             const tableWrap = document.getElementById('demo-leads-table');
             if (!btn || !input || !section) return;
 
@@ -767,8 +751,7 @@
                 { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]
             ));
 
-            function show(html, countText) {
-                if (countText != null) countEl.textContent = countText;
+            function show(html) {
                 tableWrap.innerHTML = html;
                 section.hidden = false;
             }
@@ -780,8 +763,7 @@
             // no scan count anywhere, so the demo's size stays a server-side detail.
             function showDemoLimit() {
                 show('<div class="lp-demo-note">You\'ve reached the demo limit. '
-                    + '<a href="/signup">Create a free account</a> to keep scanning.</div>',
-                    'Demo limit reached');
+                    + '<a href="/signup">Create a free account</a> to keep scanning.</div>');
             }
 
             async function runScan() {
@@ -793,7 +775,7 @@
                 busy = true;
                 btn.classList.add('loading');
                 btn.textContent = 'SCANNING';
-                show('<div class="lp-demo-note">Sweeping a 5-mile radius…</div>', 'Scanning…');
+                show('<div class="lp-demo-note">Sweeping a 5-mile radius…</div>');
 
                 try {
                     const res = await fetch('/api/demo-search', {
@@ -810,7 +792,7 @@
                             demoLocked = true;
                             showDemoLimit();
                         } else {
-                            show('<div class="lp-demo-note">Too many scans at once. Give it a minute and try again.</div>', 'Slow down');
+                            show('<div class="lp-demo-note">Too many scans at once. Give it a minute and try again.</div>');
                         }
                         return;
                     }
@@ -818,7 +800,7 @@
                     const data = await res.json();
                     renderLeads(category, data);
                 } catch (err) {
-                    show('<div class="lp-demo-note">Something went wrong. Try again in a moment.</div>', 'Error');
+                    show('<div class="lp-demo-note">Something went wrong. Try again in a moment.</div>');
                 } finally {
                     busy = false;
                     btn.classList.remove('loading');
@@ -865,8 +847,7 @@
 
                 if (!all.length) {
                     show('<div class="lp-demo-note">No website-less ' + esc(category) +
-                        ' found here — try dragging the pin to a denser area, or another category.</div>',
-                        '0 results');
+                        ' found here — try dragging the pin to a denser area, or another category.</div>');
                     return;
                 }
 
@@ -886,16 +867,10 @@
                         + '<td class="col-loc"><span>' + esc(l.city || '') + '</span></td>'
                         + '</tr>';
                 });
-                // The remaining leads are on the map but not in the table. Name
-                // the number so the wall is a concrete offer, not a tease.
-                const hidden = lockedLeads.length;
-                const unlock = hidden ? (
+                // The remaining leads stay on the map as grey dots. The button
+                // carries the offer on its own, so no explanatory copy here.
+                const unlock = lockedLeads.length ? (
                     '<div class="lp-demo-unlock">'
-                    +   '<div class="lp-demo-unlock-text"><strong>' + hidden + ' more lead'
-                    +     (hidden === 1 ? '' : 's') + ' in this area.</strong> '
-                    +     'They are the grey dots on the map. Create a free account to see '
-                    +     (hidden === 1 ? 'its name and phone number.' : 'their names and phone numbers.')
-                    +   '</div>'
                     +   '<a href="/signup" class="lp-demo-unlock-cta">See all ' + total + ' leads</a>'
                     + '</div>'
                 ) : '';
@@ -907,7 +882,7 @@
                     + '</tr></thead><tbody>' + rows + '</tbody></table></div>'
                     + unlock;
 
-                show(html, total + ' lead' + (total === 1 ? '' : 's') + ' found');
+                show(html);
 
                 // Frame the pins so the user sees them appear.
                 if (map && layer && layer.getLayers().length) {
