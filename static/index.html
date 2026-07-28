@@ -321,28 +321,37 @@
     }
 
     /* ===== FEATURE CARDS ===== */
-    /* No background: the white from the demo section runs straight through, so the
-       heading is dark-on-light while the cards stay dark panels. */
-    .fc-section {
-        position: relative;
-        padding: clamp(56px, 7vw, 104px) clamp(16px, 4vw, 48px) clamp(56px, 7vw, 96px);
+    /* Full-bleed black band behind the heading only. The cards below sit on the
+       white that carries through from the demo section. */
+    .fc-headband {
+        position: relative; overflow: hidden; background: #000;
+        padding: clamp(56px, 7vw, 96px) clamp(16px, 4vw, 48px) clamp(52px, 6vw, 88px);
     }
-    .fc-head {
-        position: relative; max-width: 780px; text-align: center;
-        margin: 0 auto clamp(40px, 5vw, 68px);
+    /* Soft green bloom so the band is not a flat slab. */
+    .fc-headband::before {
+        content: ''; position: absolute; pointer-events: none;
+        left: 50%; top: -150px; transform: translateX(-50%);
+        width: min(920px, 95%); height: 440px;
+        background: radial-gradient(ellipse at center,
+            rgba(61,220,132,0.12) 0%, rgba(61,220,132,0) 70%);
     }
-    /* Darker than the card eyebrows: the same green would drop to ~1.7:1 on white. */
+    .fc-head { position: relative; max-width: 780px; margin: 0 auto; text-align: center; }
     .fc-head-eyebrow {
         font: 500 13px 'JetBrains Mono', monospace;
-        color: oklch(0.52 0.15 150); letter-spacing: 2.5px;
+        color: oklch(0.8 0.19 150); letter-spacing: 2.5px;
     }
     .fc-head-title {
-        margin: 14px 0 0; color: #0a0a0a; letter-spacing: -1px; text-wrap: balance;
+        margin: 14px 0 0; color: #fff; letter-spacing: -1px; text-wrap: balance;
         font: 700 clamp(31px, 3.9vw, 52px)/1.1 'Space Grotesk', sans-serif;
     }
     .fc-head-sub {
-        margin: 16px auto 0; max-width: 620px; color: #6b7080;
+        margin: 16px auto 0; max-width: 620px; color: oklch(0.72 0 0);
         font: 400 clamp(16px, 1.4vw, 19px)/1.55 'Space Grotesk', sans-serif;
+    }
+
+    .fc-section {
+        position: relative;
+        padding: clamp(48px, 6vw, 80px) clamp(16px, 4vw, 48px) clamp(56px, 7vw, 96px);
     }
     .fc-grid {
         max-width: 1320px; margin: 0 auto;
@@ -723,13 +732,15 @@
         </section>
 
         <!-- ===== FEATURE CARDS ===== -->
-        <section class="fc-section">
+        <section class="fc-headband">
             <header class="fc-head">
                 <span class="fc-head-eyebrow">THE TOOLKIT</span>
                 <h2 class="fc-head-title">Scan wider. Close faster.</h2>
                 <p class="fc-head-sub">Everything you need to find businesses without a website, and turn them into clients.</p>
             </header>
+        </section>
 
+        <section class="fc-section">
             <div class="fc-grid">
 
                 <!-- Multi-zone scanning -->
