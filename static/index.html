@@ -341,7 +341,9 @@
             linear-gradient(90deg, oklch(0.19 0 0) 1px, transparent 1px);
         background-size: 40px 40px; opacity: 0.6;
     }
-    .fc-art { position: relative; height: 340px; flex-shrink: 0; overflow: hidden; }
+    /* No overflow clip: the widest ring runs slightly past 340px and should
+       spill over the body rather than get sliced off. The card still clips it. */
+    .fc-art { position: relative; height: 340px; flex-shrink: 0; }
     /* The artwork is laid out against a fixed 560px canvas, as drawn. Centring it
        means a narrower card crops evenly on both sides instead of sliding off. */
     .fc-art-inner {
