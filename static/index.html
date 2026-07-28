@@ -330,7 +330,7 @@
     .fc-card {
         position: relative; box-sizing: border-box;
         display: flex; flex-direction: column;
-        background: oklch(0.13 0 0); border-radius: 16px; overflow: hidden;
+        border-radius: 16px; overflow: hidden;
     }
     .fc-card::before {                       /* graph paper, behind the artwork */
         content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -373,7 +373,7 @@
     }
     .fc-mi {
         position: absolute; left: 50%; transform: translate(-50%, -50%);
-        background: oklch(0.13 0 0); padding: 0 8px;
+        background: #0d0d0d; padding: 0 8px;   /* knockout matches the section now */
         font: 500 12px 'JetBrains Mono', monospace;
     }
     .fc-pill {
