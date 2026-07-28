@@ -117,11 +117,14 @@ PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
 # Text Search field mask. Phone is in Enterprise tier; rating/userRatingCount push
 # the call to Enterprise + Atmosphere ($40/1K vs $35/1K) — a flat ~$5/1K calls more,
 # regardless of how many places each call returns.
+# nextPageToken must be named in the mask or the API omits it and pagination
+# silently stops after the first 20 results, whatever max_pages says.
 FIELD_MASK        = (
     "places.id,places.displayName,places.formattedAddress,"
     "places.googleMapsUri,places.location,places.businessStatus,"
     "places.websiteUri,"
-    "places.nationalPhoneNumber,places.rating,places.userRatingCount"
+    "places.nationalPhoneNumber,places.rating,places.userRatingCount,"
+    "nextPageToken"
 )
 
 # ── App ──────────────────────────────────────────────────────────────────────
@@ -1458,13 +1461,30 @@ async def delete_client(client_id: str, user=Depends(get_current_user), db: Sess
     db.commit()
     return {"ok": True}
 
-def _generate_sub_circles(lat: float, lng: float, total_radius_m: float) -> list[tuple[float, float]]:
+def _haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """Great-circle distance in metres."""
+    R = 6_371_000.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = p2 - p1
+    dl = math.radians(lng2 - lng1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * R * math.asin(math.sqrt(a))
+
+
+def _generate_sub_circles(
+    lat: float,
+    lng: float,
+    total_radius_m: float,
+    sub_radius_m: float = 8_000.0,
+) -> list[tuple[float, float]]:
     """
     Tile the search area with a hexagonal grid of sub-circles so every part of
     a large radius gets its own focused query (overcoming the 60-result API cap).
-    Sub-circle radius is fixed at 8 km; for areas <= 8 km a single center is used.
+    Default sub-circle radius is 8 km; for areas <= one sub-circle a single
+    center is used. Pass a smaller sub_radius_m to tile a small area densely —
+    the 60-result cap is per query, not per area, so finer tiles return more.
     """
-    SUB_R = 8_000.0  # metres — Google returns good local density at this scale
+    SUB_R = float(sub_radius_m)  # metres — 8 km gives good local density by default
 
     if total_radius_m <= SUB_R:
         return [(lat, lng)]
@@ -1556,7 +1576,7 @@ async def get_nearby_places(
     places = []
     page_token = None
 
-    for page_num in range(max_pages):
+    for _page in range(max_pages):
         body: dict = {
             "textQuery": category,
             "locationBias": {
@@ -1598,8 +1618,9 @@ async def get_nearby_places(
         if not page_token:
             break
 
-        if page_num < max_pages - 1:
-            await asyncio.sleep(2)
+        # No inter-page delay: the legacy Places API needed ~2s for a page token
+        # to become valid, but on Places API (New) the token works immediately
+        # and returns a non-overlapping page.
 
     _cache_put(db, key, places)
     return places
@@ -1754,15 +1775,27 @@ async def search_leads(
 
 
 # ── Landing-page demo search ──────────────────────────────────────────────────
-# Public (no auth) but bounded: one cached Places call per scan (no grid
-# tiling), a burst rate limit, and a hard per-IP allowance of DEMO_SCAN_LIMIT
-# scans. Once that allowance is spent the endpoint returns DEMO_LIMIT_REACHED
-# and the landing page tells the visitor to sign up.
+# Public (no auth) but bounded by a per-IP allowance of DEMO_SCAN_LIMIT scans
+# plus a burst rate limit. Within a scan the demo is deliberately NOT thinned:
+# it tiles the full 5-mile disc and pulls every page of every tile, because a
+# rich free result set is what sells the paid plan. Spend is bounded by the
+# per-IP scan cap and the 30-day Places cache, not by holding results back.
 
-DEMO_RADIUS_M = 8_047    # fixed 5 miles — a single Places call covers this well
-                         # (one 8km sub-circle), so results spread across the whole
-                         # circle instead of clustering at the center. Matches the
-                         # Free plan's radius, too.
+DEMO_RADIUS_M = 8_047    # fixed 5 miles — matches the Free plan's radius.
+
+# The Places API caps any single query at 60 results (3 pages of 20), so one
+# call over the whole disc can never return more than 60 no matter how dense
+# the area. Tiling into smaller sub-circles gives each tile its own 60-result
+# budget: DEMO_SUB_RADIUS_M of 4km yields 7 hex tiles over the 5-mile disc,
+# raising the raw ceiling from 60 to ~420 before filtering.
+#
+# Cost note: an uncached demo scan is len(tiles) * DEMO_MAX_PAGES Places calls
+# (7 * 3 = 21 today). Repeat scans of the same area+category are free via the
+# 30-day cache. Lower DEMO_SUB_RADIUS_M for more coverage at proportionally
+# more spend; raise it toward DEMO_RADIUS_M to collapse back to a single call.
+DEMO_SUB_RADIUS_M = 4_000
+DEMO_MAX_PAGES    = 3      # 3 = every page the Places API will hand out
+DEMO_CONCURRENCY  = 8      # all tiles in flight at once keeps the demo snappy
 
 DEMO_SCAN_LIMIT        = 3     # demo scans per IP before the signup wall
 DEMO_SCAN_WINDOW_HOURS = 24    # rolling window the allowance refills over
@@ -1820,12 +1853,38 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
     if not (-90 <= req.lat <= 90 and -180 <= req.lng <= 180):
         raise HTTPException(status_code=400, detail="Invalid coordinates")
 
-    # Single Places call (max_pages=1) through the shared 30-day cache — repeat
-    # demo scans of the same area/category cost nothing.
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        places = await get_nearby_places(
-            client, db, req.lat, req.lng, DEMO_RADIUS_M, category, max_pages=1
-        )
+    # Tile the disc and pull every page of every tile, all through the shared
+    # 30-day cache. One slow tile must not sink the whole scan, so a failing
+    # sub-circle contributes nothing rather than raising.
+    tiles = _generate_sub_circles(req.lat, req.lng, DEMO_RADIUS_M, DEMO_SUB_RADIUS_M)
+    sem = asyncio.Semaphore(DEMO_CONCURRENCY)
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+
+        async def _fetch_tile(tlat: float, tlng: float) -> list:
+            async with sem:
+                try:
+                    return await get_nearby_places(
+                        client, db, tlat, tlng, DEMO_SUB_RADIUS_M, category,
+                        max_pages=DEMO_MAX_PAGES,
+                    )
+                except Exception:
+                    return []
+
+        batches = await asyncio.gather(*[_fetch_tile(t[0], t[1]) for t in tiles])
+
+    # Overlapping tiles return the same business more than once — dedupe by
+    # place id, same as the real grid scan.
+    seen_ids: set[str] = set()
+    places: list = []
+    for batch in batches:
+        for place in batch:
+            pid = place.get("id")
+            if pid and pid in seen_ids:
+                continue
+            if pid:
+                seen_ids.add(pid)
+            places.append(place)
 
     # Same lead filter as the real scan: open, no website, phone + reviews.
     leads = []
@@ -1839,8 +1898,16 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
         if not phone or review_count == 0:
             continue
         geo = place.get("location", {})
+        # Places uses locationBias (a soft hint), so edge tiles pull in results
+        # from outside the disc. Hold the demo to the 5 miles the page promises.
+        plat, plng = geo.get("latitude"), geo.get("longitude")
+        if plat is None or plng is None:
+            continue
+        dist = _haversine_m(req.lat, req.lng, plat, plng)
+        if dist > DEMO_RADIUS_M:
+            continue
         leads.append(
-            {
+            (dist, {
                 "name": place.get("displayName", {}).get("text", "Unknown"),
                 "city": place.get("formattedAddress", ""),
                 "phone": phone,
@@ -1849,8 +1916,13 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
                 "reviews": review_count,
                 "lat": geo.get("latitude"),
                 "lng": geo.get("longitude"),
-            }
+            })
         )
+
+    # Tiles come back in grid order, which reads as random. Nearest-first makes
+    # the list feel like a sweep outward from the visitor's pin.
+    leads.sort(key=lambda pair: pair[0])
+    leads = [lead for _, lead in leads]
 
     total = len(leads)
 
