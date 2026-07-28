@@ -321,7 +321,9 @@
     }
 
     /* ===== FEATURE CARDS ===== */
-    .fc-section { background: #0d0d0d; padding: clamp(52px, 6vw, 92px) clamp(16px, 4vw, 48px); }
+    /* No background of its own: the white from the demo section runs straight
+       through, so each card reads as its own panel rather than one dark band. */
+    .fc-section { padding: clamp(52px, 6vw, 92px) clamp(16px, 4vw, 48px); }
     .fc-grid {
         max-width: 1320px; margin: 0 auto;
         display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -330,7 +332,7 @@
     .fc-card {
         position: relative; box-sizing: border-box;
         display: flex; flex-direction: column;
-        border-radius: 16px; overflow: hidden;
+        background: oklch(0.13 0 0); border-radius: 16px; overflow: hidden;
     }
     .fc-card::before {                       /* graph paper, behind the artwork */
         content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -347,7 +349,7 @@
         width: 560px; height: 340px;
     }
     .fc-body {
-        position: relative; margin-top: auto;
+        position: relative;
         display: flex; flex-direction: column; gap: 16px;
         padding: 12px clamp(24px, 3vw, 40px) clamp(28px, 3vw, 40px);
     }
@@ -373,7 +375,7 @@
     }
     .fc-mi {
         position: absolute; left: 50%; transform: translate(-50%, -50%);
-        background: #0d0d0d; padding: 0 8px;   /* knockout matches the section now */
+        background: oklch(0.13 0 0); padding: 0 8px;   /* knocks out the ring behind it */
         font: 500 12px 'JetBrains Mono', monospace;
     }
     .fc-pill {
