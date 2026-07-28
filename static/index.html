@@ -30,7 +30,7 @@
     <meta name="twitter:image" content="https://leadscanner.fun/static/og-image.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
@@ -318,6 +318,92 @@
     @media (max-width: 560px) {
         .lr-tag { display: none; }               /* labels overflow a phone-width radar */
         .lr-cta { width: 100%; }
+    }
+
+    /* ===== FEATURE CARDS ===== */
+    .fc-section { background: #0d0d0d; padding: clamp(52px, 6vw, 92px) clamp(16px, 4vw, 48px); }
+    .fc-grid {
+        max-width: 1320px; margin: 0 auto;
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 32px; align-items: stretch;
+    }
+    .fc-card {
+        position: relative; box-sizing: border-box;
+        display: flex; flex-direction: column;
+        background: oklch(0.13 0 0); border-radius: 16px; overflow: hidden;
+    }
+    .fc-card::before {                       /* graph paper, behind the artwork */
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background-image:
+            linear-gradient(oklch(0.19 0 0) 1px, transparent 1px),
+            linear-gradient(90deg, oklch(0.19 0 0) 1px, transparent 1px);
+        background-size: 40px 40px; opacity: 0.6;
+    }
+    .fc-art { position: relative; height: 340px; flex-shrink: 0; overflow: hidden; }
+    /* The artwork is laid out against a fixed 560px canvas, as drawn. Centring it
+       means a narrower card crops evenly on both sides instead of sliding off. */
+    .fc-art-inner {
+        position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+        width: 560px; height: 340px;
+    }
+    .fc-body {
+        position: relative; margin-top: auto;
+        display: flex; flex-direction: column; gap: 16px;
+        padding: 12px clamp(24px, 3vw, 40px) clamp(28px, 3vw, 40px);
+    }
+    .fc-eyebrow {
+        font: 500 13px 'JetBrains Mono', monospace;
+        color: oklch(0.8 0.19 150); letter-spacing: 2.5px;
+    }
+    .fc-title {
+        margin: 0; font: 700 clamp(28px, 2.4vw, 36px)/1.1 'Space Grotesk', sans-serif;
+        color: oklch(0.97 0 0); letter-spacing: -0.5px; text-wrap: pretty;
+    }
+    .fc-text {
+        margin: 0; font: 400 17px/1.55 'Space Grotesk', sans-serif;
+        color: oklch(0.72 0 0);
+    }
+    .fc-ring {
+        position: absolute; border: 2px dashed oklch(0.8 0.19 150); border-radius: 50%;
+        background: oklch(0.8 0.19 150 / .07);
+    }
+    .fc-plus {
+        position: absolute; color: oklch(0.8 0.19 150);
+        font: 700 22px 'Space Grotesk', sans-serif;
+    }
+    .fc-mi {
+        position: absolute; left: 50%; transform: translate(-50%, -50%);
+        background: oklch(0.13 0 0); padding: 0 8px;
+        font: 500 12px 'JetBrains Mono', monospace;
+    }
+    .fc-pill {
+        position: absolute; left: 50%; transform: translate(-50%, -50%);
+        background: oklch(0.8 0.19 150); border-radius: 99px; padding: 6px 14px;
+        font: 700 13px 'JetBrains Mono', monospace; color: oklch(0.13 0 0);
+        white-space: nowrap;
+    }
+    .fc-formats {
+        position: absolute; left: 50%; top: 288px; transform: translateX(-50%);
+        display: flex; gap: 10px;
+    }
+    .fc-chip {
+        background: oklch(0.17 0 0); border: 1px solid oklch(0.4 0.05 150);
+        border-radius: 6px; padding: 6px 12px;
+        font: 500 12px 'JetBrains Mono', monospace; color: oklch(0.85 0.1 150);
+    }
+    .fc-chip.is-primary {
+        background: oklch(0.8 0.19 150); border-color: oklch(0.8 0.19 150);
+        font-weight: 700; color: oklch(0.13 0 0);
+    }
+    /* Once a card is narrower than the 560px canvas the composition would bleed off
+       both edges, so scale it down instead of cropping it. */
+    @media (max-width: 700px) {
+        .fc-art { height: 282px; }
+        .fc-art-inner { transform: translateX(-50%) scale(0.8); transform-origin: top center; }
+    }
+    @media (max-width: 480px) {
+        .fc-art { height: 214px; }
+        .fc-art-inner { transform: translateX(-50%) scale(0.6); transform-origin: top center; }
     }
     /* Motion here is decorative, so drop it entirely when asked. */
     @media (prefers-reduced-motion: reduce) {
@@ -609,6 +695,77 @@
             <!-- Scan results, shown below the map as a spreadsheet -->
             <div class="lp-demo-leads" id="demo-leads" hidden aria-live="polite">
                 <div class="lp-demo-table-wrap" id="demo-leads-table"></div>
+            </div>
+        </section>
+
+        <!-- ===== FEATURE CARDS ===== -->
+        <section class="fc-section">
+            <div class="fc-grid">
+
+                <!-- Multi-zone scanning -->
+                <article class="fc-card">
+                    <div class="fc-art">
+                        <div class="fc-art-inner" aria-hidden="true">
+                            <!-- Shifted +30px from the mock so the cluster is centred
+                                 in the 560px canvas and crops evenly on both sides. -->
+                            <span class="fc-ring" style="left:90px;  top:40px;  width:200px; height:200px"></span>
+                            <span class="fc-ring" style="left:250px; top:90px;  width:220px; height:220px"></span>
+                            <span class="fc-ring" style="left:160px; top:152px; width:170px; height:170px"></span>
+                            <span class="fc-plus" style="left:182px; top:126px">+</span>
+                            <span class="fc-plus" style="left:352px; top:186px">+</span>
+                            <span class="fc-plus" style="left:236px; top:224px">+</span>
+                        </div>
+                    </div>
+                    <div class="fc-body">
+                        <span class="fc-eyebrow">MULTI-ZONE SCANNING</span>
+                        <h2 class="fc-title">One scan.<br>Every neighborhood.</h2>
+                        <p class="fc-text">Drop zones across a metro, or a state, and get one merged, de-duplicated list of businesses with no website.</p>
+                    </div>
+                </article>
+
+                <!-- Extended scan radius -->
+                <article class="fc-card">
+                    <div class="fc-art">
+                        <div class="fc-art-inner" aria-hidden="true">
+                            <span class="fc-ring" style="left:50%; top:200px; transform:translate(-50%,-50%); width:300px; height:300px; background:oklch(0.8 0.19 150 / .05)"></span>
+                            <span class="fc-ring" style="left:50%; top:200px; transform:translate(-50%,-50%); width:200px; height:200px; background:none; border-color:oklch(0.8 0.19 150 / .6)"></span>
+                            <span class="fc-ring" style="left:50%; top:200px; transform:translate(-50%,-50%); width:100px; height:100px; background:none; border-color:oklch(0.8 0.19 150 / .45)"></span>
+                            <span class="fc-plus" style="left:50%; top:200px; transform:translate(-50%,-50%); font-size:24px">+</span>
+                            <span class="fc-mi" style="top:150px; color:oklch(0.6 0.1 150)">10 MI</span>
+                            <span class="fc-mi" style="top:100px; color:oklch(0.7 0.14 150)">20 MI</span>
+                            <span class="fc-pill" style="top:50px">30 MI</span>
+                        </div>
+                    </div>
+                    <div class="fc-body">
+                        <span class="fc-eyebrow">EXTENDED SCAN RADIUS</span>
+                        <h2 class="fc-title">Reach out to<br>30 miles.</h2>
+                        <p class="fc-text">Widen any zone up to a 30-mile radius, perfect for rural areas and sprawling metros where leads are spread out.</p>
+                    </div>
+                </article>
+
+                <!-- Export your leads -->
+                <article class="fc-card">
+                    <div class="fc-art">
+                        <div class="fc-art-inner" aria-hidden="true">
+                            <span class="fc-ring" style="left:50%; top:160px; transform:translate(-50%,-50%); width:300px; height:300px; background:none; border-color:oklch(0.8 0.19 150 / .35)"></span>
+                            <span class="fc-ring" style="left:50%; top:160px; transform:translate(-50%,-50%); width:210px; height:210px; background:oklch(0.8 0.19 150 / .08); border-color:oklch(0.8 0.19 150 / .6)"></span>
+                            <span class="fc-plus" style="left:50%; top:138px; transform:translate(-50%,-50%); font-size:80px; line-height:1">&uarr;</span>
+                            <span style="position:absolute; left:50%; top:182px; transform:translateX(-50%); width:92px; height:26px; border:3px solid oklch(0.8 0.19 150); border-top:none; border-radius:0 0 10px 10px"></span>
+                            <span class="fc-formats">
+                                <span class="fc-chip">.CSV</span>
+                                <span class="fc-chip">.XLSX</span>
+                                <span class="fc-chip">.JSON</span>
+                                <span class="fc-chip is-primary">CRM</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="fc-body" style="padding-top:24px">
+                        <span class="fc-eyebrow">EXPORT YOUR LEADS</span>
+                        <h2 class="fc-title">Take your leads anywhere.</h2>
+                        <p class="fc-text">Export to CSV, XLSX, or JSON and drop them straight into your existing CRM, or skip the export and manage everything in ours.</p>
+                    </div>
+                </article>
+
             </div>
         </section>
 
