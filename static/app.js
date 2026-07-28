@@ -331,14 +331,14 @@ function showUpgradeModal(title, message, extraNode) {
     return modal;
 }
 
-/* ===== FREE DAILY SCAN LIMIT MODAL (free tier — live countdown) ===== */
+/* ===== SCAN LIMIT MODAL (live countdown to the next refill) ===== */
 function showDailyLimitModal(retryAt) {
     const countdown = document.createElement('p');
     countdown.className = 'paywall-msg';
     countdown.style.fontVariantNumeric = 'tabular-nums';
     const modal = showUpgradeModal(
-        '> DAILY SCAN LIMIT REACHED',
-        "You've used all 5 of your free scans for today. The free plan resets 5 scans every 24 hours (countdown below). Upgrade to Pro for unlimited scans — no daily limit, no waiting — plus a 15mi radius, multi-scan, and the client portal.",
+        '> SCAN LIMIT REACHED',
+        "You've used all your scans for now. Your scans refill automatically (countdown below). Upgrade to Pro for unlimited scans with no waiting, plus a 15mi radius, multi-scan, and the client portal.",
         countdown
     );
     if (!retryAt) return;
@@ -346,11 +346,11 @@ function showDailyLimitModal(retryAt) {
     (function tick() {
         if (!document.body.contains(modal)) return;
         const ms = target - Date.now();
-        if (ms <= 0) { countdown.textContent = "> Your free scans have reset — reload to continue."; return; }
+        if (ms <= 0) { countdown.textContent = "> Your scans have refilled. Reload to continue."; return; }
         const h = Math.floor(ms / 3600000);
         const m = Math.floor((ms % 3600000) / 60000);
         const s = Math.floor((ms % 60000) / 1000);
-        countdown.textContent = `> Free scans reset in ${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+        countdown.textContent = `> Scans refill in ${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
         setTimeout(tick, 1000);
     })();
 }

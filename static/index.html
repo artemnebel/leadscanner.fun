@@ -50,7 +50,7 @@
           "applicationCategory": "BusinessApplication",
           "operatingSystem": "Web",
           "offers": [
-            { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD", "description": "5 scans per day within a ~5-mile radius, plus a starter client portal. No credit card required." },
+            { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD", "description": "Scan within a ~5-mile radius, plus a starter client portal. No credit card required." },
             { "@type": "Offer", "name": "Pro", "price": "49", "priceCurrency": "USD", "description": "Priority access — unlimited scans with no waiting, a ~15-mile radius, multi-scan, and an unlimited client portal. $49/month or $490/year." }
           ],
           "featureList": [
@@ -79,7 +79,7 @@
             {
               "@type": "Question",
               "name": "Is Lead Scanner free to use?",
-              "acceptedAnswer": { "@type": "Answer", "text": "Yes — the Free plan includes 5 scans per day within a ~5-mile radius and a starter client portal, no credit card required. Pro ($49/month) adds unlimited scans with no waiting, a ~15-mile radius, multi-scan, and an unlimited client portal." }
+              "acceptedAnswer": { "@type": "Answer", "text": "Yes. Lead Scanner is free to start, with a ~5-mile scan radius and a starter client portal, no credit card required. Pro ($49/month) adds unlimited scans with no waiting, a ~15-mile radius, multi-scan, and an unlimited client portal." }
             },
             {
               "@type": "Question",
@@ -464,7 +464,7 @@
                 <h1 class="land-headline">Find local businesses without a website</h1>
                 <p class="land-sub">Scan any city and pull businesses that have no website, with phone numbers ready to call.</p>
                 <a href="/signup" class="land-free-cta" id="land-start-btn">Start scanning free</a>
-                <p class="land-hero-trust">No credit card. 5 free scans every day.</p>
+                <p class="land-hero-trust">No credit card required.</p>
             </div>
         </section>
         </div>
@@ -741,8 +741,19 @@
             }
 
             let busy = false;
+            let demoLocked = false;   // set once the server says this visitor's demo scans are spent
+
+            // The wall shown when the demo allowance runs out. Deliberately quotes
+            // no scan count anywhere, so the demo's size stays a server-side detail.
+            function showDemoLimit() {
+                show('<div class="lp-demo-note">You\'ve reached the demo limit. '
+                    + '<a href="/signup">Create a free account</a> to keep scanning.</div>',
+                    'Demo limit reached');
+            }
+
             async function runScan() {
                 if (busy) return;
+                if (demoLocked) { showDemoLimit(); return; }
                 const category = (input.value || '').trim() || 'plumbers';
                 const c = window._demoScanCenter ? window._demoScanCenter() : { lat: 40.0379, lng: -76.3055 };
 
@@ -758,7 +769,16 @@
                         body: JSON.stringify({ category, lat: c.lat, lng: c.lng }),
                     });
                     if (res.status === 429) {
-                        show('<div class="lp-demo-note">Too many demo scans — give it a minute and try again.</div>', 'Rate limited');
+                        // The server sends DEMO_LIMIT_REACHED once this visitor has
+                        // spent their demo allowance; anything else is a burst limit.
+                        let detail = '';
+                        try { detail = (await res.json()).detail || ''; } catch (e) {}
+                        if (detail === 'DEMO_LIMIT_REACHED') {
+                            demoLocked = true;
+                            showDemoLimit();
+                        } else {
+                            show('<div class="lp-demo-note">Too many scans at once. Give it a minute and try again.</div>', 'Slow down');
+                        }
                         return;
                     }
                     if (!res.ok) throw new Error('scan failed');

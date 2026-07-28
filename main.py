@@ -1755,13 +1755,49 @@ async def search_leads(
 
 # ── Landing-page demo search ──────────────────────────────────────────────────
 # Public (no auth) but bounded: one cached Places call per scan (no grid
-# tiling) and a hard IP rate limit. Result gating (caps / login-to-unlock)
-# is intentionally NOT applied here yet — to be added later.
+# tiling), a burst rate limit, and a hard per-IP allowance of DEMO_SCAN_LIMIT
+# scans. Once that allowance is spent the endpoint returns DEMO_LIMIT_REACHED
+# and the landing page tells the visitor to sign up.
 
 DEMO_RADIUS_M = 8_047    # fixed 5 miles — a single Places call covers this well
                          # (one 8km sub-circle), so results spread across the whole
                          # circle instead of clustering at the center. Matches the
                          # Free plan's radius, too.
+
+DEMO_SCAN_LIMIT        = 3     # demo scans per IP before the signup wall
+DEMO_SCAN_WINDOW_HOURS = 24    # rolling window the allowance refills over
+
+# IP -> timestamps of that IP's demo scans, trimmed to the rolling window.
+# Deliberately in-process: no migration, and a restart just hands out fresh
+# allowances. This is a friction gate for a public demo, not a security
+# control — X-Forwarded-For is client-supplied and therefore spoofable.
+_demo_scan_hits: dict[str, list[datetime]] = {}
+
+
+def _client_ip(request: Request) -> str:
+    """Real client IP behind Render's proxy.
+
+    get_remote_address() reads request.client.host, which on Render is the
+    edge proxy — every visitor would share one bucket and the demo would shut
+    off globally after 3 scans. Prefer the leftmost X-Forwarded-For hop.
+    """
+    fwd = request.headers.get("x-forwarded-for", "")
+    if fwd:
+        first = fwd.split(",")[0].strip()
+        if first:
+            return first
+    return request.headers.get("x-real-ip") or get_remote_address(request) or "unknown"
+
+
+def _demo_scans_remaining(ip: str) -> int:
+    """Scans left for this IP, pruning hits that aged out of the window."""
+    cutoff = datetime.utcnow() - timedelta(hours=DEMO_SCAN_WINDOW_HOURS)
+    hits = [t for t in _demo_scan_hits.get(ip, []) if t > cutoff]
+    if hits:
+        _demo_scan_hits[ip] = hits
+    else:
+        _demo_scan_hits.pop(ip, None)
+    return max(0, DEMO_SCAN_LIMIT - len(hits))
 
 
 class DemoSearchRequest(BaseModel):
@@ -1771,10 +1807,14 @@ class DemoSearchRequest(BaseModel):
 
 
 @app.post("/api/demo-search")
-@limiter.limit("3/minute")
+@limiter.limit("10/minute")   # burst guard only; DEMO_SCAN_LIMIT is the real cap
 async def demo_search(request: Request, req: DemoSearchRequest, db: Session = Depends(get_db)):
     if not API_KEY:
         raise HTTPException(status_code=500, detail="GOOGLE_MAPS_API_KEY not set in .env file")
+
+    ip = _client_ip(request)
+    if _demo_scans_remaining(ip) <= 0:
+        raise HTTPException(status_code=429, detail="DEMO_LIMIT_REACHED")
 
     category = req.category.strip()[:60] or "plumbers"
     if not (-90 <= req.lat <= 90 and -180 <= req.lng <= 180):
@@ -1813,6 +1853,10 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
         )
 
     total = len(leads)
+
+    # Burn one of this IP's demo scans. Charged only once the scan actually
+    # succeeded, so a Places outage never costs the visitor an attempt.
+    _demo_scan_hits.setdefault(ip, []).append(datetime.utcnow())
 
     # Log for the admin panel like a normal search — analytics only.
     try:
