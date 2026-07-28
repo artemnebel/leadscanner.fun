@@ -30,7 +30,7 @@
     <meta name="twitter:image" content="https://leadscanner.fun/static/og-image.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
@@ -176,57 +176,154 @@
         .lp-nav { padding: 0 1.25rem; }
     }
 
-    /* ===== White edges around the ORIGINAL hero: white page behind, hero
-       inset in a rounded dark panel with white gaps left/right/bottom.
-       Nothing inside the hero is changed. ===== */
     #landing-overlay { background: #ffffff; overflow-y: auto; overflow-x: hidden; }
 
-    .lp-frame {
-        margin: 8px 16px 16px;               /* nav (68px) is in-flow above; small gap + white L/R/bottom */
-        height: calc(100vh - 92px);          /* 68 nav + 8 top + 16 bottom = full first screen */
-        border-radius: 30px;
-        background: var(--bg);
-        overflow: hidden;
+    /* ===== HERO — full-bleed dark panel, copy left, radar right ===== */
+    .lr-hero {
         position: relative;
+        background: #050505;
+        overflow: hidden;
+        padding: clamp(40px, 5vw, 72px) 0 clamp(48px, 6vw, 88px);
     }
-    /* Landing sits above #crt-overlay, so re-add the scanlines inside the panel
-       to keep the hero looking exactly as before. */
-    .lp-frame::after {
+    /* Faint graph paper behind everything; purely atmospheric. */
+    .lr-hero::before {
         content: '';
-        position: absolute; inset: 0;
-        pointer-events: none;
-        border-radius: inherit;
-        background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.055) 2px, rgba(0,0,0,0.055) 4px);
+        position: absolute; inset: 0; pointer-events: none;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.021) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.021) 1px, transparent 1px);
+        background-size: 46px 46px;
     }
-    /* Hero fills the panel instead of the full viewport */
-    .lp-frame .land-hero { min-height: 100%; height: 100%; }
-
-    /* Cube removed — center the hero text in the middle of the panel */
-    .lp-frame .land-hero { justify-content: center; text-align: center; }
-    .lp-frame .land-hero-left { max-width: 620px; }
-    .lp-frame .land-headline { font-size: clamp(2rem, 4.6vw, 3.3rem); margin-bottom: 1.1rem; }
-    .lp-frame .land-sub { margin: 0 auto 2rem; max-width: 460px; font-size: 15px; }
-    .lp-frame .land-bullets { align-items: center; }
-
-    /* Prominent, filled primary CTA (better conversion than the outline default) */
-    .lp-frame .land-free-cta {
-        background: var(--green); color: var(--bg);
-        border-color: var(--green);
-        font-size: 14px; letter-spacing: 0.06em;
-        padding: 14px 34px;
-        box-shadow: 0 0 26px rgba(51,255,0,0.35);
-    }
-    .lp-frame .land-free-cta:hover {
-        background: #5cff33; color: var(--bg);
-        box-shadow: 0 0 34px rgba(51,255,0,0.55);
-    }
-    .lp-frame .land-hero-trust {
-        color: rgba(122,200,122,0.7); font-size: 12px; letter-spacing: 0.02em;
-        margin: 16px 0 0;
+    .lr-hero-inner {
+        position: relative; z-index: 1;
+        max-width: 1320px; margin: 0 auto;
+        padding: 0 clamp(20px, 4vw, 60px);
+        min-height: min(76vh, 700px);
+        display: grid;
+        grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
+        align-items: center;
+        gap: clamp(28px, 4vw, 64px);
     }
 
-    @media (max-width: 640px) {
-        .lp-frame { margin: 6px 10px 10px; border-radius: 22px; }
+    .lr-eyebrow {
+        display: flex; align-items: center; gap: 11px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px; font-weight: 500; letter-spacing: 0.19em;
+        color: #4ade80; margin: 0 0 clamp(18px, 2.4vw, 30px);
+    }
+    .lr-eyebrow-dot {
+        width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+        background: #4ade80; box-shadow: 0 0 11px rgba(74,222,128,0.9);
+        animation: lr-pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes lr-pulse {
+        0%, 100% { opacity: 1;   transform: scale(1); }
+        50%      { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .lr-headline {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: clamp(2.3rem, 4.4vw, 3.85rem);
+        font-weight: 800; line-height: 1.07; letter-spacing: -0.035em;
+        color: #ffffff; margin: 0 0 clamp(16px, 2.2vw, 26px);
+        max-width: 9.4em;   /* tuned so it breaks into the same three lines */
+    }
+    .lr-sub {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: clamp(15px, 1.42vw, 19px);
+        font-weight: 400; line-height: 1.58; color: #98a2b3;
+        margin: 0 0 clamp(26px, 3.2vw, 40px); max-width: 27em;
+    }
+
+    .lr-cta-row { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+    .lr-cta {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-height: 56px; padding: 0 34px;          /* comfortably over the 44px target */
+        background: #3ee87b; color: #04150a;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+        border-radius: 10px; text-decoration: none;
+        transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+    }
+    .lr-cta:hover  { background: #5cf295; box-shadow: 0 0 34px rgba(62,232,123,0.30); }
+    .lr-cta:active { transform: translateY(1px); }
+    .lr-cta:focus-visible { outline: 3px solid #bbf7d0; outline-offset: 3px; }
+    .lr-cta-note {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13.5px; color: #7c8798; letter-spacing: 0.02em;
+    }
+
+    /* ── Radar ──────────────────────────────────────────────────────────── */
+    .lr-hero-visual { position: relative; display: flex; align-items: center; justify-content: center; }
+    .lr-radar { position: relative; width: min(100%, 620px); aspect-ratio: 1 / 1; }
+
+    .lr-ring {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        border: 1px solid rgba(130,200,158,0.20); border-radius: 50%;
+    }
+    .lr-ring.r1 { width: 26%; height: 26%; }
+    .lr-ring.r2 { width: 52%; height: 52%; }
+    .lr-ring.r3 { width: 78%; height: 78%; }
+    .lr-ring.r4 { width: 100%; height: 100%; border-color: rgba(130,200,158,0.12); }
+
+    /* Afterglow trails counter-clockwise behind the leading edge at 0deg, so a
+       clockwise rotation reads as a sweep that just passed. */
+    .lr-sweep {
+        position: absolute; inset: 0; border-radius: 50%;
+        background: conic-gradient(from 0deg,
+            rgba(61,220,132,0.00)  0deg,
+            rgba(61,220,132,0.00)  300deg,
+            rgba(61,220,132,0.045) 318deg,
+            rgba(61,220,132,0.13)  344deg,
+            rgba(61,220,132,0.30)  360deg);
+        /* Fade the wedge out toward the middle so the beam reads as coming from
+           the core rather than being a flat pie slice. */
+        -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 4%, #000 58%);
+                mask-image: radial-gradient(circle at 50% 50%, transparent 4%, #000 58%);
+        animation: lr-sweep 4.4s linear infinite;
+    }
+    .lr-sweep-line {
+        position: absolute; left: 50%; top: 0; width: 1.5px; height: 50%;
+        margin-left: -0.75px; transform-origin: 50% 100%;
+        background: linear-gradient(to bottom, rgba(74,222,128,0) 0%, rgba(74,222,128,0.9) 100%);
+        animation: lr-sweep 4.4s linear infinite;
+    }
+    @keyframes lr-sweep { to { transform: rotate(360deg); } }
+
+    .lr-core {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 9px; height: 9px; border-radius: 50%;
+        background: #4ade80; box-shadow: 0 0 14px rgba(74,222,128,0.95);
+    }
+
+    .lr-blip {
+        position: absolute; transform: translate(-50%, -50%);
+        width: 11px; height: 11px; border-radius: 50%;
+    }
+    .lr-blip.hot  { background: #4ade80; box-shadow: 0 0 13px rgba(74,222,128,0.8); }
+    .lr-blip.cold { background: #565e6b; width: 8px; height: 8px; }
+
+    .lr-tag {
+        position: absolute; transform: translate(-50%, -50%);
+        background: #101418; border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 9px; padding: 9px 15px;
+        font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #e7ebf0;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 980px) {
+        .lr-hero-inner { grid-template-columns: 1fr; min-height: 0; gap: 44px; }
+        .lr-headline, .lr-sub { max-width: none; }
+        .lr-radar { width: min(100%, 460px); }
+    }
+    @media (max-width: 560px) {
+        .lr-tag { display: none; }               /* labels overflow a phone-width radar */
+        .lr-cta { width: 100%; }
+        .lr-cta-row { gap: 14px; }
+    }
+    /* Motion here is decorative, so drop it entirely when asked. */
+    @media (prefers-reduced-motion: reduce) {
+        .lr-sweep, .lr-sweep-line, .lr-eyebrow-dot { animation: none; }
     }
 
     /* ===== Demo section — white gap with text, then a rounded map box ===== */
@@ -466,20 +563,45 @@
             </div>
         </nav>
 
-        <!-- HERO (original, unchanged — just framed with white edges) -->
-        <div class="lp-frame">
-        <section class="land-hero">
-            <div class="land-hero-left">
-                <h1 class="land-headline">Find local businesses without a website</h1>
-                <p class="land-sub">Scan any city and pull businesses that have no website, with phone numbers ready to call.</p>
-                <a href="/signup" class="land-free-cta" id="land-start-btn">Start scanning free</a>
-                <p class="land-hero-trust">No credit card required.</p>
+        <!-- HERO -->
+        <section class="lr-hero">
+            <div class="lr-hero-inner">
+                <div class="lr-hero-copy">
+                    <p class="lr-eyebrow"><span class="lr-eyebrow-dot"></span>LEADSCANNER.FUN</p>
+                    <h1 class="lr-headline">Every business without a website is a client waiting.</h1>
+                    <p class="lr-sub">Scan any city. Find local businesses with no web presence. Pitch them first.</p>
+                    <div class="lr-cta-row">
+                        <a href="#demo" class="lr-cta" id="land-start-btn">See a demo</a>
+                        <span class="lr-cta-note">no signup required</span>
+                    </div>
+                </div>
+
+                <!-- Decorative: the scan idea, not real data. Hidden from AT. -->
+                <div class="lr-hero-visual" aria-hidden="true">
+                    <div class="lr-radar">
+                        <span class="lr-ring r1"></span>
+                        <span class="lr-ring r2"></span>
+                        <span class="lr-ring r3"></span>
+                        <span class="lr-ring r4"></span>
+                        <span class="lr-sweep"></span>
+                        <span class="lr-sweep-line"></span>
+                        <span class="lr-core"></span>
+
+                        <span class="lr-blip cold" style="left:29%; top:33%"></span>
+                        <span class="lr-blip cold" style="left:47%; top:38%"></span>
+                        <span class="lr-blip hot"  style="left:72%; top:26%"></span>
+                        <span class="lr-blip hot"  style="left:38%; top:61%"></span>
+                        <span class="lr-blip hot"  style="left:64%; top:75%"></span>
+
+                        <span class="lr-tag" style="left:83%; top:19%">Rosie's Diner &middot; no website</span>
+                        <span class="lr-tag" style="left:31%; top:70%">Vela Barbershop &middot; no website</span>
+                    </div>
+                </div>
             </div>
         </section>
-        </div>
 
         <!-- ===== DEMO SECTION (white gap + rounded map box) ===== -->
-        <section class="lp-demo">
+        <section class="lp-demo" id="demo">
             <h2 class="lp-demo-title">See It Scan In Real Time</h2>
             <p class="lp-demo-sub">Drop a pin on any city and Lead Scanner sweeps a 5-mile radius for local businesses without a website.</p>
             <a href="/signup" class="lp-demo-cta">Start For Free</a>
