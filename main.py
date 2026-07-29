@@ -1301,19 +1301,14 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             if not user and customer_id:
                 user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
             if user:
+                # Pro is retired: no checkout can grant a tier any more. Every
+                # subscription sold now is a lead plan, and its leads arrive via
+                # invoice.paid. The one existing Pro subscriber keeps their tier
+                # through the customer.subscription.* events further down.
                 user.stripe_subscription_id = obj.get("subscription")
-                # Only the retired Pro plan carries a tier. The lead plans must
-                # NOT land here: "pro" is in PAID_TIERS, so setting it would hand
-                # a $20/mo subscriber uncapped scanning instead of 300 leads.
-                # Their leads arrive via invoice.paid below. Unknown plans are
-                # treated as metered, which is the safe direction to fail.
-                if plan in ("monthly", "annual"):
-                    user.tier = "pro"
-                    print(f"[webhook] legacy pro subscription activated for {user.email}", flush=True)
-                else:
-                    print(f"[webhook] lead plan '{plan}' started for {user.email}; "
-                          f"leads follow on invoice.paid", flush=True)
                 db.commit()
+                print(f"[webhook] lead plan '{plan}' started for {user.email}; "
+                      f"leads follow on invoice.paid", flush=True)
             return {"ok": True}
 
         if obj.get("payment_status") != "paid":

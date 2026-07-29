@@ -112,7 +112,7 @@
             const limit = plan.portal_limit;
             const full = count >= limit;
             el.innerHTML = `${count}/${limit} saved on Free` +
-                (full ? ' — <a href="/pricing" style="color:inherit">upgrade to Pro</a> for unlimited' : '');
+                (full ? ' — <a href="/pricing" style="color:inherit">see pricing</a> to lift the limit' : '');
             el.className = 'cap-banner' + (full ? ' full' : '');
         }
 

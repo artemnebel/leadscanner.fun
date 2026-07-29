@@ -284,14 +284,14 @@ function showPaywallModal(message) {
     box.className = 'paywall-box';
     const title = document.createElement('div');
     title.className = 'paywall-title';
-    title.textContent = '> UPGRADE TO PRO';
+    title.textContent = '> OUT OF LEADS';
     const msg = document.createElement('p');
     msg.className = 'paywall-msg';
     msg.textContent = message;
     const upgradeBtn = document.createElement('a');
     upgradeBtn.href = '/pricing';
     upgradeBtn.className = 'auth-btn paywall-upgrade-btn';
-    upgradeBtn.textContent = '[ ⚡ UPGRADE TO PRO ]';
+    upgradeBtn.textContent = '[ ⚡ GET LEADS ]';
     const dismissBtn = document.createElement('button');
     dismissBtn.className = 'paywall-close';
     dismissBtn.textContent = '[ DISMISS ]';
@@ -320,7 +320,7 @@ function showUpgradeModal(title, message, extraNode) {
     const upgradeBtn = document.createElement('a');
     upgradeBtn.href = '/pricing';
     upgradeBtn.className = 'auth-btn paywall-upgrade-btn';
-    upgradeBtn.textContent = '[ ⚡ UPGRADE TO PRO ]';
+    upgradeBtn.textContent = '[ ⚡ GET LEADS ]';
     const dismissBtn = document.createElement('button');
     dismissBtn.className = 'paywall-close';
     dismissBtn.textContent = '[ DISMISS ]';
@@ -354,7 +354,7 @@ function showOutOfLeadsModal() {
 function showPremiumFeatureModal() {
     showUpgradeModal(
         '> MULTI-SCAN IS A PRO FEATURE',
-        'Multi-scan sweeps several areas in one run. Upgrade to Pro to unlock it — along with a 15mi radius, priority access with no waiting, and the client portal.'
+        'Multi-scan sweeps several areas in one run. See the pricing page to unlock it.'
     );
 }
 
@@ -642,7 +642,7 @@ async function saveLeadToClients(lead, btn) {
             btn.textContent = prev;
             showUpgradeModal(
                 '> CLIENT PORTAL FULL',
-                `Free accounts can save up to ${data.detail.limit} clients. Upgrade to Pro for an unlimited client portal.`
+                `You can save up to ${data.detail.limit} clients. See the pricing page to lift the limit.`
             );
             return;
         }
@@ -673,7 +673,7 @@ async function applyPlanToUI() {
     const maxM = state.plan.max_radius_m;
     slider.max = String(maxM);
     if (parseInt(slider.value, 10) > maxM) slider.value = String(maxM);
-    if (!state.plan.pro) slider.title = 'Free plan caps at ~5mi — upgrade to Pro for 15mi';
+    if (!state.plan.pro) slider.title = 'Your plan caps the scan radius at ~5mi';
     slider.dispatchEvent(new Event('input'));
 }
 
