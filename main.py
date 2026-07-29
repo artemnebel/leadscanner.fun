@@ -161,6 +161,29 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="static")
 init_db()
 
+def _log_billing_config() -> None:
+    """Print exactly which billing pieces are wired, so a missing price ID shows
+    up in the deploy log instead of as a failed checkout for a real customer."""
+    rows = [
+        ("STRIPE_SECRET_KEY",          bool(STRIPE_SECRET_KEY)),
+        ("STRIPE_WEBHOOK_SECRET",      bool(STRIPE_WEBHOOK_SECRET)),
+        ("STRIPE_PRICE_PACK_SOLO",     bool(PACK_PRICE_IDS.get("solo"))),
+        ("STRIPE_PRICE_PACK_BUSINESS", bool(PACK_PRICE_IDS.get("business"))),
+        ("STRIPE_PRICE_PACK_SCALE",    bool(PACK_PRICE_IDS.get("scale"))),
+        ("STRIPE_PRICE_AGENCY",        bool(AGENCY_PRICE_IDS.get("agency"))),
+        ("STRIPE_PRICE_AGENCY_PLUS",   bool(AGENCY_PRICE_IDS.get("agency-plus"))),
+    ]
+    missing = [name for name, ok in rows if not ok]
+    for name, ok in rows:
+        print(f"[billing] {'OK      ' if ok else 'MISSING '} {name}", flush=True)
+    if missing:
+        print(f"[billing] {len(missing)} setting(s) missing — checkout will refuse "
+              f"those products until they are set", flush=True)
+    else:
+        print("[billing] all products configured", flush=True)
+
+_log_billing_config()
+
 bearer  = HTTPBearer(auto_error=False)
 
 # ── Auth helpers ─────────────────────────────────────────────────────────────
@@ -1267,22 +1290,30 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
 
     # ── New pricing: one-time credit pack purchases ─────────────────────────
     if ev_type == "checkout.session.completed":
-        # Pro subscription checkout: grant the plan immediately (don't wait for the
-        # separate customer.subscription.created event).
         if obj.get("mode") == "subscription":
             metadata = obj.get("metadata") or {}
             user_id = metadata.get("user_id")
             customer_id = obj.get("customer")
+            plan = (metadata.get("plan") or "").lower()
             user = None
             if user_id:
                 user = db.query(User).filter(User.id == user_id).first()
             if not user and customer_id:
                 user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
             if user:
-                user.tier = "pro"
                 user.stripe_subscription_id = obj.get("subscription")
+                # Only the retired Pro plan carries a tier. The lead plans must
+                # NOT land here: "pro" is in PAID_TIERS, so setting it would hand
+                # a $20/mo subscriber uncapped scanning instead of 300 leads.
+                # Their leads arrive via invoice.paid below. Unknown plans are
+                # treated as metered, which is the safe direction to fail.
+                if plan in ("monthly", "annual"):
+                    user.tier = "pro"
+                    print(f"[webhook] legacy pro subscription activated for {user.email}", flush=True)
+                else:
+                    print(f"[webhook] lead plan '{plan}' started for {user.email}; "
+                          f"leads follow on invoice.paid", flush=True)
                 db.commit()
-                print(f"[webhook] pro subscription activated for {user.email}", flush=True)
             return {"ok": True}
 
         if obj.get("payment_status") != "paid":
