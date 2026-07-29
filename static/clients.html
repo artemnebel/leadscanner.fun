@@ -46,6 +46,8 @@
     </style>
 </head>
 <body class="page">
+    {% if maintenance %}{% include '_maintenance_banner.html' %}{% endif %}
+    {% if maintenance %}{% include '_maintenance_notice.html' %}{% endif %}
     <div id="crt-overlay"></div>
 
     <header id="top-bar">

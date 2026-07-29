@@ -1,0 +1,34 @@
+<!-- Site-wide "app is offline" bar. Included on every page so any visitor to
+     leadscanner.fun sees it, marketing pages included. Rendered only when
+     APP_MAINTENANCE is on; delete the includes to retire it. -->
+<div id="maint-banner" role="status">
+    <span class="mb-dot" aria-hidden="true"></span>
+    <span><strong>Under development.</strong> The scanner is offline and will be back within 48 hours.</span>
+</div>
+<style>
+    /* One variable drives both the bar's height and everything it has to push
+       out of the way, so they can never drift apart. */
+    :root { --maint-h: 42px; }
+
+    #maint-banner {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 200000;
+        height: var(--maint-h);
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        padding: 0 16px; text-align: center;
+        background: #3ee87b; color: #04150a;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 14px; font-weight: 500; line-height: 1.3;
+    }
+    #maint-banner strong { font-weight: 800; }
+    .mb-dot { width: 8px; height: 8px; border-radius: 50%; background: #04150a; flex-shrink: 0; }
+
+    /* In-flow pages just get pushed down. */
+    body { padding-top: var(--maint-h); }
+    /* These two are position:fixed, so body padding does not move them. */
+    #landing-overlay, #maintenance-notice { top: var(--maint-h); }
+
+    @media (max-width: 620px) {
+        :root { --maint-h: 54px; }
+        #maint-banner { font-size: 13px; padding: 6px 14px; }
+    }
+</style>

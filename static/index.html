@@ -899,6 +899,7 @@
     </style>
 </head>
 <body>
+    {% if maintenance %}{% include '_maintenance_banner.html' %}{% endif %}
 
     <!-- ===== LANDING OVERLAY ===== -->
     <div id="landing-overlay">
@@ -1238,22 +1239,7 @@
     </div>
     <!-- ===== END LANDING OVERLAY ===== -->
 
-    {% if maintenance %}
-    <!-- Sits one layer below #landing-overlay (100000), so logged-out visitors
-         still get the marketing page and demo, while anyone who reaches the
-         scanner itself lands on this instead. -->
-    <div id="maintenance-notice" role="status" aria-live="polite">
-        <div class="mt-card">
-            <span class="mt-mark">&gt;_</span>
-            <h1 class="mt-title">Lead Scanner is under development</h1>
-            <p class="mt-text">The scanner is offline while we finish the new pricing. It will be back within 48 hours.</p>
-            <div class="mt-actions">
-                <a class="mt-btn" href="/pricing">See pricing</a>
-                <a class="mt-link" href="/contact">Contact</a>
-            </div>
-        </div>
-    </div>
-    {% endif %}
+    {% if maintenance %}{% include '_maintenance_notice.html' %}{% endif %}
     <div id="crt-overlay"></div>
 
     <header id="top-bar">
