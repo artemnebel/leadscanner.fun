@@ -296,7 +296,12 @@
         position: absolute; transform: translate(-50%, -50%);
         width: 11px; height: 11px; border-radius: 50%;
     }
-    .lr-blip.cold { background: #565e6b; width: 8px; height: 8px; }
+    /* Smaller and a touch softer than the hot blips, so the radar still has
+       depth now that everything is green. */
+    .lr-blip.cold {
+        background: #4ade80; width: 8px; height: 8px;
+        box-shadow: 0 0 10px rgba(74,222,128,0.65);
+    }
 
     /* Green blips are "detected" by the sweep: dark until the beam reaches their
        bearing, then a flash that settles and fades before the next pass. Scaling
@@ -304,10 +309,9 @@
        and only transform/opacity animate. Each blip's animation-delay is set
        inline from its bearing: (degrees from 12 o'clock / 360) * 4.4s, matching
        the sweep's period. Move a blip and its delay has to be recomputed. */
-    .lr-blip.hot {
-        background: #4ade80; box-shadow: 0 0 13px rgba(74,222,128,0.8);
-        animation: lr-blip 4.4s linear infinite backwards;  /* backwards: stays dark during the delay */
-    }
+    .lr-blip.hot { background: #4ade80; box-shadow: 0 0 13px rgba(74,222,128,0.8); }
+    /* backwards: stays dark through the delay instead of flashing visible on load */
+    .lr-blip { animation: lr-blip 4.4s linear infinite backwards; }
     @keyframes lr-blip {
         0%   { opacity: 0;    transform: translate(-50%, -50%) scale(0.4); }
         3%   { opacity: 1;    transform: translate(-50%, -50%) scale(1.5); }
@@ -320,7 +324,7 @@
     }
     /* Without motion the blips simply sit there, lit. */
     @media (prefers-reduced-motion: reduce) {
-        .lr-blip.hot { animation: none; opacity: 1; }
+        .lr-blip { animation: none; opacity: 1; }
     }
 
     .lr-tag {
@@ -861,8 +865,8 @@
                         <span class="lr-sweep-line"></span>
                         <span class="lr-core"></span>
 
-                        <span class="lr-blip cold" style="left:29%; top:33%"></span>
-                        <span class="lr-blip cold" style="left:47%; top:38%"></span>
+                        <span class="lr-blip cold" style="left:29%; top:33%; animation-delay:3.78s"></span>
+                        <span class="lr-blip cold" style="left:47%; top:38%; animation-delay:4.23s"></span>
                         <!-- animation-delay = bearing from 12 o'clock as a fraction of the 4.4s sweep -->
                         <span class="lr-blip hot"  style="left:72%; top:26%; animation-delay:0.52s"></span>
                         <span class="lr-blip hot"  style="left:38%; top:61%; animation-delay:2.78s"></span>
