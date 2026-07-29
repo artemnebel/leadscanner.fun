@@ -1471,12 +1471,23 @@
                 btn.textContent = 'SCANNING';
                 show('<div class="lp-demo-note">Sweeping a 5-mile radius…</div>');
 
+                // Each failure mode is handled separately and logged, so a dropped
+                // connection, a server error and a rendering bug are told apart
+                // instead of all surfacing as one unexplained message.
                 try {
-                    const res = await fetch('/api/demo-search', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ category, lat: c.lat, lng: c.lng }),
-                    });
+                    let res;
+                    try {
+                        res = await fetch('/api/demo-search', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ category, lat: c.lat, lng: c.lng }),
+                        });
+                    } catch (netErr) {
+                        console.error('[demo] request never completed:', netErr);
+                        show('<div class="lp-demo-note">Could not reach the scanner. Check your connection and try again.</div>');
+                        return;
+                    }
+
                     if (res.status === 429) {
                         // The server sends DEMO_LIMIT_REACHED once this visitor has
                         // spent their demo allowance; anything else is a burst limit.
@@ -1490,11 +1501,21 @@
                         }
                         return;
                     }
-                    if (!res.ok) throw new Error('scan failed');
+
+                    if (!res.ok) {
+                        let body = '';
+                        try { body = await res.text(); } catch (e) {}
+                        console.error('[demo] server responded ' + res.status + ':', body);
+                        show('<div class="lp-demo-note">The scanner returned an error (' + res.status + '). Try again in a moment.</div>');
+                        return;
+                    }
+
                     const data = await res.json();
                     renderLeads(category, data);
                 } catch (err) {
-                    show('<div class="lp-demo-note">Something went wrong. Try again in a moment.</div>');
+                    // Reached only if parsing or rendering threw, never the network.
+                    console.error('[demo] could not display results:', err);
+                    show('<div class="lp-demo-note">Something went wrong displaying the results. Try again in a moment.</div>');
                 } finally {
                     busy = false;
                     btn.classList.remove('loading');
