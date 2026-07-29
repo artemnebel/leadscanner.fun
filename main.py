@@ -115,6 +115,15 @@ PAID_TIERS = {"pro", "starter", "business", "unlimited"}
 # The old per-tier monthly caps are gone with the allotment logic: grandfathered
 # paid tiers are uncapped and everyone else spends from lead_credits.
 
+# ── Maintenance switch ─────────────────────────────────────────────────────
+# Takes the scanner offline while billing is being finished. The marketing
+# pages and the landing demo stay up. Set APP_MAINTENANCE=0 to bring it back.
+APP_MAINTENANCE = os.getenv("APP_MAINTENANCE", "1").strip().lower() not in ("0", "false", "no", "")
+MAINTENANCE_DETAIL = {
+    "code": "MAINTENANCE",
+    "message": "Lead Scanner is under development and will be back within 48 hours.",
+}
+
 if STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
 
@@ -285,6 +294,7 @@ def _ctx(request: Request):
         "version": APP_VERSION,
         "facebook_enabled": bool(FACEBOOK_APP_ID and FACEBOOK_APP_SECRET),
         "github_enabled": bool(GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET),
+        "maintenance": APP_MAINTENANCE,
     }
 
 @app.get("/")
@@ -1666,6 +1676,10 @@ async def search_leads(
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Server-side gate, so the scanner is genuinely off rather than just hidden.
+    if APP_MAINTENANCE:
+        raise HTTPException(status_code=503, detail=MAINTENANCE_DETAIL)
+
     if not user:
         raise HTTPException(status_code=401, detail="LOGIN_REQUIRED")
     if not API_KEY:

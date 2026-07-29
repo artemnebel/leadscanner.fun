@@ -331,6 +331,15 @@ function showUpgradeModal(title, message, extraNode) {
     return modal;
 }
 
+/* ===== MAINTENANCE MODAL =====
+   Only reachable from a page that was loaded before the scanner went offline;
+   a fresh load gets the full-screen notice instead. */
+function showMaintenanceModal(detail) {
+    const msg = (detail && detail.message)
+        || 'Lead Scanner is under development and will be back within 48 hours.';
+    showUpgradeModal('> UNDER DEVELOPMENT', msg);
+}
+
 /* ===== OUT OF LEADS MODAL =====
    There is no longer a timed window to wait out: a scan is blocked only when
    the lead balance is empty, so the only way forward is to buy more. */
@@ -415,6 +424,13 @@ async function handleSearch() {
                     showLeadsUI();
                     return;
                 }
+                if (resp.status === 503) {
+                    showMaintenanceModal(data.detail);
+                    setLoading(false);
+                    applyFilterAndRender();
+                    showLeadsUI();
+                    return;
+                }
                 if (resp.status === 429) {
                     showOutOfLeadsModal();
                     setLoading(false);
@@ -473,6 +489,11 @@ async function handleSearch() {
 
         if (resp.status === 403 && data.detail === 'SCAN_CAP_REACHED') {
             showScanCapModal();
+            return;
+        }
+
+        if (resp.status === 503) {
+            showMaintenanceModal(data.detail);
             return;
         }
 
