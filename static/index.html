@@ -358,6 +358,9 @@
     .ql-section {
         position: relative; overflow: hidden; background: #050505;
         padding: clamp(64px, 8vw, 108px) clamp(20px, 4vw, 60px);
+        /* White gap before the footer, otherwise the two dark blocks merge into
+           one. The overlay's white shows through this margin. */
+        margin-bottom: clamp(48px, 7vw, 96px);
     }
     /* Same faint graph paper as the hero, so the two dark blocks feel related. */
     .ql-section::before {
