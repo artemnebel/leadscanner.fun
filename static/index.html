@@ -638,31 +638,40 @@
         animation: fc-zone-in 0.42s ease-out backwards;
     }
 
-    /* 2. Rings sweep outward from the centre. The mile labels and the centre
-       marker are left out so they hold still, as asked. */
+    /* 2. Rings sweep outward from the centre, and each mile marker arrives with
+       the ring it labels. The centre marker holds still. */
     @keyframes fc-expand {
         0%   { opacity: 0; transform: translate(-50%, -50%) scale(0); }
         18%  { opacity: 1; }
         100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     }
+    @keyframes fc-label-in {
+        from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
     .fc-card--radius:hover .fc-ring {
         animation: fc-expand 0.62s cubic-bezier(0.22, 0.9, 0.3, 1) backwards;
     }
+    .fc-card--radius:hover .fc-mi,
+    .fc-card--radius:hover .fc-pill {
+        animation: fc-label-in 0.34s ease-out backwards;
+    }
 
-    /* 3. The arrow wipes in from tip to base and lifts, reading as an upload.
-       A gradient mask twice the glyph's height slides down to reveal it: at
-       100% the opaque half sits above the glyph (hidden), at 0 it covers it. */
+    /* 3. The arrow wipes in from base to tip and lifts, reading as an upload.
+       The opaque half of the mask sits at the bottom, so sliding the mask down
+       (0 -> 100%) uncovers the glyph from its base upward. 100% is the resting,
+       fully visible state. */
     .fc-arrow {
-        -webkit-mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50%);
-                mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50%);
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0 50%, #000 50%);
+                mask-image: linear-gradient(to bottom, transparent 0 50%, #000 50%);
         -webkit-mask-size: 100% 200%;   mask-size: 100% 200%;
         -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-        -webkit-mask-position: 0 0;     mask-position: 0 0;
+        -webkit-mask-position: 0 100%;  mask-position: 0 100%;
     }
     @keyframes fc-arrow-up {
-        0%   { -webkit-mask-position: 0 100%; mask-position: 0 100%;
+        0%   { -webkit-mask-position: 0 0;    mask-position: 0 0;
                transform: translate(-50%, -50%) translateY(12px); }
-        100% { -webkit-mask-position: 0 0;    mask-position: 0 0;
+        100% { -webkit-mask-position: 0 100%; mask-position: 0 100%;
                transform: translate(-50%, -50%) translateY(0); }
     }
     .fc-card--export:hover .fc-arrow {
@@ -768,6 +777,11 @@
         transition: background 0.15s;
     }
     .lp-demo-unlock-cta:hover { background: #23232b; }
+
+    .lp-demo-disclaimer {
+        max-width: 1040px; margin: 22px auto 0;
+        text-align: center; color: #0a0a0a; font-size: 13px; line-height: 1.5;
+    }
 
     .lp-demo-note {
         text-align: center; color: #6b7080; font-size: 14px; line-height: 1.5; padding: 22px 18px;
@@ -977,6 +991,8 @@
             <div class="lp-demo-leads" id="demo-leads" hidden aria-live="polite">
                 <div class="lp-demo-table-wrap" id="demo-leads-table"></div>
             </div>
+
+            <p class="lp-demo-disclaimer">For the purposes of this demo, the scan radius is limited to 5 miles.</p>
         </section>
 
         <!-- ===== FEATURE CARDS ===== -->
@@ -1024,9 +1040,11 @@
                             <span class="fc-ring" style="left:50%; top:200px; transform:translate(-50%,-50%); width:200px; height:200px; background:none; border-color:oklch(0.8 0.19 150 / .6); animation-delay:0.10s"></span>
                             <span class="fc-ring" style="left:50%; top:200px; transform:translate(-50%,-50%); width:100px; height:100px; background:none; border-color:oklch(0.8 0.19 150 / .45); animation-delay:0s"></span>
                             <span class="fc-plus" style="left:50%; top:200px; transform:translate(-50%,-50%); font-size:24px">+</span>
-                            <span class="fc-mi" style="top:150px; color:oklch(0.6 0.1 150)">10 MI</span>
-                            <span class="fc-mi" style="top:100px; color:oklch(0.7 0.14 150)">20 MI</span>
-                            <span class="fc-pill" style="top:50px">30 MI</span>
+                            <!-- Each label trails its own ring by 0.30s, so it lands as
+                                 that ring's edge reaches it rather than floating early. -->
+                            <span class="fc-mi" style="top:150px; color:oklch(0.6 0.1 150); animation-delay:0.30s">10 MI</span>
+                            <span class="fc-mi" style="top:100px; color:oklch(0.7 0.14 150); animation-delay:0.40s">20 MI</span>
+                            <span class="fc-pill" style="top:50px; animation-delay:0.50s">30 MI</span>
                         </div>
                     </div>
                     <div class="fc-body">
