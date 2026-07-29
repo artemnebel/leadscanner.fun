@@ -354,6 +354,83 @@
         padding: clamp(48px, 6vw, 80px) clamp(16px, 4vw, 48px) clamp(56px, 7vw, 96px);
     }
 
+    /* ===== QUALIFY / LEAD CHECKS ===== */
+    .ql-section {
+        position: relative; overflow: hidden; background: #050505;
+        padding: clamp(64px, 8vw, 108px) clamp(20px, 4vw, 60px);
+    }
+    /* Same faint graph paper as the hero, so the two dark blocks feel related. */
+    .ql-section::before {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.021) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.021) 1px, transparent 1px);
+        background-size: 46px 46px;
+    }
+    .ql-inner {
+        position: relative; max-width: 1320px; margin: 0 auto;
+        display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
+        gap: clamp(36px, 5vw, 80px); align-items: center;
+    }
+    .ql-eyebrow {
+        font: 500 13px 'JetBrains Mono', monospace;
+        color: oklch(0.8 0.19 150); letter-spacing: 2.5px;
+    }
+    .ql-title {
+        margin: 14px 0 0; color: #fff; letter-spacing: -1px; text-wrap: balance;
+        font: 700 clamp(31px, 3.7vw, 50px)/1.09 'Space Grotesk', sans-serif;
+    }
+    .ql-sub {
+        margin: 20px 0 0; max-width: 440px; color: #98a2b3;
+        font: 400 clamp(16px, 1.35vw, 18px)/1.6 'Space Grotesk', sans-serif;
+    }
+    .ql-badge {
+        display: inline-flex; align-items: center; gap: 11px;
+        margin: clamp(24px, 3vw, 34px) 0 0;
+        font: 400 13.5px 'JetBrains Mono', monospace; color: #8b95a5;
+    }
+    .ql-badge-dot {                          /* reuses the hero's lr-pulse keyframes */
+        width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+        background: #4ade80; box-shadow: 0 0 11px rgba(74,222,128,0.9);
+        animation: lr-pulse 2.4s ease-in-out infinite;
+    }
+
+    .ql-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+    .ql-item {
+        display: flex; align-items: flex-start; gap: 18px;
+        padding: 22px 26px; border-radius: 14px;
+        background: #0c0f13; border: 1px solid rgba(255,255,255,0.07);
+    }
+    /* Dashed ring echoes the scan-zone circles on the feature cards. */
+    .ql-check {
+        flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%;
+        border: 1.5px dashed oklch(0.8 0.19 150);
+        background: rgba(74,222,128,0.06);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .ql-check svg { width: 20px; height: 20px; color: #4ade80; }
+    .ql-item-title {
+        margin: 0; color: #fff;
+        font: 700 clamp(16.5px, 1.3vw, 19px)/1.3 'Space Grotesk', sans-serif;
+    }
+    .ql-item-text {
+        margin: 6px 0 0; color: #98a2b3;
+        font: 400 15px/1.5 'Space Grotesk', sans-serif;
+    }
+
+    @media (max-width: 980px) {
+        .ql-inner { grid-template-columns: 1fr; gap: 40px; align-items: start; }
+        .ql-sub { max-width: none; }
+    }
+    @media (max-width: 520px) {
+        .ql-item { padding: 18px; gap: 14px; }
+        .ql-check { width: 38px; height: 38px; }
+        .ql-check svg { width: 17px; height: 17px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .ql-badge-dot { animation: none; }
+    }
+
     /* ===== FOOTER ===== */
     .lp-footer {
         background: #050505;
@@ -872,6 +949,52 @@
                     </div>
                 </article>
 
+            </div>
+        </section>
+
+        <!-- ===== HOW WE QUALIFY LEADS ===== -->
+        <!-- The four checks mirror the real filter in main.py: no websiteUri,
+             businessStatus not CLOSED_PERMANENTLY, userRatingCount > 0, and a
+             nationalPhoneNumber. Keep them in step if that filter changes. -->
+        <section class="ql-section">
+            <div class="ql-inner">
+                <div class="ql-copy">
+                    <span class="ql-eyebrow">HOW WE QUALIFY LEADS</span>
+                    <h2 class="ql-title">Every lead passes four checks. Guaranteed.</h2>
+                    <p class="ql-sub">No dead listings, no ghosts, no wasted calls. If a business shows up in your scan, it's real, reachable, and ready to be pitched.</p>
+                    <p class="ql-badge"><span class="ql-badge-dot"></span>Verified at scan time, every time</p>
+                </div>
+
+                <ul class="ql-list">
+                    <li class="ql-item">
+                        <span class="ql-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                        <div>
+                            <h3 class="ql-item-title">No website on their Google Business Profile</h3>
+                            <p class="ql-item-text">The one thing they're missing is the one thing you sell.</p>
+                        </div>
+                    </li>
+                    <li class="ql-item">
+                        <span class="ql-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                        <div>
+                            <h3 class="ql-item-title">Operational business</h3>
+                            <p class="ql-item-text">Open and active. Permanently closed listings are filtered out.</p>
+                        </div>
+                    </li>
+                    <li class="ql-item">
+                        <span class="ql-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                        <div>
+                            <h3 class="ql-item-title">Has customer reviews</h3>
+                            <p class="ql-item-text">Real customers, real activity. Proof the business is worth pitching.</p>
+                        </div>
+                    </li>
+                    <li class="ql-item">
+                        <span class="ql-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                        <div>
+                            <h3 class="ql-item-title">Phone number included</h3>
+                            <p class="ql-item-text">A direct line to the owner. No digging for contact info.</p>
+                        </div>
+                    </li>
+                </ul>
             </div>
         </section>
 
