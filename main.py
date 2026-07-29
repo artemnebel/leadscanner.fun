@@ -161,26 +161,58 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="static")
 init_db()
 
+# What each configured price is supposed to be: (label, cents, recurring interval).
+# Checked against Stripe at startup so a mis-pasted ID is caught in the deploy log
+# rather than by a customer at checkout.
+_EXPECTED_PRICES = {
+    "STRIPE_PRICE_PACK_SOLO":     ("Solo pack",       PACK_PRICE_IDS.get("solo"),          1500, None),
+    "STRIPE_PRICE_PACK_BUSINESS": ("Business pack",   PACK_PRICE_IDS.get("business"),      4900, None),
+    "STRIPE_PRICE_PACK_SCALE":    ("Scale pack",      PACK_PRICE_IDS.get("scale"),         8900, None),
+    "STRIPE_PRICE_AGENCY":        ("Agency monthly",  AGENCY_PRICE_IDS.get("agency"),      2000, "month"),
+    "STRIPE_PRICE_AGENCY_PLUS":   ("Agency plus",     AGENCY_PRICE_IDS.get("agency-plus"), 3900, "month"),
+}
+
 def _log_billing_config() -> None:
-    """Print exactly which billing pieces are wired, so a missing price ID shows
-    up in the deploy log instead of as a failed checkout for a real customer."""
-    rows = [
-        ("STRIPE_SECRET_KEY",          bool(STRIPE_SECRET_KEY)),
-        ("STRIPE_WEBHOOK_SECRET",      bool(STRIPE_WEBHOOK_SECRET)),
-        ("STRIPE_PRICE_PACK_SOLO",     bool(PACK_PRICE_IDS.get("solo"))),
-        ("STRIPE_PRICE_PACK_BUSINESS", bool(PACK_PRICE_IDS.get("business"))),
-        ("STRIPE_PRICE_PACK_SCALE",    bool(PACK_PRICE_IDS.get("scale"))),
-        ("STRIPE_PRICE_AGENCY",        bool(AGENCY_PRICE_IDS.get("agency"))),
-        ("STRIPE_PRICE_AGENCY_PLUS",   bool(AGENCY_PRICE_IDS.get("agency-plus"))),
-    ]
-    missing = [name for name, ok in rows if not ok]
-    for name, ok in rows:
-        print(f"[billing] {'OK      ' if ok else 'MISSING '} {name}", flush=True)
-    if missing:
-        print(f"[billing] {len(missing)} setting(s) missing — checkout will refuse "
-              f"those products until they are set", flush=True)
+    """Report exactly which billing pieces are wired, and verify each price
+    against Stripe. A swapped or mistyped ID otherwise only shows up when a real
+    customer clicks Buy."""
+    for name, present in (("STRIPE_SECRET_KEY", bool(STRIPE_SECRET_KEY)),
+                          ("STRIPE_WEBHOOK_SECRET", bool(STRIPE_WEBHOOK_SECRET))):
+        print(f"[billing] {'OK      ' if present else 'MISSING '} {name}", flush=True)
+
+    problems = 0
+    for env_name, (label, price_id, cents, interval) in _EXPECTED_PRICES.items():
+        if not price_id:
+            print(f"[billing] MISSING  {env_name}", flush=True)
+            problems += 1
+            continue
+        if not STRIPE_SECRET_KEY:
+            print(f"[billing] SET      {env_name} (not verified, no API key)", flush=True)
+            continue
+        try:
+            price = stripe.Price.retrieve(price_id, expand=["product"])
+            # Same reason as the webhook: StripeObject is not a plain dict.
+            price = price.to_dict() if hasattr(price, "to_dict") else price
+            got_cents = price.get("unit_amount")
+            got_interval = (price.get("recurring") or {}).get("interval")
+            product = price.get("product") or {}
+            pname = product.get("name", "?") if isinstance(product, dict) else "?"
+            if got_cents != cents or got_interval != interval:
+                want = f"${cents/100:.2f} {interval or 'one-time'}"
+                got = f"${(got_cents or 0)/100:.2f} {got_interval or 'one-time'}"
+                print(f"[billing] WRONG    {env_name} -> '{pname}' is {got}, expected {want}", flush=True)
+                problems += 1
+            else:
+                print(f"[billing] OK       {env_name} -> '{pname}' "
+                      f"${got_cents/100:.2f} {got_interval or 'one-time'}", flush=True)
+        except Exception as e:
+            print(f"[billing] ERROR    {env_name} -> {type(e).__name__}: {e}", flush=True)
+            problems += 1
+
+    if problems:
+        print(f"[billing] {problems} problem(s) — those products will not sell correctly", flush=True)
     else:
-        print("[billing] all products configured", flush=True)
+        print("[billing] all products configured and verified against Stripe", flush=True)
 
 _log_billing_config()
 
@@ -1703,7 +1735,10 @@ async def search_leads(
     db: Session = Depends(get_db),
 ):
     # Server-side gate, so the scanner is genuinely off rather than just hidden.
-    if APP_MAINTENANCE:
+    # The admin account is exempt: that is how the app gets tested while it is
+    # closed. Enforced on the JWT, so hiding the notice in the browser is not
+    # enough to actually scan.
+    if APP_MAINTENANCE and not (user and user.email == ADMIN_EMAIL):
         raise HTTPException(status_code=503, detail=MAINTENANCE_DETAIL)
 
     if not user:

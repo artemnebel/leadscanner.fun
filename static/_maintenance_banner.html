@@ -32,3 +32,29 @@
         #maint-banner { font-size: 13px; padding: 6px 14px; }
     }
 </style>
+<script>
+    // Developer bypass: visit any page with ?dev=1 to clear the bar and the
+    // full-screen notice for the rest of the browser session. Purely cosmetic —
+    // /api/search still refuses anyone but the admin account, so this reveals
+    // the UI without opening the scanner to the public.
+    (function () {
+        try {
+            if (new URLSearchParams(location.search).get('dev') === '1') {
+                sessionStorage.setItem('ls_dev', '1');
+            }
+            if (sessionStorage.getItem('ls_dev') !== '1') return;
+            var clear = function () {
+                ['maint-banner', 'maintenance-notice'].forEach(function (id) {
+                    var el = document.getElementById(id);
+                    if (el) el.remove();
+                });
+                document.documentElement.style.setProperty('--maint-h', '0px');
+            };
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', clear);
+            } else {
+                clear();
+            }
+        } catch (e) { /* private mode: just leave the notice up */ }
+    })();
+</script>
