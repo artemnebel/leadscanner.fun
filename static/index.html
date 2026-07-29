@@ -296,8 +296,32 @@
         position: absolute; transform: translate(-50%, -50%);
         width: 11px; height: 11px; border-radius: 50%;
     }
-    .lr-blip.hot  { background: #4ade80; box-shadow: 0 0 13px rgba(74,222,128,0.8); }
     .lr-blip.cold { background: #565e6b; width: 8px; height: 8px; }
+
+    /* Green blips are "detected" by the sweep: dark until the beam reaches their
+       bearing, then a flash that settles and fades before the next pass. Scaling
+       the element scales its box-shadow too, so the existing glow pulses with it,
+       and only transform/opacity animate. Each blip's animation-delay is set
+       inline from its bearing: (degrees from 12 o'clock / 360) * 4.4s, matching
+       the sweep's period. Move a blip and its delay has to be recomputed. */
+    .lr-blip.hot {
+        background: #4ade80; box-shadow: 0 0 13px rgba(74,222,128,0.8);
+        animation: lr-blip 4.4s linear infinite backwards;  /* backwards: stays dark during the delay */
+    }
+    @keyframes lr-blip {
+        0%   { opacity: 0;    transform: translate(-50%, -50%) scale(0.4); }
+        3%   { opacity: 1;    transform: translate(-50%, -50%) scale(1.5); }
+        9%   { opacity: 1;    transform: translate(-50%, -50%) scale(1); }
+        35%  { opacity: 0.9;  transform: translate(-50%, -50%) scale(0.92); }
+        55%  { opacity: 1;    transform: translate(-50%, -50%) scale(1.08); }
+        78%  { opacity: 0.7;  transform: translate(-50%, -50%) scale(0.95); }
+        96%  { opacity: 0;    transform: translate(-50%, -50%) scale(0.85); }
+        100% { opacity: 0;    transform: translate(-50%, -50%) scale(0.4); }
+    }
+    /* Without motion the blips simply sit there, lit. */
+    @media (prefers-reduced-motion: reduce) {
+        .lr-blip.hot { animation: none; opacity: 1; }
+    }
 
     .lr-tag {
         position: absolute; transform: translate(-50%, -50%);
@@ -839,9 +863,10 @@
 
                         <span class="lr-blip cold" style="left:29%; top:33%"></span>
                         <span class="lr-blip cold" style="left:47%; top:38%"></span>
-                        <span class="lr-blip hot"  style="left:72%; top:26%"></span>
-                        <span class="lr-blip hot"  style="left:38%; top:61%"></span>
-                        <span class="lr-blip hot"  style="left:64%; top:75%"></span>
+                        <!-- animation-delay = bearing from 12 o'clock as a fraction of the 4.4s sweep -->
+                        <span class="lr-blip hot"  style="left:72%; top:26%; animation-delay:0.52s"></span>
+                        <span class="lr-blip hot"  style="left:38%; top:61%; animation-delay:2.78s"></span>
+                        <span class="lr-blip hot"  style="left:64%; top:75%; animation-delay:1.84s"></span>
 
                         <span class="lr-tag" style="left:80%; top:19%">Rosie's Diner
                             <svg class="lr-tag-icon" viewBox="0 0 24 24" fill="none"><use href="#icon-no-website"/></svg>
