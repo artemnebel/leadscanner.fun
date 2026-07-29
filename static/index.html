@@ -451,6 +451,24 @@
         font: 400 15px/1.5 'Space Grotesk', sans-serif;
     }
 
+    /* Falling-brick reveal. The hidden state only applies once JS adds .is-armed,
+       so if the script never runs the items just render normally. */
+    .ql-list.is-armed .ql-item {
+        opacity: 0; transform: translateY(-38px);
+        transition: opacity 0.42s ease-out,
+                    transform 0.42s cubic-bezier(0.22, 1.15, 0.36, 1);  /* slight settle on landing */
+    }
+    .ql-list.is-armed.is-stacked .ql-item { opacity: 1; transform: translateY(0); }
+    /* Bottom brick lands first, then each one stacks on top of it. */
+    .ql-list.is-armed.is-stacked .ql-item:nth-child(4) { transition-delay: 0s; }
+    .ql-list.is-armed.is-stacked .ql-item:nth-child(3) { transition-delay: 0.10s; }
+    .ql-list.is-armed.is-stacked .ql-item:nth-child(2) { transition-delay: 0.20s; }
+    .ql-list.is-armed.is-stacked .ql-item:nth-child(1) { transition-delay: 0.30s; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ql-list.is-armed .ql-item { opacity: 1; transform: none; transition: none; }
+    }
+
     @media (max-width: 980px) {
         .ql-inner { grid-template-columns: 1fr; gap: 40px; align-items: start; }
         .ql-sub { max-width: none; }
@@ -1031,6 +1049,28 @@
                 </ul>
             </div>
         </section>
+        <script>
+            // Stack the check items only once the section is on screen, otherwise
+            // the reveal would play unseen while the visitor is still at the hero.
+            (function () {
+                const list = document.querySelector('.ql-list');
+                if (!list) return;
+                // No observer support, or the visitor asked for less motion: leave
+                // the items in their normal, visible state and do nothing.
+                if (!('IntersectionObserver' in window)) return;
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+                list.classList.add('is-armed');
+                const io = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (e) {
+                        if (!e.isIntersecting) return;
+                        list.classList.add('is-stacked');
+                        io.disconnect();          // one-shot
+                    });
+                }, { threshold: 0.25 });
+                io.observe(list);
+            })();
+        </script>
 
         <!-- ===== FOOTER ===== -->
         <footer class="lp-footer">
