@@ -274,7 +274,7 @@
                     <p class="pr-pack-price">$49<span>one-time</span></p>
                     <div class="pr-rows">
                         <div class="pr-row"><span>Leads</span><b>500</b></div>
-                        <div class="pr-row"><span>Per lead</span><span class="pr-rate">10&cent;</span></div>
+                        <div class="pr-row"><span>Per lead</span><span class="pr-rate">9.8&cent;</span></div>
                     </div>
                     <p class="pr-pack-blurb">A serious pipeline. Cover a whole metro across multiple zones.</p>
                     <button type="button" class="pr-pack-cta" data-pack="business">Start Business</button>
@@ -329,7 +329,75 @@
     </main>
 
     <script src="/static/auth.js?v={{ version }}"></script>
-    <!-- Checkout is not wired to these buttons yet. The pack/plan each one maps
-         to is on its data-pack / data-plan attribute, ready for /api/billing. -->
+    <script>
+    (function () {
+        const errEl = document.getElementById('pricing-error');
+
+        function fail(btn, label, msg) {
+            errEl.textContent = msg;
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = label;
+        }
+
+        // Packs are one-time payments, plans are subscriptions. Both return a
+        // Stripe Checkout URL to redirect to.
+        async function buy(btn, endpoint, body, gaItem, value) {
+            const label = btn.textContent;
+            errEl.style.display = 'none';
+
+            const token = getToken();
+            if (!token) {
+                // Come back here after login so the click is not lost.
+                sessionStorage.setItem('ls_after_login', '/pricing');
+                window.location.href = '/login';
+                return;
+            }
+
+            gtag('event', 'begin_checkout', {
+                currency: 'USD', value: value,
+                items: [{ item_id: gaItem, item_name: gaItem, price: value, quantity: 1 }],
+            });
+
+            btn.disabled = true;
+            btn.textContent = 'Redirecting...';
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(body),
+                });
+                let data = {};
+                try { data = await res.json(); } catch (e) {}
+                if (!res.ok || !data.url) {
+                    console.error('[pricing] checkout failed', res.status, data);
+                    fail(btn, label, typeof data.detail === 'string' ? data.detail : 'Checkout could not start. Try again in a moment.');
+                    return;
+                }
+                window.location.href = data.url;
+            } catch (err) {
+                console.error('[pricing] checkout request failed', err);
+                fail(btn, label, 'Could not reach checkout. Check your connection and try again.');
+            }
+        }
+
+        const PACK_VALUE = { solo: 15, business: 49, scale: 89 };
+        const PLAN_VALUE = { 'agency': 20, 'agency-plus': 39 };
+
+        document.querySelectorAll('.pr-pack-cta').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pack = btn.dataset.pack;
+                buy(btn, '/api/billing/checkout', { pack }, 'pack_' + pack, PACK_VALUE[pack]);
+            });
+        });
+
+        document.querySelectorAll('.pr-sub-cta').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const plan = btn.dataset.plan;
+                buy(btn, '/api/billing/subscribe', { plan }, 'plan_' + plan, PLAN_VALUE[plan]);
+            });
+        });
+    })();
+    </script>
 </body>
 </html>

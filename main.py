@@ -72,43 +72,48 @@ for _pid in (PRO_PRICE_MONTHLY, PRO_PRICE_ANNUAL):
     if _pid:
         SUBSCRIPTION_PRICE_TO_TIER[_pid] = "pro"
 
-# New pricing: one-time credit packs. price_id -> credits granted.
+# ── Catalogue ──────────────────────────────────────────────────────────────
+# One-time lead packs, exactly as sold on /pricing.
 PACK_PRICE_IDS = {
-    "mini":     os.getenv("STRIPE_PRICE_PACK_MINI"),
-    "starter":  os.getenv("STRIPE_PRICE_PACK_STARTER"),
-    "pro":      os.getenv("STRIPE_PRICE_PACK_PRO"),
-    "business": os.getenv("STRIPE_PRICE_PACK_BUSINESS"),
-    "bulk":     os.getenv("STRIPE_PRICE_PACK_BULK"),
+    "solo":     os.getenv("STRIPE_PRICE_PACK_SOLO"),       # $15
+    "business": os.getenv("STRIPE_PRICE_PACK_BUSINESS"),   # $49
+    "scale":    os.getenv("STRIPE_PRICE_PACK_SCALE"),      # $89
 }
-PACK_CREDITS = {
-    PACK_PRICE_IDS["mini"]:     100,
-    PACK_PRICE_IDS["starter"]:  300,
-    PACK_PRICE_IDS["pro"]:      650,
-    PACK_PRICE_IDS["business"]: 1300,
-    PACK_PRICE_IDS["bulk"]:     2600,
+PACK_LEADS = {"solo": 100, "business": 500, "scale": 1000}
+
+# price_id -> leads granted, used by the webhook.
+PACK_CREDITS = {pid: PACK_LEADS[name] for name, pid in PACK_PRICE_IDS.items() if pid}
+# Retired packs, folded in so a webhook replay for an older purchase still
+# resolves. STRIPE_PRICE_PACK_BUSINESS is deliberately absent here: that name is
+# now the $49/500 pack above, so point it at the new Stripe price.
+for _pid, _leads in {
+    os.getenv("STRIPE_PRICE_PACK_MINI"):    100,
+    os.getenv("STRIPE_PRICE_PACK_STARTER"): 300,
+    os.getenv("STRIPE_PRICE_PACK_PRO"):     650,
+    os.getenv("STRIPE_PRICE_PACK_BULK"):   2600,
+}.items():
+    if _pid and _pid not in PACK_CREDITS:
+        PACK_CREDITS[_pid] = _leads
+
+# Recurring lead plans, as sold on /pricing. Each renewal tops the balance up.
+AGENCY_PRICE_IDS = {
+    "agency":      os.getenv("STRIPE_PRICE_AGENCY"),       # $20/mo
+    "agency-plus": os.getenv("STRIPE_PRICE_AGENCY_PLUS"),  # $39/mo
 }
-PACK_CREDITS = {pid: credits for pid, credits in PACK_CREDITS.items() if pid}
+AGENCY_LEADS = {"agency": 300, "agency-plus": 700}
+AGENCY_PRICE_TO_LEADS = {pid: AGENCY_LEADS[n] for n, pid in AGENCY_PRICE_IDS.items() if pid}
+ROLLOVER_MONTHS = 3   # unused leads roll over up to this many months' worth
 
-FREE_MONTHLY_LEADS = 500
-
-# ── Plan gating (new pricing) ──────────────────────────────────────────────
-# Free plan: ~5mi radius, 5 scans per rolling 24h window, up to 5 saved clients.
-# Pro plan:  ~15mi radius, no daily cap, unlimited saved clients.
-FREE_RADIUS_M          = 8_000     # ~5mi
-PRO_RADIUS_M           = 24_140    # ~15mi
-FREE_DAILY_SCANS       = 5
-FREE_SCAN_WINDOW_HOURS = 24        # free tier: 5 scans per rolling 24h window, then wait to refill
-FREE_PORTAL_LIMIT      = 5
+# ── Plan gating ────────────────────────────────────────────────────────────
+# Everyone now scans against a lead balance. The only uncapped accounts are the
+# admin and anyone already on a legacy paid tier, who stay grandfathered.
+FREE_RADIUS_M     = 8_000     # ~5mi
+PRO_RADIUS_M      = 24_140    # ~15mi
+FREE_PORTAL_LIMIT = 5
 PAID_TIERS = {"pro", "starter", "business", "unlimited"}
 
-# Legacy monthly caps for grandfathered subscribers. None = uncapped.
-LEGACY_TIER_LIMITS = {
-    "free":      FREE_MONTHLY_LEADS,
-    "starter":   500,
-    "pro":       2000,
-    "business":  5000,
-    "unlimited": None,
-}
+# The old per-tier monthly caps are gone with the allotment logic: grandfathered
+# paid tiers are uncapped and everyone else spends from lead_credits.
 
 if STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
@@ -187,48 +192,54 @@ def reset_usage_if_needed(user: User, db: Session):
         user.usage_reset = today
         db.commit()
 
-def monthly_allotment(user: User) -> int | None:
-    """Lead scanning is now free and unlimited for everyone. None = uncapped."""
-    return None
+def has_unlimited_leads(user: User) -> bool:
+    """Accounts that scan without drawing down a balance.
+
+    Only the admin and anyone already sitting on a legacy paid tier. Everyone
+    else, new or old, now spends leads from lead_credits."""
+    if user is None:
+        return False
+    return user.email == ADMIN_EMAIL or (user.tier in PAID_TIERS)
 
 def available_leads(user: User) -> int | None:
-    """Total leads the user can still scan right now. None = uncapped."""
-    allotment = monthly_allotment(user)
-    if allotment is None:
+    """Leads the user can still scan right now. None = uncapped."""
+    if has_unlimited_leads(user):
         return None
-    remaining = max(0, allotment - (user.leads_used or 0))
-    return remaining + (user.lead_credits or 0)
+    return max(0, user.lead_credits or 0)
 
 def consume_leads(user: User, count: int) -> None:
-    """Record N scanned leads against the user.
+    """Charge N delivered leads to the user.
 
-    Scanning is free & unlimited, so for everyone we simply increment leads_used
-    for analytics (this is what the admin dashboard reports). The credit logic
-    below is legacy — it only runs for grandfathered capped tiers, which no
-    longer exist now that monthly_allotment() always returns None."""
-    allotment = monthly_allotment(user)
-    if allotment is None:
-        user.leads_used = (user.leads_used or 0) + count  # uncapped — tracked for analytics
+    leads_used is incremented for everyone because the admin dashboard reports
+    on it. The balance is only drawn down for metered accounts."""
+    user.leads_used = (user.leads_used or 0) + count
+    if has_unlimited_leads(user):
         return
-    remaining_allotment = max(0, allotment - (user.leads_used or 0))
-    from_allotment = min(count, remaining_allotment)
-    from_credits = count - from_allotment
-    user.leads_used = (user.leads_used or 0) + from_allotment
-    if from_credits > 0:
-        user.lead_credits = max(0, (user.lead_credits or 0) - from_credits)
+    user.lead_credits = max(0, (user.lead_credits or 0) - count)
+
+def grant_leads(user: User, count: int, cap_months: int | None = None) -> int:
+    """Add leads to the balance, optionally capping it at cap_months' worth.
+
+    Used by the recurring plans so unused leads roll over but do not pile up
+    forever. Returns the number actually added."""
+    before = user.lead_credits or 0
+    after = before + count
+    if cap_months is not None:
+        after = min(after, count * cap_months)
+    user.lead_credits = max(before, after)   # never take leads away
+    return user.lead_credits - before
 
 def usage_info(user: User) -> dict:
-    allotment = monthly_allotment(user)
     available = available_leads(user)
     return {
         "type": "leads",
         "tier": user.tier,
         "free_used": user.leads_used or 0,
-        "free_limit": allotment,                    # None = uncapped
+        "free_limit": None,
         "credits": user.lead_credits or 0,
         "available": available,                     # None = uncapped
         "used": user.leads_used or 0,               # legacy field, kept for old UI
-        "limit": allotment,                         # legacy field, kept for old UI
+        "limit": None,                              # legacy field, kept for old UI
     }
 
 # ── Plan gating ────────────────────────────────────────────────────────────────
@@ -245,29 +256,22 @@ def plan_features(user: User) -> dict:
     return {
         "pro": pro,
         "max_radius_m": PRO_RADIUS_M if pro else FREE_RADIUS_M,
-        "daily_scan_limit": None if pro else FREE_DAILY_SCANS,   # None = uncapped
         "portal_limit": None if pro else FREE_PORTAL_LIMIT,      # None = uncapped
     }
 
 def plan_payload(user: User) -> dict:
-    """Plan info for the frontend, including remaining scans in the 5h window."""
+    """Plan info for the frontend. There is no longer a rolling scan window:
+    scanning is limited by the lead balance alone."""
     feats = plan_features(user)
-    remaining = None
-    reset_at = None
-    if feats["daily_scan_limit"] is not None:
-        now = datetime.utcnow()
-        if not user.daily_reset or now >= user.daily_reset:
-            remaining = feats["daily_scan_limit"]      # window elapsed → full quota
-        else:
-            remaining = max(0, feats["daily_scan_limit"] - (user.daily_scans or 0))
-            reset_at = user.daily_reset.isoformat()
     return {
         "pro": feats["pro"],
         "max_radius_m": feats["max_radius_m"],
-        "daily_scan_limit": feats["daily_scan_limit"],
-        "daily_remaining": remaining,
-        "daily_reset": reset_at,
         "portal_limit": feats["portal_limit"],
+        "leads_available": available_leads(user),   # None = uncapped
+        # Retired fields, still sent so older cached clients do not break.
+        "daily_scan_limit": None,
+        "daily_remaining": None,
+        "daily_reset": None,
     }
 
 # ── Page routes ───────────────────────────────────────────────────────────────
@@ -1177,7 +1181,7 @@ async def create_checkout(
     return {"url": session.url}
 
 class SubscribeBody(BaseModel):
-    plan: str | None = "monthly"  # "monthly" | "annual"
+    plan: str | None = "agency"  # "agency" | "agency-plus"
 
 @app.post("/api/billing/subscribe")
 async def create_subscription(
@@ -1185,17 +1189,18 @@ async def create_subscription(
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Start a Pro subscription checkout ($49/mo or annual). The webhook flips
-    the user's tier to 'pro' once the subscription is active."""
+    """Start a recurring lead plan checkout. Each renewal tops the user's lead
+    balance up via the invoice.paid webhook. The old Pro tier is no longer sold;
+    its price IDs stay wired only so existing subscribers keep working."""
     if not user:
         raise HTTPException(status_code=401, detail="Login required.")
     if not STRIPE_SECRET_KEY:
         raise HTTPException(status_code=500, detail="Payments not configured.")
 
-    plan = (body.plan or "monthly").lower()
-    price_id = PRO_PRICE_ANNUAL if plan == "annual" else PRO_PRICE_MONTHLY
+    plan = (body.plan or "agency").lower()
+    price_id = AGENCY_PRICE_IDS.get(plan)
     if not price_id:
-        raise HTTPException(status_code=400, detail="Pro plan not configured.")
+        raise HTTPException(status_code=400, detail="Plan not configured.")
 
     def _create_session(customer_id: str):
         return stripe.checkout.Session.create(
@@ -1306,6 +1311,33 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             user.lead_credits = (user.lead_credits or 0) + credits_to_add
             db.commit()
             print(f"[webhook] granted {credits_to_add} credits to {user.email}", flush=True)
+
+    # ── Recurring lead plans: every paid invoice tops the balance up ─────────
+    # invoice.paid fires for the first charge and every renewal, so this is the
+    # single place leads are granted. Stripe retries webhooks, so the invoice id
+    # is recorded and replays are ignored rather than granting twice.
+    elif ev_type in ("invoice.paid", "invoice.payment_succeeded"):
+        customer_id = obj.get("customer")
+        invoice_id = obj.get("id")
+        lines = (obj.get("lines") or {}).get("data") or []
+        leads_to_grant = 0
+        for line in lines:
+            pid = ((line.get("price") or {}).get("id")
+                   or ((line.get("pricing") or {}).get("price_details") or {}).get("price"))
+            if pid in AGENCY_PRICE_TO_LEADS:
+                leads_to_grant += AGENCY_PRICE_TO_LEADS[pid] * (line.get("quantity") or 1)
+
+        if leads_to_grant > 0 and customer_id:
+            user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
+            if user and invoice_id and user.last_invoice_id == invoice_id:
+                print(f"[webhook] invoice {invoice_id} already granted, skipping", flush=True)
+                return {"ok": True}
+            if user:
+                added = grant_leads(user, leads_to_grant, cap_months=ROLLOVER_MONTHS)
+                user.last_invoice_id = invoice_id
+                db.commit()
+                print(f"[webhook] granted {added} leads to {user.email} "
+                      f"(invoice {invoice_id}, balance {user.lead_credits})", flush=True)
 
     # ── Legacy subscription events (grandfathered subscribers only) ──────────
     elif ev_type in ("customer.subscription.updated", "customer.subscription.created"):
@@ -1650,21 +1682,8 @@ async def search_leads(
 
     reset_usage_if_needed(user, db)
 
-    # Free-tier scan window: N scans per rolling 24h window, then a wait wall that steers
-    # toward Pro. Pro/admin have no cap (daily_scan_limit is None). The window is anchored
-    # at the first scan and resets once FREE_SCAN_WINDOW_HOURS have elapsed.
-    daily_limit = feats["daily_scan_limit"]
-    now = datetime.utcnow()
-    if not user.daily_reset or now >= user.daily_reset:
-        user.daily_scans = 0
-        user.daily_reset = now + timedelta(hours=FREE_SCAN_WINDOW_HOURS)
-    if daily_limit is not None and (user.daily_scans or 0) >= daily_limit:
-        raise HTTPException(
-            status_code=429,
-            detail={"code": "DAILY_LIMIT_REACHED", "retry_at": user.daily_reset.isoformat()},
-        )
-
-    # Pre-check: block if user has no leads available (free allotment exhausted AND no credits).
+    # The rolling 24h scan window is gone. Scanning is bounded by the lead
+    # balance alone, so a user with leads can scan as often as they like.
     available_before = available_leads(user)
     if available_before is not None and available_before <= 0:
         raise HTTPException(status_code=429, detail="LIMIT_REACHED")
@@ -1746,7 +1765,7 @@ async def search_leads(
 
     user.scans_used = (user.scans_used or 0) + 1  # one /api/search call = one scan (analytics)
     user.total_scans = (user.total_scans or 0) + 1  # lifetime counter (analytics)
-    user.daily_scans = (user.daily_scans or 0) + 1  # rolling 24h window — free-tier cooldown
+    user.daily_scans = (user.daily_scans or 0) + 1  # analytics only; no longer gates anything
     consume_leads(user, leads_count)
     # Log the query for the admin panel. Analytics only — never fail a search over it.
     try:
@@ -1803,10 +1822,10 @@ DEMO_CONCURRENCY  = 8      # all tiles in flight at once keeps the demo snappy
 # withheld details never reach the browser at all.
 DEMO_VISIBLE_LEADS = 3
 
-# Demo scans per IP before the signup wall. Set DEMO_SCAN_LIMIT=0 in the env
-# to lift the cap entirely — that is how local dev scans without hitting the
-# wall, and .env.docker does exactly that. Production leaves it unset.
-DEMO_SCAN_LIMIT        = int(os.getenv("DEMO_SCAN_LIMIT", "3"))
+# Demo scans per IP before the signup wall. One free look, then sign up and buy
+# leads. Set DEMO_SCAN_LIMIT=0 in the env to lift the cap entirely — that is how
+# local dev scans without hitting the wall, and .env.docker does exactly that.
+DEMO_SCAN_LIMIT        = int(os.getenv("DEMO_SCAN_LIMIT", "1"))
 DEMO_SCAN_WINDOW_HOURS = 24    # rolling window the allowance refills over
 
 # IP -> timestamps of that IP's demo scans, trimmed to the rolling window.

@@ -331,28 +331,14 @@ function showUpgradeModal(title, message, extraNode) {
     return modal;
 }
 
-/* ===== SCAN LIMIT MODAL (live countdown to the next refill) ===== */
-function showDailyLimitModal(retryAt) {
-    const countdown = document.createElement('p');
-    countdown.className = 'paywall-msg';
-    countdown.style.fontVariantNumeric = 'tabular-nums';
-    const modal = showUpgradeModal(
-        '> SCAN LIMIT REACHED',
-        "You've used all your scans for now. Your scans refill automatically (countdown below). Upgrade to Pro for unlimited scans with no waiting, plus a 15mi radius, multi-scan, and the client portal.",
-        countdown
+/* ===== OUT OF LEADS MODAL =====
+   There is no longer a timed window to wait out: a scan is blocked only when
+   the lead balance is empty, so the only way forward is to buy more. */
+function showOutOfLeadsModal() {
+    showUpgradeModal(
+        '> OUT OF LEADS',
+        "You've used every lead in your balance. Top up on the pricing page to keep scanning. Leads never expire, and you're only charged for leads we actually deliver."
     );
-    if (!retryAt) return;
-    const target = new Date(retryAt).getTime();
-    (function tick() {
-        if (!document.body.contains(modal)) return;
-        const ms = target - Date.now();
-        if (ms <= 0) { countdown.textContent = "> Your scans have refilled. Reload to continue."; return; }
-        const h = Math.floor(ms / 3600000);
-        const m = Math.floor((ms % 3600000) / 60000);
-        const s = Math.floor((ms % 60000) / 1000);
-        countdown.textContent = `> Scans refill in ${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
-        setTimeout(tick, 1000);
-    })();
 }
 
 /* ===== MULTI-SCAN PRO UPSELL ===== */
@@ -430,9 +416,7 @@ async function handleSearch() {
                     return;
                 }
                 if (resp.status === 429) {
-                    const code = data.detail && data.detail.code;
-                    if (code === 'DAILY_LIMIT_REACHED') showDailyLimitModal(data.detail.retry_at);
-                    else showUpgradeModal('> SCAN LIMIT REACHED', 'You\'ve reached your scan limit. Upgrade to Pro to keep scanning.');
+                    showOutOfLeadsModal();
                     setLoading(false);
                     applyFilterAndRender();
                     showLeadsUI();
@@ -493,9 +477,7 @@ async function handleSearch() {
         }
 
         if (resp.status === 429) {
-            const code = data.detail && data.detail.code;
-            if (code === 'DAILY_LIMIT_REACHED') showDailyLimitModal(data.detail.retry_at);
-            else showUpgradeModal('> SCAN LIMIT REACHED', 'You\'ve reached your scan limit. Upgrade to Pro to keep scanning.');
+            showOutOfLeadsModal();
             return;
         }
 

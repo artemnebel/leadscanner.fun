@@ -38,6 +38,7 @@ class User(Base):
     daily_reset = Column(DateTime, nullable=True)   # end of the current 24h scan window; reset once passed
     stripe_customer_id = Column(String, nullable=True)
     stripe_subscription_id = Column(String, nullable=True)
+    last_invoice_id = Column(String, nullable=True)  # guards against double-granting on webhook retries
     created_at = Column(DateTime, default=datetime.utcnow)
     reset_token = Column(String, nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
@@ -107,6 +108,8 @@ def init_db():
         ("promo_status", "VARCHAR"),
         ("facebook_id", "VARCHAR"),
         ("github_id", "VARCHAR"),
+        # Last Stripe invoice granted, so webhook retries do not top up twice.
+        ("last_invoice_id", "VARCHAR"),
     ]
     with engine.connect() as conn:
         for col, typedef in migrations:

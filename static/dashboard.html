@@ -154,12 +154,11 @@
                 if (user.is_admin) document.getElementById('portal-btn').style.display = 'none';
             } else {
                 document.getElementById('dash-free-card').style.display = 'block';
-                // Live "scans left today" nudge (data from plan_payload)
-                const limit = plan.daily_scan_limit;
-                const remaining = plan.daily_remaining;
-                if (typeof limit === 'number' && typeof remaining === 'number') {
+                // Live lead balance (data from plan_payload). null = uncapped.
+                const leadsLeft = plan.leads_available;
+                if (typeof leadsLeft === 'number') {
                     const el = document.getElementById('dash-scans-left');
-                    el.textContent = `> ${remaining} of ${limit} scans left today`;
+                    el.textContent = `> ${leadsLeft} lead${leadsLeft === 1 ? '' : 's'} left in your balance`;
                     el.style.display = 'block';
                 }
             }
