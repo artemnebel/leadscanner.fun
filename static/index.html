@@ -621,6 +621,60 @@
         background: oklch(0.8 0.19 150); border-color: oklch(0.8 0.19 150);
         font-weight: 700; color: oklch(0.13 0 0);
     }
+
+    /* ── Card hover animations ───────────────────────────────────────────
+       Each card replays a build-in while hovered. None of them use a
+       forwards fill, so the moment the pointer leaves, every card snaps
+       back to its complete static artwork. Per-element delays live inline
+       next to the geometry they belong to. */
+
+    /* 1. Zones arrive one at a time and each stays up. */
+    @keyframes fc-zone-in {
+        from { opacity: 0; transform: scale(0.92); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+    .fc-card--zones:hover .fc-ring,
+    .fc-card--zones:hover .fc-plus {
+        animation: fc-zone-in 0.42s ease-out backwards;
+    }
+
+    /* 2. Rings sweep outward from the centre. The mile labels and the centre
+       marker are left out so they hold still, as asked. */
+    @keyframes fc-expand {
+        0%   { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+        18%  { opacity: 1; }
+        100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    .fc-card--radius:hover .fc-ring {
+        animation: fc-expand 0.62s cubic-bezier(0.22, 0.9, 0.3, 1) backwards;
+    }
+
+    /* 3. The arrow wipes in from tip to base and lifts, reading as an upload.
+       A gradient mask twice the glyph's height slides down to reveal it: at
+       100% the opaque half sits above the glyph (hidden), at 0 it covers it. */
+    .fc-arrow {
+        -webkit-mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50%);
+                mask-image: linear-gradient(to bottom, #000 0 50%, transparent 50%);
+        -webkit-mask-size: 100% 200%;   mask-size: 100% 200%;
+        -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+        -webkit-mask-position: 0 0;     mask-position: 0 0;
+    }
+    @keyframes fc-arrow-up {
+        0%   { -webkit-mask-position: 0 100%; mask-position: 0 100%;
+               transform: translate(-50%, -50%) translateY(12px); }
+        100% { -webkit-mask-position: 0 0;    mask-position: 0 0;
+               transform: translate(-50%, -50%) translateY(0); }
+    }
+    .fc-card--export:hover .fc-arrow {
+        animation: fc-arrow-up 0.9s ease-out backwards;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .fc-card--zones:hover .fc-ring,
+        .fc-card--zones:hover .fc-plus,
+        .fc-card--radius:hover .fc-ring,
+        .fc-card--export:hover .fc-arrow { animation: none; }
+    }
     /* Once a card is narrower than the 560px canvas the composition would bleed off
        both edges, so scale it down instead of cropping it. */
     @media (max-width: 700px) {
@@ -938,17 +992,19 @@
             <div class="fc-grid">
 
                 <!-- Multi-zone scanning -->
-                <article class="fc-card">
+                <article class="fc-card fc-card--zones">
                     <div class="fc-art">
                         <div class="fc-art-inner" aria-hidden="true">
                             <!-- Shifted +30px from the mock so the cluster is centred
-                                 in the 560px canvas and crops evenly on both sides. -->
-                            <span class="fc-ring" style="left:90px;  top:40px;  width:200px; height:200px"></span>
-                            <span class="fc-ring" style="left:250px; top:90px;  width:220px; height:220px"></span>
-                            <span class="fc-ring" style="left:160px; top:152px; width:170px; height:170px"></span>
-                            <span class="fc-plus" style="left:182px; top:126px">+</span>
-                            <span class="fc-plus" style="left:352px; top:186px">+</span>
-                            <span class="fc-plus" style="left:236px; top:224px">+</span>
+                                 in the 560px canvas and crops evenly on both sides.
+                                 animation-delay staggers the hover build; each zone
+                                 and its marker share a delay. -->
+                            <span class="fc-ring" style="left:90px;  top:40px;  width:200px; height:200px; animation-delay:0s"></span>
+                            <span class="fc-ring" style="left:250px; top:90px;  width:220px; height:220px; animation-delay:0.28s"></span>
+                            <span class="fc-ring" style="left:160px; top:152px; width:170px; height:170px; animation-delay:0.56s"></span>
+                            <span class="fc-plus" style="left:182px; top:126px; animation-delay:0s">+</span>
+                            <span class="fc-plus" style="left:352px; top:186px; animation-delay:0.28s">+</span>
+                            <span class="fc-plus" style="left:236px; top:224px; animation-delay:0.56s">+</span>
                         </div>
                     </div>
                     <div class="fc-body">
@@ -959,12 +1015,14 @@
                 </article>
 
                 <!-- Extended scan radius -->
-                <article class="fc-card">
+                <article class="fc-card fc-card--radius">
                     <div class="fc-art">
                         <div class="fc-art-inner" aria-hidden="true">
-                            <span class="fc-ring" style="left:50%; top:200px; transform:translate(-50%,-50%); width:300px; height:300px; background:oklch(0.8 0.19 150 / .05)"></span>
-                            <span class="fc-ring" style="left:50%; top:200px; transform:translate(-50%,-50%); width:200px; height:200px; background:none; border-color:oklch(0.8 0.19 150 / .6)"></span>
-                            <span class="fc-ring" style="left:50%; top:200px; transform:translate(-50%,-50%); width:100px; height:100px; background:none; border-color:oklch(0.8 0.19 150 / .45)"></span>
+                            <!-- Delays run inner ring first so the hover reads as one
+                                 wave travelling outward from the centre. -->
+                            <span class="fc-ring" style="left:50%; top:200px; transform:translate(-50%,-50%); width:300px; height:300px; background:oklch(0.8 0.19 150 / .05); animation-delay:0.20s"></span>
+                            <span class="fc-ring" style="left:50%; top:200px; transform:translate(-50%,-50%); width:200px; height:200px; background:none; border-color:oklch(0.8 0.19 150 / .6); animation-delay:0.10s"></span>
+                            <span class="fc-ring" style="left:50%; top:200px; transform:translate(-50%,-50%); width:100px; height:100px; background:none; border-color:oklch(0.8 0.19 150 / .45); animation-delay:0s"></span>
                             <span class="fc-plus" style="left:50%; top:200px; transform:translate(-50%,-50%); font-size:24px">+</span>
                             <span class="fc-mi" style="top:150px; color:oklch(0.6 0.1 150)">10 MI</span>
                             <span class="fc-mi" style="top:100px; color:oklch(0.7 0.14 150)">20 MI</span>
@@ -979,12 +1037,12 @@
                 </article>
 
                 <!-- Export your leads -->
-                <article class="fc-card">
+                <article class="fc-card fc-card--export">
                     <div class="fc-art">
                         <div class="fc-art-inner" aria-hidden="true">
                             <span class="fc-ring" style="left:50%; top:160px; transform:translate(-50%,-50%); width:300px; height:300px; background:none; border-color:oklch(0.8 0.19 150 / .35)"></span>
                             <span class="fc-ring" style="left:50%; top:160px; transform:translate(-50%,-50%); width:210px; height:210px; background:oklch(0.8 0.19 150 / .08); border-color:oklch(0.8 0.19 150 / .6)"></span>
-                            <span class="fc-plus" style="left:50%; top:138px; transform:translate(-50%,-50%); font-size:80px; line-height:1">&uarr;</span>
+                            <span class="fc-plus fc-arrow" style="left:50%; top:138px; transform:translate(-50%,-50%); font-size:80px; line-height:1">&uarr;</span>
                             <span style="position:absolute; left:50%; top:182px; transform:translateX(-50%); width:92px; height:26px; border:3px solid oklch(0.8 0.19 150); border-top:none; border-radius:0 0 10px 10px"></span>
                             <span class="fc-formats">
                                 <span class="fc-chip">.CSV</span>
