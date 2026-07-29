@@ -63,9 +63,19 @@
         margin: clamp(36px, 4vw, 56px) 0 0;
     }
     .pr-pack {
+        position: relative;                  /* anchors the "most popular" tag */
         display: flex; flex-direction: column; box-sizing: border-box;
         background: #000; border: 1px solid rgba(74,222,128,0.22);
         border-radius: 16px; padding: 26px 24px 24px;
+    }
+    /* Rectangular, deliberately unlike the pill badges below, and sitting over
+       the card's top-right corner rather than inside the padding. */
+    .pr-pack-tag {
+        position: absolute; top: -11px; right: -8px;
+        background: #3ee87b; color: #04150a;
+        font: 700 11px 'JetBrains Mono', monospace;
+        letter-spacing: 0.12em; text-transform: uppercase;
+        padding: 6px 12px; border-radius: 4px; white-space: nowrap;
     }
     /* Dashed edge marks the recommended pack, echoing the scan-zone rings
        elsewhere on the site rather than introducing an off-palette colour. */
@@ -126,6 +136,7 @@
         font: 500 12px 'JetBrains Mono', monospace;
         color: #4ade80; letter-spacing: 0.16em; text-transform: uppercase;
     }
+    .pr-subs { display: flex; flex-direction: column; gap: 16px; }
     .pr-sub-card {
         display: flex; align-items: center; justify-content: space-between;
         gap: clamp(20px, 3vw, 44px); flex-wrap: wrap;
@@ -257,6 +268,7 @@
                 </article>
 
                 <article class="pr-pack is-featured">
+                    <span class="pr-pack-tag">Most popular</span>
                     <span class="pr-pack-icon" aria-hidden="true"><svg><use href="#ic-business"/></svg></span>
                     <h2 class="pr-pack-name">Business</h2>
                     <p class="pr-pack-price">$49<span>one-time</span></p>
@@ -281,18 +293,32 @@
                 </article>
             </div>
 
-            <p class="pr-sub-label">Subscription &middot; best rate on the page</p>
-            <section class="pr-sub-card">
-                <div class="pr-sub-main">
-                    <span class="pr-badge">Same guarantee, every month</span>
-                    <h2 class="pr-sub-title"><svg aria-hidden="true"><use href="#ic-recurring"/></svg>Agency monthly</h2>
-                    <p class="pr-sub-text">300 leads every month &middot; 6.7&cent; per lead &middot; unused leads roll over for up to 3 months &middot; cancel anytime</p>
-                </div>
-                <div class="pr-sub-buy">
-                    <p class="pr-sub-price">$20<span>/mo</span></p>
-                    <button type="button" class="pr-sub-cta" data-plan="agency">Subscribe</button>
-                </div>
-            </section>
+            <p class="pr-sub-label">Subscriptions &middot; best rates on the page</p>
+            <div class="pr-subs">
+                <section class="pr-sub-card">
+                    <div class="pr-sub-main">
+                        <span class="pr-badge">Same guarantee, every month</span>
+                        <h2 class="pr-sub-title"><svg aria-hidden="true"><use href="#ic-recurring"/></svg>Agency monthly</h2>
+                        <p class="pr-sub-text">300 leads every month &middot; 6.7&cent; per lead &middot; unused leads roll over for up to 3 months &middot; cancel anytime</p>
+                    </div>
+                    <div class="pr-sub-buy">
+                        <p class="pr-sub-price">$20<span>/mo</span></p>
+                        <button type="button" class="pr-sub-cta" data-plan="agency">Subscribe</button>
+                    </div>
+                </section>
+
+                <section class="pr-sub-card">
+                    <div class="pr-sub-main">
+                        <span class="pr-badge">Lowest per-lead price</span>
+                        <h2 class="pr-sub-title"><svg aria-hidden="true"><use href="#ic-recurring"/></svg>Agency plus</h2>
+                        <p class="pr-sub-text">700 leads every month &middot; 5.6&cent; per lead &middot; unused leads roll over for up to 3 months &middot; cancel anytime</p>
+                    </div>
+                    <div class="pr-sub-buy">
+                        <p class="pr-sub-price">$39<span>/mo</span></p>
+                        <button type="button" class="pr-sub-cta" data-plan="agency-plus">Subscribe</button>
+                    </div>
+                </section>
+            </div>
 
             <ul class="pr-assurances">
                 <li><svg aria-hidden="true"><use href="#ic-check"/></svg>leads never expire on packs</li>
