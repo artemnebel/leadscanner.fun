@@ -365,10 +365,17 @@
         display: inline-flex; align-items: center; gap: 10px;
         margin-right: 14px; cursor: pointer; user-select: none;
     }
-    .an-brand svg { width: 21px; height: 21px; color: #3ee87b; flex-shrink: 0; }
+    .an-brand svg { width: 21px; height: 21px; color: #3ee87b; flex-shrink: 0; filter: none; }
+    /* These two ids carry terminal styling in style.css: #logo-text types itself
+       in from width:0 on every load and #logo-blink blinks, both with a green
+       glow. None of that belongs in the app nav. */
+    #logo-text.an-brand {
+        animation: none; width: auto; overflow: visible;
+        text-shadow: none; letter-spacing: normal;
+    }
     .an-brand #logo-blink {
         color: #fff; font-size: 16.5px; font-weight: 700; letter-spacing: -0.02em;
-        animation: none;                          /* it used to blink as a cursor block */
+        animation: none; text-shadow: none;
     }
     .an-link {
         padding: 8px 13px; border-radius: 8px; text-decoration: none;
@@ -437,9 +444,9 @@
     .sf-icon { width: 17px; height: 17px; color: #7c8798; flex-shrink: 0; }
     #category-input {
         flex: 1; min-width: 0; background: none; border: none; outline: none;
-        color: #fff; font-family: inherit; font-size: 15px;
+        color: #fff; font-family: inherit; font-size: 15px; text-shadow: none;
     }
-    #category-input::placeholder { color: #5b626d; }
+    #category-input::placeholder { color: #5b626d; text-shadow: none; opacity: 1; }
 
     #search-form .btn-term {
         display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -467,7 +474,28 @@
         color: #3ee87b; font-family: 'JetBrains Mono', monospace; font-size: 13px;
         font-weight: 700; min-width: 52px; text-align: right;
     }
-    #radius-slider { width: 108px; accent-color: #3ee87b; }
+    /* Custom thumb: the terminal theme gives it a square one. Styling the thumb
+       at all means dropping accent-color and drawing the track too. */
+    #radius-slider {
+        width: 112px; height: 18px; margin: 0; padding: 0;
+        background: none; border: none; -webkit-appearance: none; appearance: none;
+        cursor: pointer;
+    }
+    #radius-slider::-webkit-slider-runnable-track {
+        height: 3px; border-radius: 3px; background: rgba(255,255,255,0.22);
+    }
+    #radius-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; appearance: none;
+        width: 14px; height: 14px; margin-top: -5.5px;
+        border-radius: 50%; background: #3ee87b; border: none; box-shadow: none;
+    }
+    #radius-slider::-moz-range-track {
+        height: 3px; border-radius: 3px; background: rgba(255,255,255,0.22);
+    }
+    #radius-slider::-moz-range-thumb {
+        width: 14px; height: 14px; border-radius: 50%;
+        background: #3ee87b; border: none; box-shadow: none;
+    }
 
     /* Results panel */
     #leads-section { display: flex; flex-direction: column; }
@@ -557,7 +585,9 @@
     #lead-count {
         margin-right: auto; flex: none; text-align: left;   /* style.css centres it */
         color: #7c8798; font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+        text-shadow: none;
     }
+    #lead-count .found-text, #lead-count .count-meta { text-shadow: none !important; }
     #export-btn {
         padding: 8px 16px; border-radius: 8px; cursor: pointer;
         background: #3ee87b; border: none; color: #04150a;
@@ -1500,7 +1530,10 @@
                 <div class="sf-divider" aria-hidden="true"></div>
                 <div id="radius-group">
                     <label for="radius-slider">Radius</label>
-                    <input type="range" id="radius-slider" min="500" max="24140" step="500" value="16000"/>
+                    <!-- Steps one mile at a time (1609m), so the label lands on whole
+                         numbers. Default 16093m is exactly 10 miles. app.js lowers
+                         max to the plan's cap. -->
+                    <input type="range" id="radius-slider" min="1609" max="24140" step="1609" value="16093"/>
                     <span id="radius-label">10mi</span>
                 </div>
                 <button id="locate-btn" class="btn-term" title="Center on my location">

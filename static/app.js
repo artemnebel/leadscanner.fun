@@ -219,8 +219,10 @@ function initRadiusSlider() {
 
     function updateRadius() {
         const meters = parseInt(slider.value, 10);
-        const miles = meters / 1609.34;
-        label.textContent = miles >= 10 ? `${Math.round(miles)}mi` : `${miles.toFixed(1)}mi`;
+        // Whole miles only: the slider steps a mile at a time, so a decimal here
+        // just showed 9.9 for what is meant to read as 10.
+        const miles = Math.max(1, Math.round(meters / 1609.34));
+        label.textContent = `${miles}mi`;
         if (state.searchCircle) state.searchCircle.setRadius(meters);
         state.bulkTargets.forEach(t => t.circle.setRadius(meters));
     }
