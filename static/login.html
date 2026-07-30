@@ -172,7 +172,11 @@
                 localStorage.setItem('ls_token', data.token);
                 localStorage.removeItem('ls_user');
                 await minShow;   // keep the matrix loader up for a few seconds before entering
-                window.location.href = '/?launched=1';
+                // Clicking a pack while logged out parks the return path here, so
+                // the visitor lands back on pricing instead of losing the purchase.
+                const back = sessionStorage.getItem('ls_after_login');
+                sessionStorage.removeItem('ls_after_login');
+                window.location.href = back || '/?launched=1';
             } catch {
                 loader.classList.remove('show');
                 errEl.textContent = '> ERR: Network error.';
