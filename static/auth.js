@@ -89,11 +89,23 @@ function updateAuthNav(user) {
   const plain = authLink.dataset.plain === '1';
 
   if (user) {
-    authLink.textContent = plain ? 'Account' : '[ ACCOUNT ]';
+    if (plain) {
+      // Signed in on the app view: an initial in a circle rather than a word.
+      const initial = (user.email || '?').trim().charAt(0).toUpperCase() || '?';
+      authLink.textContent = initial;
+      authLink.classList.add('an-avatar');
+      authLink.title = user.email || 'Account';
+      authLink.setAttribute('aria-label', 'Account: ' + (user.email || ''));
+    } else {
+      authLink.textContent = '[ ACCOUNT ]';
+    }
     authLink.href = '/dashboard';
     if (clientsLink) clientsLink.style.display = 'inline';
   } else {
     authLink.textContent = plain ? 'Log in' : '[ LOGIN ]';
+    authLink.classList.remove('an-avatar');
+    authLink.removeAttribute('title');
+    authLink.removeAttribute('aria-label');
     authLink.href = '/login';
     if (clientsLink) clientsLink.style.display = 'none';
   }

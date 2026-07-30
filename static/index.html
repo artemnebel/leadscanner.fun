@@ -383,12 +383,38 @@
         transition: background 0.15s ease, border-color 0.15s ease;
     }
     .an-account:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.4); }
+    /* Signed-in state: initial in a circle. 36px keeps it a comfortable target. */
+    .an-account.an-avatar {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 36px; height: 36px; padding: 0; border-radius: 50%;
+        background: rgba(62,232,123,0.10); border: 1px solid rgba(62,232,123,0.55);
+        color: #3ee87b; font-size: 15px; font-weight: 700; line-height: 1;
+    }
+    .an-account.an-avatar:hover { background: rgba(62,232,123,0.2); border-color: #3ee87b; }
 
+    /* --results-w is owned by the drag handle below and restored from
+       localStorage, so the width the user picks survives a reload. */
     #content {
-        display: grid; grid-template-columns: minmax(0, 1fr) 380px;
-        gap: 14px; padding: 14px; height: calc(100vh - 62px);
+        --results-w: 440px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 10px var(--results-w);
+        gap: 4px; padding: 14px; height: calc(100vh - 62px);
         background: #000; box-sizing: border-box;
     }
+    #panel-resizer {
+        position: relative; cursor: col-resize; touch-action: none;
+        background: none; border: 0; padding: 0;
+    }
+    /* Thin visible grip, but the whole 10px column is the hit area. */
+    #panel-resizer::after {
+        content: ''; position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 3px; height: 46px; border-radius: 3px;
+        background: rgba(255,255,255,0.14); transition: background 0.15s ease;
+    }
+    #panel-resizer:hover::after, #panel-resizer.is-dragging::after { background: #3ee87b; }
+    #panel-resizer:focus-visible { outline: 2px solid #3ee87b; outline-offset: -2px; }
+    body.is-resizing { cursor: col-resize; user-select: none; }
     #map-section, #leads-section {
         position: relative; border: 1px solid rgba(255,255,255,0.09);
         border-radius: 16px; overflow: hidden; background: #0a0b0d; min-width: 0;
@@ -1491,6 +1517,9 @@
             </div>
         </section>
 
+        <div id="panel-resizer" role="separator" aria-orientation="vertical"
+             aria-label="Resize results panel" tabindex="0"></div>
+
         <aside id="leads-section">
             <div id="leads-header">
                 <h2 class="ls-title">Results</h2>
@@ -1873,5 +1902,62 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.mini.min.js"></script>
     <script src="/static/auth.js?v={{ version }}"></script>
     <script src="/static/app.js?v={{ version }}"></script>
+    <script>
+    // Draggable divider between the map and the results panel. Loaded after
+    // app.js so state.map exists: Leaflet caches its container size, so the map
+    // has to be told to re-measure or the tiles end up stale after a resize.
+    (function () {
+        const content = document.getElementById('content');
+        const handle = document.getElementById('panel-resizer');
+        if (!content || !handle) return;
+
+        const MIN = 320, MAX = 760, KEY = 'ls_results_w';
+
+        const apply = (px, persist) => {
+            const w = Math.round(Math.min(MAX, Math.max(MIN, px)));
+            content.style.setProperty('--results-w', w + 'px');
+            handle.setAttribute('aria-valuenow', String(w));
+            if (persist) { try { localStorage.setItem(KEY, w); } catch (e) {} }
+            // Leaflet only re-reads its size when asked.
+            if (typeof state !== 'undefined' && state.map) state.map.invalidateSize();
+        };
+
+        try {
+            const saved = parseInt(localStorage.getItem(KEY), 10);
+            if (saved) apply(saved, false);
+        } catch (e) {}
+
+        let dragging = false;
+        const widthFor = (clientX) => content.getBoundingClientRect().right - clientX - 14;
+
+        handle.addEventListener('pointerdown', (e) => {
+            dragging = true;
+            handle.setPointerCapture(e.pointerId);
+            handle.classList.add('is-dragging');
+            document.body.classList.add('is-resizing');
+            e.preventDefault();
+        });
+        handle.addEventListener('pointermove', (e) => {
+            if (dragging) apply(widthFor(e.clientX), false);
+        });
+        const stop = (e) => {
+            if (!dragging) return;
+            dragging = false;
+            handle.classList.remove('is-dragging');
+            document.body.classList.remove('is-resizing');
+            apply(widthFor(e.clientX), true);   // persist only once, on release
+        };
+        handle.addEventListener('pointerup', stop);
+        handle.addEventListener('pointercancel', stop);
+
+        // Keyboard support, since a drag handle is otherwise mouse-only.
+        handle.addEventListener('keydown', (e) => {
+            const step = e.shiftKey ? 48 : 16;
+            const cur = parseInt(getComputedStyle(content).getPropertyValue('--results-w'), 10) || 440;
+            if (e.key === 'ArrowLeft')  { apply(cur + step, true); e.preventDefault(); }
+            if (e.key === 'ArrowRight') { apply(cur - step, true); e.preventDefault(); }
+        });
+    })();
+    </script>
 </body>
 </html>
