@@ -558,13 +558,11 @@ function applyFilterAndRender() {
     const count = state.filteredLeads.length;
     const total = state.allLeads.length;
     const foundLabel = count === total
-        ? `${total} LEAD${total !== 1 ? 'S' : ''} FOUND`
-        : `${count}/${total} LEADS (FILTERED)`;
-    let countText = total > 0
-        ? `&gt; <span class="found-text">${foundLabel}</span>`
-        : `&gt; ${foundLabel}`;
+        ? `${total} lead${total !== 1 ? 's' : ''}`
+        : `${count} of ${total} leads`;
+    let countText = `<span class="found-text">${foundLabel}</span>`;
     if (state.totalScanned > 0) {
-        countText += `<span class="count-meta"> [${state.totalScanned} SCANNED / ${state.totalSkipped} SKIPPED]</span>`;
+        countText += `<span class="count-meta"> · ${state.totalScanned} scanned</span>`;
     }
     document.getElementById('lead-count').innerHTML = countText;
 }
@@ -765,7 +763,7 @@ function clearAllLeads() {
     state.totalScanned = 0;
     state.totalSkipped = 0;
     state.markersLayer.clearLayers();
-    document.getElementById('lead-count').innerHTML = '&gt; awaiting input_';
+    document.getElementById('lead-count').innerHTML = '0 leads';
     document.getElementById('filter-input').value = '';
     renderTable();
 }
@@ -937,7 +935,7 @@ async function explodeAndClear() {
 function setLoading(isLoading) {
     document.getElementById('spinner').classList.toggle('hidden', !isLoading);
     document.getElementById('search-btn').disabled = isLoading;
-    if (!isLoading) document.getElementById('search-btn').textContent = '[ SCAN ]';
+    if (!isLoading) document.getElementById('search-btn').textContent = 'SCAN';
     const multiBtn = document.getElementById('multi-btn');
     if (multiBtn) multiBtn.disabled = isLoading;
 }

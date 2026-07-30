@@ -85,12 +85,15 @@ function updateAuthNav(user) {
   const clientsLink = document.getElementById('nav-clients-link');
   if (!authLink) return;
 
+  // The app view uses plain labels; the terminal pages keep their brackets.
+  const plain = authLink.dataset.plain === '1';
+
   if (user) {
-    authLink.textContent = '[ ACCOUNT ]';
+    authLink.textContent = plain ? 'Account' : '[ ACCOUNT ]';
     authLink.href = '/dashboard';
     if (clientsLink) clientsLink.style.display = 'inline';
   } else {
-    authLink.textContent = '[ LOGIN ]';
+    authLink.textContent = plain ? 'Log in' : '[ LOGIN ]';
     authLink.href = '/login';
     if (clientsLink) clientsLink.style.display = 'none';
   }

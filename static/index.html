@@ -348,6 +348,206 @@
         .lr-cta { width: 100%; }
     }
 
+    /* ===== APP VIEW =====================================================
+       Overrides the terminal styling from style.css for the scanner itself.
+       Every id app.js binds to is preserved; only presentation changes. */
+    body { background: #000; }
+    #crt-overlay { display: none; }              /* scanlines belong to the old look */
+
+    #app-nav {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 20px; height: 62px; padding: 0 22px;
+        background: #000; border-bottom: 1px solid rgba(255,255,255,0.08);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    .an-left, .an-right { display: flex; align-items: center; gap: 8px; }
+    .an-brand {
+        display: inline-flex; align-items: center; gap: 10px;
+        margin-right: 14px; cursor: pointer; user-select: none;
+    }
+    .an-brand svg { width: 21px; height: 21px; color: #3ee87b; flex-shrink: 0; }
+    .an-brand #logo-blink {
+        color: #fff; font-size: 16.5px; font-weight: 700; letter-spacing: -0.02em;
+        animation: none;                          /* it used to blink as a cursor block */
+    }
+    .an-link {
+        padding: 8px 13px; border-radius: 8px; text-decoration: none;
+        color: #98a2b3; font-size: 14.5px; font-weight: 500; white-space: nowrap;
+        transition: color 0.15s ease, background 0.15s ease;
+    }
+    .an-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
+    .an-account {
+        padding: 8px 18px; border-radius: 999px; text-decoration: none;
+        border: 1px solid rgba(255,255,255,0.22); color: #fff;
+        font-size: 14.5px; font-weight: 600;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .an-account:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.4); }
+
+    #content {
+        display: grid; grid-template-columns: minmax(0, 1fr) 380px;
+        gap: 14px; padding: 14px; height: calc(100vh - 62px);
+        background: #000; box-sizing: border-box;
+    }
+    #map-section, #leads-section {
+        position: relative; border: 1px solid rgba(255,255,255,0.09);
+        border-radius: 16px; overflow: hidden; background: #0a0b0d; min-width: 0;
+    }
+    #map { height: 100%; width: 100%; }
+
+    /* Floating toolbar over the map */
+    #search-form {
+        position: absolute; z-index: 600; top: 14px; left: 14px; right: 14px;
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        padding: 0; background: none; border: none;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    #search-form .input-wrap {
+        display: flex; align-items: center; gap: 9px; flex: 1 1 240px; min-width: 200px;
+        height: 44px; padding: 0 14px;
+        background: #0d0f11; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
+    }
+    #search-form .input-wrap:focus-within { border-color: #3ee87b; }
+    .sf-icon { width: 17px; height: 17px; color: #7c8798; flex-shrink: 0; }
+    #category-input {
+        flex: 1; min-width: 0; background: none; border: none; outline: none;
+        color: #fff; font-family: inherit; font-size: 15px;
+    }
+    #category-input::placeholder { color: #5b626d; }
+
+    #search-form .btn-term {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        height: 44px; padding: 0 16px; border-radius: 10px; cursor: pointer;
+        background: #0d0f11; border: 1px solid rgba(255,255,255,0.14); color: #e7ebf0;
+        font-family: inherit; font-size: 14px; font-weight: 600; white-space: nowrap;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    #search-form .btn-term:hover { background: #14171a; border-color: rgba(255,255,255,0.3); }
+    #search-form .btn-term svg { width: 16px; height: 16px; flex-shrink: 0; }
+    #search-form .btn-primary {
+        background: #3ee87b; border-color: #3ee87b; color: #04150a;
+        font-weight: 700; letter-spacing: 0.02em; padding: 0 24px;
+    }
+    #search-form .btn-primary:hover { background: #5cf295; border-color: #5cf295; }
+    .sf-divider { width: 1px; height: 26px; background: rgba(255,255,255,0.14); }
+
+    #radius-group {
+        display: flex; flex-direction: row;   /* style.css stacks this column */
+        align-items: center; gap: 11px; height: 44px; padding: 0 14px;
+        background: #0d0f11; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
+    }
+    #radius-group label { color: #98a2b3; font-size: 14px; font-weight: 500; }
+    #radius-group #radius-label {
+        color: #3ee87b; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        font-weight: 700; min-width: 52px; text-align: right;
+    }
+    #radius-slider { width: 108px; accent-color: #3ee87b; }
+
+    /* Results panel */
+    #leads-section { display: flex; flex-direction: column; }
+    #leads-header {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 16px 18px 12px; border-bottom: none; flex-shrink: 0;
+    }
+    .ls-title {
+        margin: 0; color: #fff; letter-spacing: -0.02em;
+        font: 700 18px/1.2 'Space Grotesk', sans-serif;
+    }
+    #leads-header .btn-term {
+        padding: 6px 12px; border-radius: 8px; cursor: pointer;
+        background: none; border: 1px solid rgba(255,255,255,0.16); color: #98a2b3;
+        font-family: inherit; font-size: 13px;
+    }
+    #leads-header .btn-term:hover { color: #fff; border-color: rgba(255,255,255,0.35); }
+
+    #table-container { flex: 1; overflow-y: auto; }
+    #leads-table thead th {
+        position: sticky; top: 0; z-index: 2;
+        background: #0a0b0d; border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding: 8px 18px; text-align: left;
+        color: #6b7280; font-family: 'JetBrains Mono', monospace;
+        font-size: 10.5px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+    }
+    #leads-table td {
+        padding: 11px 18px; border-bottom: 1px solid rgba(255,255,255,0.05);
+        color: #cbd2dc; font-size: 13.5px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    #leads-table tbody tr:hover td { background: rgba(255,255,255,0.03); }
+    /* Phone and address are dropped here: the panel is narrow and the screenshot
+       shows name, rating and save only. They stay in the export. */
+    #leads-table th[data-col="phone"], #leads-table td:nth-child(2),
+    #leads-table th[data-col="city"],  #leads-table td:nth-child(4) { display: none; }
+    /* style.css puts nowrap and a border on table cells; the empty state is a
+       block of prose sitting in one, so both have to go. */
+    #table-container, #leads-table, #leads-table tbody, #leads-table tr { border: none; }
+    #empty-row td, #empty-row:hover td {
+        border: none; background: none; padding: 0; white-space: normal;
+    }
+
+    .ls-empty {
+        display: flex; flex-direction: column; align-items: center;
+        text-align: center; padding: 52px 26px; white-space: normal;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    .ls-empty-icon { width: 56px; height: 56px; color: #3ee87b; margin-bottom: 18px; }
+    .ls-empty-title { margin: 0; color: #fff; font: 700 16px 'Space Grotesk', sans-serif; }
+    .ls-empty-text {
+        margin: 8px 0 0; max-width: 230px; color: #7c8798;
+        font-family: inherit; font-size: 13.5px; line-height: 1.55; white-space: normal;
+    }
+
+    /* Filter bar, revealed by app.js once there are results. */
+    #filter-wrap { padding: 10px 18px 0; flex-shrink: 0; }
+    #filter-wrap .input-wrap {
+        display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px;
+        background: #0d0f11; border: 1px solid rgba(255,255,255,0.12); border-radius: 9px;
+    }
+    #filter-wrap .prompt { color: #6b7280; font-size: 13px; }
+    #filter-input {
+        flex: 1; min-width: 0; background: none; border: none; outline: none; color: #fff;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 13.5px;
+    }
+    #filter-input::placeholder { color: #5b626d; }
+
+    /* Business names: the terminal theme made these glowing green links. */
+    #leads-table td a, #leads-table .lead-name {
+        color: #fff; text-decoration: none; font-weight: 600;
+    }
+    #leads-table td a:hover { color: #3ee87b; text-decoration: underline; }
+    /* style.css sets this red with !important, so the override needs it too. */
+    #lead-count .found-text {
+        color: #fff !important; text-shadow: none !important; font-weight: 700;
+    }
+    #lead-count .count-meta { color: #5b626d; }
+    #filter-wrap .prompt { display: none; }
+
+    #leads-foot {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 12px 18px; border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;
+    }
+    #export-wrap { position: relative; flex-shrink: 0; }
+    #lead-count {
+        margin-right: auto; flex: none; text-align: left;   /* style.css centres it */
+        color: #7c8798; font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+    }
+    #export-btn {
+        padding: 8px 16px; border-radius: 8px; cursor: pointer;
+        background: #3ee87b; border: none; color: #04150a;
+        font-family: inherit; font-size: 13.5px; font-weight: 700;
+    }
+    #export-btn:hover { background: #5cf295; }
+
+    #site-footer { display: none; }   /* the app is a full-height workspace now */
+
+    @media (max-width: 900px) {
+        #content { grid-template-columns: 1fr; height: auto; }
+        #map-section { height: 60vh; }
+        #leads-section { height: 70vh; }
+        #search-form { position: static; padding: 12px; }
+    }
+
     /* ===== MAINTENANCE NOTICE ===== */
     #maintenance-notice {
         position: fixed; inset: 0; z-index: 99999;
@@ -1242,25 +1442,23 @@
     {% if maintenance %}{% include '_maintenance_notice.html' %}{% endif %}
     <div id="crt-overlay"></div>
 
-    <header id="top-bar">
-        <div id="logo" style="cursor:pointer" title="Back to home">
-            <span id="logo-blink">█</span>
-            <span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span>
+    <nav id="app-nav">
+        <div class="an-left">
+            <!-- id kept: the landing script binds these to reopen the marketing page -->
+            <span id="logo-text" class="an-brand" title="Back to home">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5.5 6.5 11 12l-5.5 5.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/>
+                    <rect x="12.6" y="15.3" width="7" height="2.3" fill="currentColor"/>
+                </svg>
+                <span id="logo-blink">LeadScanner</span>
+            </span>
+            <a href="/how-it-works" class="an-link">How it works</a>
+            <a href="/resources" class="an-link">Resources</a>
         </div>
-    </header>
-
-    <nav id="main-nav">
-        <div class="nav-left">
-            <a href="/" class="nav-link active">[ HOME ]</a>
-            <a href="/about" class="nav-link">[ ABOUT ]</a>
-            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
-            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
-        </div>
-        <div class="nav-right">
-            <a href="/pricing" class="nav-link">[ PRICING ]</a>
-            <a href="/clients" class="nav-link" id="nav-clients-link" style="display:none">[ MY_CLIENTS ]</a>
-            <a href="/contact" class="nav-link">[ CONTACT ]</a>
-            <a href="/login" class="nav-link" id="nav-auth-link">[ LOGIN ]</a>
+        <div class="an-right">
+            <a href="/pricing" class="an-link">Pricing</a>
+            <a href="/clients" class="an-link" id="nav-clients-link" style="display:none">My clients</a>
+            <a href="/login" class="an-account" id="nav-auth-link" data-plain="1">Log in</a>
         </div>
     </nav>
 
@@ -1268,18 +1466,22 @@
         <section id="map-section">
             <div id="search-form">
                 <div class="input-wrap">
-                    <span class="prompt">&gt;</span>
-                    <input type="text" id="category-input" placeholder="type business category"/>
+                    <svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+                    <input type="text" id="category-input" placeholder="Business category, e.g. salon"/>
                 </div>
+                <button id="search-btn" class="btn-term btn-primary">SCAN</button>
+                <div class="sf-divider" aria-hidden="true"></div>
                 <div id="radius-group">
-                    <label for="radius-slider">radius: <span id="radius-label">10mi</span></label>
+                    <label for="radius-slider">Radius</label>
                     <input type="range" id="radius-slider" min="500" max="24140" step="500" value="16000"/>
+                    <span id="radius-label">10mi</span>
                 </div>
-                <button id="locate-btn" class="btn-term" title="Center on my location">[ GPS ]</button>
-                <button id="multi-btn" class="btn-term" title="Multi-scan: click the map to place radius targets, click a target to remove it, click MULTI again to clear all">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px;margin-right:4px"><circle cx="7" cy="7" r="4.5"/><line x1="7" y1="1" x2="7" y2="3.5"/><line x1="7" y1="10.5" x2="7" y2="13"/><line x1="1" y1="7" x2="3.5" y2="7"/><line x1="10.5" y1="7" x2="13" y2="7"/><line x1="1" y1="7" x2="3.5" y2="7"/><circle cx="15" cy="15" r="4.5"/><line x1="15" y1="9" x2="15" y2="11.5"/><line x1="15" y1="18.5" x2="15" y2="21"/><line x1="9" y1="15" x2="11.5" y2="15"/><line x1="18.5" y1="15" x2="21" y2="15"/></svg>MULTI
+                <button id="locate-btn" class="btn-term" title="Center on my location">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/></svg>My location
                 </button>
-                <button id="search-btn" class="btn-term btn-primary">[ SCAN ]</button>
+                <button id="multi-btn" class="btn-term" title="Multi-scan: click the map to place radius targets, click a target to remove it, click again to clear all">
+                    <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><line x1="7" y1="1" x2="7" y2="3.5"/><line x1="7" y1="10.5" x2="7" y2="13"/><line x1="1" y1="7" x2="3.5" y2="7"/><line x1="10.5" y1="7" x2="13" y2="7"/><circle cx="15" cy="15" r="4.5"/><line x1="15" y1="9" x2="15" y2="11.5"/><line x1="15" y1="18.5" x2="15" y2="21"/><line x1="9" y1="15" x2="11.5" y2="15"/><line x1="18.5" y1="15" x2="21" y2="15"/></svg>Multi-zone
+                </button>
             </div>
             <div id="map"></div>
             <div id="spinner" class="hidden">
@@ -1291,24 +1493,15 @@
 
         <aside id="leads-section">
             <div id="leads-header">
-                <div class="lead-count-spacer" style="flex:1"></div>
-                <span id="lead-count">&gt; awaiting input_</span>
+                <h2 class="ls-title">Results</h2>
                 <div id="header-btns">
-                    <button id="clear-btn" class="btn-term hidden">[ CLR ]</button>
-                    <div id="export-wrap" class="hidden">
-                        <button id="export-btn" class="btn-term">[ EXPORT ▾ ]</button>
-                        <div id="export-menu" class="export-menu hidden">
-                            <button class="export-opt" onclick="doExport('csv')">.CSV</button>
-                            <button class="export-opt" onclick="doExport('json')">.JSON</button>
-                            <button class="export-opt" onclick="doExport('xlsx')">.XLSX</button>
-                        </div>
-                    </div>
+                    <button id="clear-btn" class="btn-term hidden">Clear</button>
                 </div>
             </div>
             <div id="filter-wrap" class="hidden">
                 <div class="input-wrap filter-input-wrap">
                     <span class="prompt">$</span>
-                    <input type="text" id="filter-input" placeholder="grep -i..."/>
+                    <input type="text" id="filter-input" placeholder="Filter results"/>
                 </div>
             </div>
             <div id="table-container">
@@ -1324,10 +1517,34 @@
                     </thead>
                     <tbody id="leads-tbody">
                         <tr id="empty-row">
-                            <td colspan="5">&gt; null. run a scan first.</td>
+                            <td colspan="5">
+                                <div class="ls-empty">
+                                    <svg class="ls-empty-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                                        <circle cx="24" cy="24" r="19" stroke="currentColor" stroke-width="1.6" stroke-dasharray="4 4" opacity="0.55"/>
+                                        <circle cx="24" cy="24" r="11" stroke="currentColor" stroke-width="1.6" stroke-dasharray="4 4" opacity="0.8"/>
+                                        <circle cx="24" cy="24" r="2.4" fill="currentColor"/>
+                                    </svg>
+                                    <p class="ls-empty-title">Ready to scan</p>
+                                    <p class="ls-empty-text">Type a business category and hit SCAN. Qualified leads land here.</p>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Lead count and export live at the foot of the panel, out of the
+                 way of the results themselves. -->
+            <div id="leads-foot">
+                <span id="lead-count">0 leads</span>
+                <div id="export-wrap" class="hidden">
+                    <button id="export-btn" class="btn-term">Export &darr;</button>
+                    <div id="export-menu" class="export-menu hidden">
+                        <button class="export-opt" onclick="doExport('csv')">.CSV</button>
+                        <button class="export-opt" onclick="doExport('json')">.JSON</button>
+                        <button class="export-opt" onclick="doExport('xlsx')">.XLSX</button>
+                    </div>
+                </div>
             </div>
         </aside>
     </main>
