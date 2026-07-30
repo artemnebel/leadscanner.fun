@@ -11,67 +11,37 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Lead Scanner</title>
+    <title>Sign up - Lead Scanner</title>
+    <meta name="description" content="Create a Lead Scanner account and start finding local businesses without a website.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
     <link rel="icon" href="/favicon.ico"/>
     <link rel="shortcut icon" href="/favicon.ico"/>
-    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <link rel="stylesheet" href="/static/auth.css?v={{ version }}"/>
 </head>
-<body class="page">
+<body>
     {% if maintenance %}{% include '_maintenance_banner.html' %}{% endif %}
-    <div id="crt-overlay"></div>
 
-    <div class="auth-loader-overlay" id="auth-loader" aria-hidden="true">
-        <div class="ai-matrix-loader">
-            <div class="digit">0</div>
-            <div class="digit">1</div>
-            <div class="digit">0</div>
-            <div class="digit">1</div>
-            <div class="digit">1</div>
-            <div class="digit">0</div>
-            <div class="digit">0</div>
-            <div class="digit">1</div>
-            <div class="glow"></div>
-        </div>
-    </div>
+    <!-- The wordmark is the only way off this page, and it goes home. -->
+    <a class="au-brand" href="/">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.4"/></svg>
+        <span>LeadScanner</span>
+    </a>
 
-    <header id="top-bar">
-        <div id="logo">
-            <span id="logo-blink">█</span>
-            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
-        </div>
-    </header>
+    <div class="au-wrap">
+        <main class="au-card">
+            <h1 class="au-title">Sign up</h1>
+            <p class="au-sub">Start finding leads in seconds.</p>
 
-    <nav id="main-nav">
-        <div class="nav-left">
-            <a href="/" class="nav-link">[ HOME ]</a>
-            <a href="/about" class="nav-link">[ ABOUT ]</a>
-            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
-            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
-        </div>
-        <div class="nav-right">
-            <a href="/contact" class="nav-link">[ CONTACT ]</a>
-            <a href="/pricing" class="nav-link">[ PRICING ]</a>
-            <a href="/login" class="nav-link" id="nav-auth-link">[ LOGIN ]</a>
-        </div>
-    </nav>
+            <p class="au-error" id="auth-error" role="alert"></p>
 
-    <main class="page-content auth-lg">
-        <h1 class="page-title">&gt; REGISTER.EXE</h1>
-
-        <div class="auth-box">
-            <p class="auth-intro"><strong>Start finding leads in seconds.</strong></p>
-
-            <div id="auth-error" class="auth-error" style="display:none"></div>
-
-            <div class="social-row">
-                <a href="/api/auth/google" class="social-tile" aria-label="Sign up with Google" title="Sign up with Google">
-                    <svg width="22" height="22" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div class="au-social">
+                <a href="/api/auth/google" aria-label="Sign up with Google" title="Sign up with Google">
+                    <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                         <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
                         <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.259c-.806.54-1.837.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
                         <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
@@ -79,58 +49,52 @@
                     </svg>
                 </a>
                 {% if facebook_enabled %}
-                <a href="/api/auth/facebook" class="social-tile fb" aria-label="Sign up with Facebook" title="Sign up with Facebook">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+                <a href="/api/auth/facebook" aria-label="Sign up with Facebook" title="Sign up with Facebook">
+                    <svg viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                         <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
                     </svg>
                 </a>
-                {% else %}
-                <button type="button" class="social-tile fb disabled" id="fb-disabled" aria-label="Facebook sign-up unavailable" title="Facebook sign-up isn't available right now">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
-                    </svg>
-                </button>
                 {% endif %}
                 {% if github_enabled %}
-                <a href="/api/auth/github" class="social-tile" aria-label="Sign up with GitHub" title="Sign up with GitHub">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+                <a href="/api/auth/github" aria-label="Sign up with GitHub" title="Sign up with GitHub">
+                    <svg viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                         <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.05-.02-2.06-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.09 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23.96-.27 1.98-.4 3-.41 1.02.01 2.04.14 3 .41 2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.81 1.1.81 2.22 0 1.61-.01 2.9-.01 3.29 0 .32.21.7.83.58C20.56 22.29 24 17.79 24 12.5 24 5.87 18.63.5 12 .5z"/>
                     </svg>
                 </a>
                 {% endif %}
             </div>
-            {% if not facebook_enabled %}
-            <p class="social-note" id="fb-note" style="display:none">&gt; Facebook sign-up isn't available right now — use Google or email for now.</p>
-            {% endif %}
 
-            <div class="auth-divider"><span>── OR ──</span></div>
+            <div class="au-or">or</div>
 
-            <form id="signup-form" class="auth-form">
-                <div class="form-group">
-                    <label class="form-label">&gt; EMAIL</label>
-                    <input type="email" id="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+            <form id="signup-form" novalidate>
+                <div class="au-field">
+                    <label class="au-label" for="email">Email address</label>
+                    <input class="au-input" type="email" id="email" name="email"
+                           placeholder="you@studio.com" required autocomplete="email" autofocus>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">&gt; PASSWORD</label>
-                    <div class="password-wrap">
-                        <input type="password" id="password" class="form-input" placeholder="••••••••" required autocomplete="new-password" minlength="8">
-                        <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Show password"></button>
+                <div class="au-field">
+                    <label class="au-label" for="password">Password</label>
+                    <div class="au-pw">
+                        <input class="au-input" type="password" id="password" name="password"
+                               placeholder="At least 8 characters" required autocomplete="new-password" minlength="8">
+                        <button type="button" class="au-eye" id="pw-toggle" aria-label="Show password"></button>
                     </div>
                 </div>
-                <button type="submit" class="auth-btn" id="submit-btn">[ CREATE ACCOUNT ]</button>
+                <button class="au-submit" type="submit" id="submit-btn">Create account</button>
             </form>
 
-            <p class="auth-footer">Already have an account? <a href="/login">[ LOGIN ]</a></p>
+            <p class="au-signup">Already have an account? <a href="/login">Log in</a></p>
 
-            <p class="auth-legal">By continuing you agree to our <a href="/terms">Terms of Service</a> and confirm you have read our <a href="/privacy">Privacy Policy</a>.</p>
-        </div>
-    </main>
+            <p class="au-legal">By continuing you agree to our <a href="/terms">Terms of Service</a>
+                and confirm you have read our <a href="/privacy">Privacy Policy</a>.</p>
+        </main>
+    </div>
 
     <script>
-        // Password show/hide toggle
+        // Password show/hide
         (function () {
-            const EYE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
-            const EYE_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+            const EYE = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+            const EYE_OFF = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
             const toggle = document.getElementById('pw-toggle');
             const input = document.getElementById('password');
             toggle.innerHTML = EYE;
@@ -142,26 +106,39 @@
             });
         })();
 
-        // Facebook sign-up is shown but not wired up yet — tell the user on click.
-        (function () {
-            const fb = document.getElementById('fb-disabled');
-            const note = document.getElementById('fb-note');
-            if (fb && note) fb.addEventListener('click', () => { note.style.display = 'block'; });
-        })();
+        // Already signed in: go straight through.
+        const existingToken = localStorage.getItem('ls_token');
+        if (existingToken) {
+            fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + existingToken } })
+                .then(r => { if (r.ok) window.location.href = '/?launched=1'; })
+                .catch(() => {});
+        }
 
         document.getElementById('signup-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
             const errEl = document.getElementById('auth-error');
-            const loader = document.getElementById('auth-loader');
-            btn.textContent = '[ CREATING... ]';
-            btn.disabled = true;
             errEl.style.display = 'none';
-            loader.classList.add('show');
-            const minShow = new Promise(r => setTimeout(r, 2500));  // let the animation play
 
-            const email    = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+
+            const fail = (msg) => {
+                errEl.textContent = msg;
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Create account';
+            };
+
+            // Checked here as well as by the input's minlength, so the message is
+            // ours rather than the browser's default bubble.
+            if (password.length < 8) {
+                fail('Password must be at least 8 characters.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Creating account...';
 
             try {
                 const res = await fetch('/api/auth/register', {
@@ -169,25 +146,22 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password }),
                 });
-                const data = await res.json();
+                let data = {};
+                try { data = await res.json(); } catch (err) {}
                 if (!res.ok) {
-                    loader.classList.remove('show');
-                    errEl.textContent = '> ERR: ' + (data.detail || 'Registration failed.');
-                    errEl.style.display = 'block';
-                    btn.textContent = '[ CREATE ACCOUNT ]';
-                    btn.disabled = false;
+                    fail(typeof data.detail === 'string' ? data.detail : 'Registration failed.');
                     return;
                 }
                 localStorage.setItem('ls_token', data.token);
                 localStorage.removeItem('ls_user');
-                await minShow;   // keep the matrix loader up for a few seconds before entering
-                window.location.href = '/?launched=1';
-            } catch {
-                loader.classList.remove('show');
-                errEl.textContent = '> ERR: Network error.';
-                errEl.style.display = 'block';
-                btn.textContent = '[ CREATE ACCOUNT ]';
-                btn.disabled = false;
+                // Someone who started a purchase and signed up instead of logging
+                // in still gets taken back to what they were buying.
+                const back = sessionStorage.getItem('ls_after_login');
+                sessionStorage.removeItem('ls_after_login');
+                window.location.href = back || '/?launched=1';
+            } catch (err) {
+                console.error('[signup] request failed', err);
+                fail('Could not reach the server. Check your connection and try again.');
             }
         });
     </script>

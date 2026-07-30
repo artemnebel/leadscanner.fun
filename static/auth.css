@@ -1,0 +1,148 @@
+/* Shared auth pages (login, signup). Standalone: these pages do not load
+   style.css, so nothing here inherits from the terminal theme. */
+/* Standalone auth page: no shared terminal stylesheet, no nav, nothing to
+   click away to except the links this page owns. */
+* { box-sizing: border-box; }
+body {
+    margin: 0; min-height: 100vh; background: #000; color: #fff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.au-brand {
+    position: relative; z-index: 1;
+    display: inline-flex; align-items: center; gap: 13px;
+    padding: 26px 0 0 30px; text-decoration: none;
+}
+.au-brand svg { width: 26px; height: 26px; color: #3ee87b; flex-shrink: 0; }
+.au-brand span { color: #fff; font-size: 21px; font-weight: 700; letter-spacing: -0.02em; }
+
+.au-wrap {
+    position: relative; z-index: 1;
+    display: flex; align-items: center; justify-content: center;
+    padding: clamp(24px, 5vh, 64px) 20px 64px;
+    min-height: calc(100vh - 90px);
+}
+/* The page is flat black, so the green edge is the only thing marking the
+   card out. A soft glow keeps it from looking like a hairline. */
+.au-card {
+    width: 100%; max-width: 560px;
+    background: #000; border: 1px solid rgba(62,232,123,0.5);
+    border-radius: 22px; padding: clamp(28px, 5vw, 56px);
+    box-shadow: 0 0 40px rgba(62,232,123,0.07);
+}
+.au-title {
+    margin: 0 0 30px; text-align: center; color: #fff;
+    font: 700 clamp(30px, 4vw, 42px)/1.1 'Space Grotesk', sans-serif;
+    letter-spacing: -0.03em;
+}
+
+.au-social { display: flex; gap: 14px; }
+.au-social a {
+    flex: 1; display: inline-flex; align-items: center; justify-content: center;
+    min-height: 56px; border-radius: 11px;
+    background: #0f1113; border: 1px solid rgba(255,255,255,0.10);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.au-social a:hover { background: #14171a; border-color: rgba(255,255,255,0.24); }
+.au-social a:focus-visible { outline: 3px solid #bbf7d0; outline-offset: 3px; }
+.au-social svg { width: 22px; height: 22px; }
+
+.au-or {
+    display: flex; align-items: center; gap: 16px; margin: 26px 0;
+    color: #6b7280; font: 400 13px 'JetBrains Mono', monospace;
+}
+.au-or::before, .au-or::after {
+    content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.10);
+}
+
+.au-field { margin-bottom: 20px; }
+.au-label {
+    display: block; margin-bottom: 9px; color: #98a2b3;
+    font-size: 14.5px; font-weight: 600;
+}
+.au-input {
+    width: 100%; min-height: 58px; padding: 0 18px;
+    background: #0f1113; color: #fff;
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 11px;
+    font-family: inherit; font-size: 16px;   /* 16px stops iOS zooming on focus */
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.au-input::placeholder { color: #5b626d; }
+.au-input:focus {
+    outline: none; border-color: #3ee87b;
+    box-shadow: 0 0 0 3px rgba(62,232,123,0.18);
+}
+/* Chrome paints autofilled fields pale blue, which wrecks a dark form. The
+   inset shadow is the only way to override that background, and the long
+   transition stops it flashing through on load. */
+.au-input:-webkit-autofill,
+.au-input:-webkit-autofill:hover,
+.au-input:-webkit-autofill:focus,
+.au-input:-webkit-autofill:active {
+    -webkit-text-fill-color: #fff;
+    -webkit-box-shadow: 0 0 0 1000px #0f1113 inset;
+            box-shadow: 0 0 0 1000px #0f1113 inset;
+    caret-color: #fff;
+    transition: background-color 9999s ease-in-out 0s;
+}
+.au-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #0f1113 inset, 0 0 0 3px rgba(62,232,123,0.18);
+            box-shadow: 0 0 0 1000px #0f1113 inset, 0 0 0 3px rgba(62,232,123,0.18);
+}
+.au-pw { position: relative; }
+.au-pw .au-input { padding-right: 52px; }
+.au-eye {
+    position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
+    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    background: none; border: 0; border-radius: 8px;
+    color: #8b95a5; cursor: pointer;
+}
+.au-eye:hover { color: #fff; }
+.au-eye:focus-visible { outline: 2px solid #3ee87b; outline-offset: 1px; }
+
+.au-forgot {
+    display: inline-block; margin: 2px 0 26px;
+    color: #3ee87b; font-size: 14.5px; font-weight: 600; text-decoration: none;
+}
+.au-forgot:hover { text-decoration: underline; }
+
+.au-submit {
+    width: 100%; min-height: 60px; border: 0; border-radius: 11px;
+    background: #3ee87b; color: #04150a; cursor: pointer;
+    font-family: inherit; font-size: 17px; font-weight: 700;
+    transition: background 0.15s ease;
+}
+.au-submit:hover:not(:disabled) { background: #5cf295; }
+.au-submit:disabled { opacity: 0.65; cursor: default; }
+.au-submit:focus-visible { outline: 3px solid #bbf7d0; outline-offset: 3px; }
+
+.au-help { margin: 26px 0 0; text-align: center; }
+.au-help a { color: #3ee87b; font-size: 15px; font-weight: 600; text-decoration: none; }
+.au-help a:hover { text-decoration: underline; }
+.au-signup { margin: 14px 0 0; text-align: center; color: #98a2b3; font-size: 15px; }
+.au-signup a { color: #3ee87b; font-weight: 700; text-decoration: none; }
+.au-signup a:hover { text-decoration: underline; }
+
+.au-error {
+    display: none; margin: 0 0 22px; padding: 13px 16px;
+    background: rgba(239,68,68,0.10); border: 1px solid rgba(239,68,68,0.45);
+    border-radius: 11px; color: #ffb4b4; font-size: 14.5px; line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+    .au-brand { padding: 20px 0 0 20px; }
+    .au-social { gap: 10px; }
+}
+
+/* ── Signup only ─────────────────────────────────────────────────────── */
+.au-sub {
+    margin: -18px 0 30px; text-align: center; color: #98a2b3;
+    font-size: 15.5px; line-height: 1.5;
+}
+.au-legal {
+    margin: 18px 0 0; text-align: center; color: #6b7280;
+    font-size: 13px; line-height: 1.6;
+}
+.au-legal a { color: #8b95a5; text-decoration: underline; }
+.au-legal a:hover { color: #fff; }
