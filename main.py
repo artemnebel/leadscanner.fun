@@ -143,13 +143,32 @@ FIELD_MASK        = (
 
 # ── App ──────────────────────────────────────────────────────────────────────
 def _get_version():
+    """Cache-busting token for /static assets.
+
+    This has to change whenever a static file does, or browsers keep serving a
+    stale app.js/style.css forever. git is not installed in the Docker image, so
+    the git branch silently failed and every asset was pinned at "v1"; the mtime
+    fallback below is what makes local edits actually reach the browser."""
     try:
         return subprocess.check_output(
             ['git', 'rev-parse', '--short', 'HEAD'],
             stderr=subprocess.DEVNULL
         ).decode().strip()
     except Exception:
-        return os.environ.get('RENDER_GIT_COMMIT', 'v1')[:7]
+        pass
+
+    commit = os.environ.get('RENDER_GIT_COMMIT')
+    if commit:
+        return commit[:7]
+
+    try:
+        newest = max(
+            os.path.getmtime(os.path.join(root, name))
+            for root, _dirs, files in os.walk('static') for name in files
+        )
+        return str(int(newest))          # stable until a static file changes
+    except Exception:
+        return 'dev'
 
 APP_VERSION = _get_version()
 
