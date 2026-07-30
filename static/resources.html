@@ -15,50 +15,28 @@
     <meta name="description" content="Useful tools, templates, and resources for freelance web designers finding and closing local business clients.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
     <link rel="icon" href="/favicon.ico"/>
     <link rel="shortcut icon" href="/favicon.ico"/>
-    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <link rel="stylesheet" href="/static/page.css?v={{ version }}"/>
 </head>
-<body class="page">
+<body>
     {% if maintenance %}{% include '_maintenance_banner.html' %}{% endif %}
-
-    <div id="crt-overlay"></div>
-
-    <header id="top-bar">
-        <div id="logo">
-            <span id="logo-blink">█</span>
-            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
-        </div>
-    </header>
-
-    <nav id="main-nav">
-        <div class="nav-left">
-            <a href="/" class="nav-link">[ HOME ]</a>
-            <a href="/about" class="nav-link">[ ABOUT ]</a>
-            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
-            <a href="/resources" class="nav-link active">[ RESOURCES ]</a>
-        </div>
-        <div class="nav-right">
-            <a href="/contact" class="nav-link">[ CONTACT ]</a>
-            <a href="/pricing" class="nav-link">[ PRICING ]</a>
-            <a href="/login" class="nav-link" id="nav-auth-link">[ LOGIN ]</a>
-        </div>
-    </nav>
+    {% include '_brand_header.html' %}
 
     <main class="page-content">
-        <h1 class="page-title">&gt; RESOURCES.EXE</h1>
+        <h1 class="page-title">Resources</h1>
 
         <div class="page-section">
-            <h2>&gt; COLD_CALLING_GUIDE</h2>
+            <h2>Cold calling guide</h2>
             <p>New to cold calling? The <a href="/cold-calling">Cold Calling Guide</a> covers scripts, objection handling, and how to turn a lead from Lead Scanner into a booked client call.</p>
         </div>
 
         <div class="page-section">
-            <h2>&gt; WEBSITE_BUILDERS_TO_OFFER_CLIENTS</h2>
+            <h2>Website builders to offer clients</h2>
             <p>When building sites for local businesses, these platforms let you deliver fast results at low cost:</p>
             <ul>
                 <li><a href="https://www.framer.com" target="_blank" rel="noopener">Framer</a> - best for modern, design-forward sites. Fast to build, looks premium.</li>
@@ -70,7 +48,7 @@
         </div>
 
         <div class="page-section">
-            <h2>&gt; PRICING_GUIDANCE</h2>
+            <h2>Pricing guidance</h2>
             <p>Typical pricing for local business websites (one-time cost):</p>
             <ul>
                 <li><strong>Starter (1-page site):</strong> $300 – $700 - hours, location, contact form, Google Maps embed</li>
@@ -81,7 +59,7 @@
         </div>
 
         <div class="page-section">
-            <h2>&gt; SEO_AND_LISTING_TOOLS</h2>
+            <h2>SEO and listing tools</h2>
             <ul>
                 <li><a href="https://search.google.com/search-console" target="_blank" rel="noopener">Google Search Console</a> - track your site's indexing and search performance</li>
                 <li><a href="https://www.google.com/business/" target="_blank" rel="noopener">Google Business Profile</a> - help clients claim and optimize their Google listing</li>
@@ -91,7 +69,7 @@
         </div>
 
         <div class="page-section">
-            <h2>&gt; EMAIL_AND_OUTREACH_TOOLS</h2>
+            <h2>Email and outreach tools</h2>
             <ul>
                 <li><a href="https://hunter.io" target="_blank" rel="noopener">Hunter.io</a> - find email addresses for businesses when a phone call isn't the right move</li>
                 <li><a href="https://www.notion.so" target="_blank" rel="noopener">Notion</a> - free CRM alternative. Track your leads, follow-ups, and deal status.</li>
@@ -101,7 +79,7 @@
         </div>
 
         <div class="page-section">
-            <h2>&gt; FREELANCE_COMMUNITIES</h2>
+            <h2>Freelance communities</h2>
             <ul>
                 <li><a href="https://www.reddit.com/r/webdev/" target="_blank" rel="noopener">r/webdev</a> - web development community, tips, and discussions</li>
                 <li><a href="https://www.reddit.com/r/Entrepreneur/" target="_blank" rel="noopener">r/Entrepreneur</a> - business growth strategies and freelancing advice</li>
@@ -111,7 +89,7 @@
         </div>
 
         <div class="page-section">
-            <h2>&gt; CONTRACT_AND_LEGAL</h2>
+            <h2>Contracts and legal</h2>
             <ul>
                 <li><a href="https://www.and.co" target="_blank" rel="noopener">AND CO (by Fiverr)</a> - free contracts, invoicing, and project management for freelancers</li>
                 <li><a href="https://www.hellobonsai.com" target="_blank" rel="noopener">Bonsai</a> - freelance contracts and proposals with legally vetted templates</li>

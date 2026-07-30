@@ -15,63 +15,41 @@
     <meta name="description" content="Learn about Lead Scanner - the free tool built for web designers to find local businesses without a website.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
     <link rel="icon" href="/favicon.ico"/>
     <link rel="shortcut icon" href="/favicon.ico"/>
-    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <link rel="stylesheet" href="/static/page.css?v={{ version }}"/>
 </head>
-<body class="page">
+<body>
     {% if maintenance %}{% include '_maintenance_banner.html' %}{% endif %}
-
-    <div id="crt-overlay"></div>
-
-    <header id="top-bar">
-        <div id="logo">
-            <span id="logo-blink">█</span>
-            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
-        </div>
-    </header>
-
-    <nav id="main-nav">
-        <div class="nav-left">
-            <a href="/" class="nav-link">[ HOME ]</a>
-            <a href="/about" class="nav-link active">[ ABOUT ]</a>
-            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
-            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
-        </div>
-        <div class="nav-right">
-            <a href="/contact" class="nav-link">[ CONTACT ]</a>
-            <a href="/pricing" class="nav-link">[ PRICING ]</a>
-            <a href="/login" class="nav-link" id="nav-auth-link">[ LOGIN ]</a>
-        </div>
-    </nav>
+    {% include '_brand_header.html' %}
 
     <main class="page-content">
-        <h1 class="page-title">&gt; ABOUT.EXE</h1>
+        <h1 class="page-title">About Lead Scanner</h1>
 
         <div class="page-section">
-            <h2>&gt; WHAT_IS_LEAD_SCANNER</h2>
+            <h2>What Lead Scanner is</h2>
             <p>Lead Scanner is a free, map-based tool built for freelance web designers and agencies who want to find local businesses that don't have a website. Instead of guessing who needs your services, you can search any city, drag a radius on the map, and instantly see every business in that area with no online presence. The Free tier covers casual use with no card required; Pro adds priority access with no waiting for anyone working leads at real volume.</p>
             <p>Every result comes with a phone number, rating, review count, and a direct link to their Google Maps profile, with everything you need to start your outreach.</p>
         </div>
 
         <div class="page-section">
-            <h2>&gt; WHY_IT_WAS_BUILT</h2>
+            <h2>Why it was built</h2>
             <p>Finding web design clients is one of the hardest parts of running a freelance business. Cold outreach works, but only when you're reaching out to businesses that actually need a website. Lead Scanner solves the discovery problem by filtering out businesses that already have an online presence and handing you a clean list of genuine prospects.</p>
             <p>Lead Scanner is free to start, with a ~5-mile scan radius and a starter client portal, no credit card required. If you're working leads at volume, <a href="/pricing">Pro</a> unlocks unlimited scans with no waiting, a ~15-mile radius, multi-scan, and an unlimited client portal, so the workflow lives in one place.</p>
         </div>
 
         <div class="page-section">
-            <h2>&gt; HOW_IT_WORKS_UNDER_THE_HOOD</h2>
+            <h2>How it works under the hood</h2>
             <p>Lead Scanner is powered by the Google Places API. When you run a scan, it searches for businesses matching your category within the radius you set. It then checks each business for a website field; if a website is present, the business is skipped. Only businesses with a phone number but no website make it into your leads list.</p>
             <p>The backend is built with Python (FastAPI) and the frontend uses vanilla JavaScript with Leaflet.js for the interactive map. The full source code is available on <a href="https://github.com/artemnebel/LeadRecon" target="_blank" rel="noopener">GitHub</a>.</p>
         </div>
 
         <div class="page-section">
-            <h2>&gt; WHO_BUILT_IT</h2>
+            <h2>Who built it</h2>
             <p>Lead Scanner was built as a personal tool and open-sourced for anyone in web design or digital marketing who wants a faster way to find clients. Have feedback or ideas? Use the <a href="/contact">contact page</a>.</p>
         </div>
     </main>

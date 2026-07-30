@@ -15,29 +15,21 @@
     <meta name="description" content="Pay for leads, not for searching. Scan as much as you need, and a pack of 100 is 100 leads. Every one is a verified local business with no website, reviews and a phone number.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
     <link rel="icon" href="/favicon.ico"/>
     <link rel="shortcut icon" href="/favicon.ico"/>
-    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <link rel="stylesheet" href="/static/page.css?v={{ version }}"/>
     <style>
     /* ===== Pricing (pr-*) — scoped so it never touches the terminal styles
        shared with the other pages. ===== */
     .pr-page {
         position: relative; overflow: hidden;
-        background: #050505;
+        background: #000;
         padding: clamp(48px, 6vw, 88px) clamp(16px, 4vw, 48px) clamp(64px, 8vw, 104px);
         font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
-    /* Same faint graph paper as the landing hero, to tie the pages together. */
-    .pr-page::before {
-        content: ''; position: absolute; inset: 0; pointer-events: none;
-        background-image:
-            linear-gradient(rgba(255,255,255,0.021) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.021) 1px, transparent 1px);
-        background-size: 46px 46px;
     }
     .pr-inner { position: relative; max-width: 1120px; margin: 0 auto; }
 
@@ -199,31 +191,9 @@
     }
     </style>
 </head>
-<body class="page">
+<body>
     {% if maintenance %}{% include '_maintenance_banner.html' %}{% endif %}
-    <div id="crt-overlay"></div>
-
-    <header id="top-bar">
-        <div id="logo">
-            <span id="logo-blink">█</span>
-            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
-        </div>
-    </header>
-
-    <nav id="main-nav">
-        <div class="nav-left">
-            <a href="/" class="nav-link">[ HOME ]</a>
-            <a href="/about" class="nav-link">[ ABOUT ]</a>
-            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
-            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
-        </div>
-        <div class="nav-right">
-            <a href="/pricing" class="nav-link active">[ PRICING ]</a>
-            <a href="/clients" class="nav-link" id="nav-clients-link" style="display:none">[ MY_CLIENTS ]</a>
-            <a href="/contact" class="nav-link">[ CONTACT ]</a>
-            <a href="/login" class="nav-link" id="nav-auth-link">[ LOGIN ]</a>
-        </div>
-    </nav>
+    {% include '_brand_header.html' %}
 
     <!-- Icon set: Lucide-style strokes at 2px, one visual language across the
          page. Deliberately not emoji, which render differently per platform and
