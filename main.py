@@ -833,6 +833,12 @@ async def admin_users(user=Depends(get_current_user), db: Session = Depends(get_
             "promo_sent_at": str(u.promo_sent_at) if u.promo_sent_at else None,
             "promo_status": u.promo_status,
             "has_stripe": bool(u.stripe_customer_id),
+            # Actually paid, not just "has a Stripe customer record" — a Customer
+            # is created on the first checkout attempt even if it's never
+            # completed (see create_checkout's self-heal), so stripe_customer_id
+            # alone way overcounts. True for a legacy paid tier or anyone who has
+            # ever had lead_credits_total granted (only set by a real purchase).
+            "is_paid": bool((u.tier in PAID_TIERS) or (u.lead_credits_total or 0) > 0),
             "google": bool(u.google_id),
             "search_count": agg.get(u.email, {}).get("search_count", 0),
             "last_active": agg.get(u.email, {}).get("last_active"),

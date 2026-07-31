@@ -418,7 +418,7 @@
             { label: 'Active (7d)', val: users.filter(u => within7(u.last_active)).length },
             { label: 'Total scans', val: sum(users, u => u.total_scans) },
             { label: 'Leads pulled', val: sum(users, u => u.leads_found), cls: 'accent' },
-            { label: 'Paid users', val: users.filter(u => u.has_stripe).length },
+            { label: 'Paid users', val: users.filter(u => u.is_paid).length },
         ];
         document.getElementById('ov-kpi-grid').innerHTML = kpis.map(k =>
             `<div class="ov-kpi"><div class="ov-kpi-label">${k.label}</div>` +
@@ -550,7 +550,7 @@
                 return;
             }
             body.innerHTML = rows.map(u => {
-                const paid = u.has_stripe;
+                const paid = u.is_paid;
                 return `<tr>
                     <td class="ov-cell-email" title="${u.email}">${u.email}</td>
                     <td><span class="ov-pill ${paid ? 'ov-pill-paid' : 'ov-pill-free'}">${paid ? 'PAID' : 'FREE'}</span></td>
@@ -580,7 +580,7 @@
         document.getElementById('ov-export-btn').addEventListener('click', () => {
             const cols = [
                 ['email', u => u.email],
-                ['plan', u => u.has_stripe ? 'paid' : 'free'],
+                ['plan', u => u.is_paid ? 'paid' : 'free'],
                 ['total_scans', u => u.total_scans || 0],
                 ['leads_found', u => u.leads_found || 0],
                 ['joined', u => u.created_at || ''],
