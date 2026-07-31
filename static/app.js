@@ -33,6 +33,8 @@ const state = {
     // plan gating + client portal
     plan: null,            // { pro, max_radius_m, daily_remaining, ... } from /api/auth/me
     savedUrls: new Set(),  // maps_urls already saved to My Clients this session
+    selectedUrls: new Set(),  // maps_urls checked in the results table right now
+    markerByUrl: new Map(), // maps_url -> Leaflet marker, so Clear can drop single pins
 };
 
 /* ===== CUSTOM ICONS ===== */
@@ -273,6 +275,7 @@ function addResultPins(leads) {
         `);
 
         state.markersLayer.addLayer(marker);
+        if (lead.maps_url) state.markerByUrl.set(lead.maps_url, marker);
     });
 }
 
@@ -534,14 +537,9 @@ async function handleSearch() {
     }
 }
 
-/* ===== FILTER + SORT + RENDER ===== */
+/* ===== SORT + RENDER ===== */
 function applyFilterAndRender() {
-    const query = (document.getElementById('filter-input').value || '').toLowerCase();
-
-    state.filteredLeads = state.allLeads.filter(lead =>
-        (lead.name || '').toLowerCase().includes(query) ||
-        (lead.city || '').toLowerCase().includes(query)
-    );
+    state.filteredLeads = [...state.allLeads];
 
     if (state.sortCol) {
         state.filteredLeads.sort((a, b) => {
@@ -557,71 +555,90 @@ function applyFilterAndRender() {
 
     renderTable();
 
-    const count = state.filteredLeads.length;
     const total = state.allLeads.length;
-    const foundLabel = count === total
-        ? `${total} lead${total !== 1 ? 's' : ''}`
-        : `${count} of ${total} leads`;
-    let countText = `<span class="found-text">${foundLabel}</span>`;
+    let countText = `<span class="found-text">${total} lead${total !== 1 ? 's' : ''}</span>`;
     if (state.totalScanned > 0) {
         countText += `<span class="count-meta"> · ${state.totalScanned} scanned</span>`;
     }
     document.getElementById('lead-count').innerHTML = countText;
+    const countBadge = document.getElementById('lead-count-badge');
+    if (countBadge) countBadge.textContent = `${total} LEAD${total !== 1 ? 'S' : ''}`;
 }
 
 function renderTable() {
     const tbody = document.getElementById('leads-tbody');
     tbody.innerHTML = '';
 
+    // Selections for leads no longer in view (filtered out / cleared) are stale.
+    for (const url of [...state.selectedUrls]) {
+        if (!state.filteredLeads.some(l => l.maps_url === url)) state.selectedUrls.delete(url);
+    }
+
     if (state.filteredLeads.length === 0) {
         const tr = document.createElement('tr');
         tr.id = 'empty-row';
-        tr.innerHTML = `<td colspan="5">${
-            state.allLeads.length === 0
-                ? 'No leads found — try a broader search or different category'
-                : 'No matches for that filter'
-        }</td>`;
+        tr.innerHTML = `<td colspan="5">No leads found — try a broader search or different category</td>`;
         tbody.appendChild(tr);
+        updateBulkControls();
         return;
     }
 
     state.filteredLeads.forEach(lead => {
         const tr = document.createElement('tr');
+        const checked = state.selectedUrls.has(lead.maps_url);
+        tr.classList.toggle('is-selected', checked);
         const phoneCell = lead.phone
             ? `<a href="tel:${esc(lead.phone)}" class="phone-link">${esc(lead.phone)}</a>`
             : '<span class="muted">—</span>';
         const ratingCell = (lead.rating != null)
-            ? `${Number(lead.rating).toFixed(1)} ★ <span class="muted">(${lead.reviews ?? 0})</span>`
+            ? `<span class="rating-value"><span class="rating-star">★</span> ${Number(lead.rating).toFixed(1)} <span class="rating-reviews">(${lead.reviews ?? 0})</span></span>`
             : '<span class="muted">—</span>';
         tr.innerHTML = `
+            <td class="select-cell"><input type="checkbox" class="row-select" data-url="${esc(lead.maps_url)}" ${checked ? 'checked' : ''}></td>
             <td class="name-cell" title="${esc(lead.name)}"><a href="${esc(lead.maps_url)}" target="_blank" rel="noopener" class="name-link">${esc(lead.name)}</a></td>
             <td data-label="PHONE">${phoneCell}</td>
             <td data-label="RATING">${ratingCell}</td>
             <td class="muted" data-label="ADDRESS" title="${esc(lead.city)}">${esc(lead.city)}</td>
         `;
-        // Save-to-portal action
-        const actionTd = document.createElement('td');
-        actionTd.className = 'save-cell';
-        const btn = document.createElement('button');
-        btn.className = 'save-client-btn btn-term';
-        const already = state.savedUrls.has(lead.maps_url);
-        btn.textContent = already ? '✓ SAVED' : '+ SAVE';
-        btn.disabled = already;
-        btn.title = already ? 'Saved to My Clients' : 'Save to My Clients';
-        btn.addEventListener('click', () => saveLeadToClients(lead, btn));
-        actionTd.appendChild(btn);
-        tr.appendChild(actionTd);
         tbody.appendChild(tr);
     });
+
+    updateBulkControls();
+}
+
+/* ===== ROW SELECTION (Save / Clear act on the checked leads) ===== */
+function updateBulkControls() {
+    const selectAll = document.getElementById('select-all-leads');
+    const saveBtn = document.getElementById('save-btn');
+    const count = state.selectedUrls.size;
+    const total = state.filteredLeads.length;
+
+    if (selectAll) {
+        selectAll.checked = total > 0 && count === total;
+        selectAll.indeterminate = count > 0 && count < total;
+    }
+    if (saveBtn) saveBtn.disabled = count === 0;
+}
+
+function toggleRowSelection(url, on) {
+    if (on) state.selectedUrls.add(url);
+    else state.selectedUrls.delete(url);
+    const tr = document.querySelector(`.row-select[data-url="${CSS.escape(url)}"]`)?.closest('tr');
+    if (tr) tr.classList.toggle('is-selected', on);
+    updateBulkControls();
+}
+
+function selectAllLeads(on) {
+    state.selectedUrls = on ? new Set(state.filteredLeads.map(l => l.maps_url)) : new Set();
+    renderTable();
 }
 
 /* ===== SAVE LEAD → CLIENT PORTAL ===== */
-async function saveLeadToClients(lead, btn) {
+// One POST for one lead. Returns 'saved' | 'duplicate' | 'limit_reached' | 'error'
+// so the bulk caller can tally results without duplicating the fetch logic.
+async function saveLeadRequest(lead) {
     const token = typeof getToken === 'function' ? getToken() : null;
-    if (!token) { window.location.href = '/login'; return; }
-    const prev = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = '...';
+    if (!token) { window.location.href = '/login'; return 'error'; }
     try {
         const resp = await fetch('/api/clients', {
             method: 'POST',
@@ -636,30 +653,55 @@ async function saveLeadToClients(lead, btn) {
             }),
         });
         const data = await resp.json().catch(() => ({}));
-        if (resp.status === 401) { window.location.href = '/login'; return; }
+        if (resp.status === 401) { window.location.href = '/login'; return 'error'; }
         if (resp.status === 403 && data.detail && data.detail.code === 'PORTAL_LIMIT_REACHED') {
-            btn.disabled = false;
-            btn.textContent = prev;
+            return { status: 'limit_reached', limit: data.detail.limit };
+        }
+        if (!resp.ok) return 'error';
+        state.savedUrls.add(lead.maps_url);
+        return data.duplicate ? 'duplicate' : 'saved';
+    } catch (err) {
+        return 'error';
+    }
+}
+
+/* Saves every checked lead. Stops early on a portal-limit hit (further saves
+   would just fail the same way) and reports what happened either way. */
+async function bulkSaveSelected() {
+    const saveBtn = document.getElementById('save-btn');
+    const leads = state.allLeads.filter(l => state.selectedUrls.has(l.maps_url));
+    if (leads.length === 0) return;
+
+    saveBtn.disabled = true;
+    const prevLabel = saveBtn.textContent;
+    let saved = 0, duplicate = 0, failed = 0;
+
+    for (const lead of leads) {
+        saveBtn.textContent = `Saving ${saved + duplicate + failed + 1}/${leads.length}...`;
+        const result = await saveLeadRequest(lead);
+        if (result === 'saved') saved++;
+        else if (result === 'duplicate') duplicate++;
+        else if (result && result.status === 'limit_reached') {
             showUpgradeModal(
                 '> CLIENT PORTAL FULL',
-                `You can save up to ${data.detail.limit} clients. See the pricing page to lift the limit.`
+                `You can save up to ${result.limit} clients. See the pricing page to lift the limit.`
             );
-            return;
-        }
-        if (!resp.ok) {
-            btn.disabled = false;
-            btn.textContent = prev;
-            showToast('Could not save client', 'error');
-            return;
-        }
-        state.savedUrls.add(lead.maps_url);
-        btn.textContent = '✓ SAVED';
-        btn.title = 'Saved to My Clients';
-        showToast(data.duplicate ? 'Already in My Clients' : 'Saved to My Clients', 'success');
-    } catch (err) {
-        btn.disabled = false;
-        btn.textContent = prev;
-        showToast('Could not save client', 'error');
+            break;
+        } else failed++;
+    }
+
+    saveBtn.textContent = prevLabel;
+    state.selectedUrls.clear();
+    renderTable();
+
+    if (saved || duplicate) {
+        const parts = [];
+        if (saved) parts.push(`${saved} saved`);
+        if (duplicate) parts.push(`${duplicate} already saved`);
+        if (failed) parts.push(`${failed} failed`);
+        showToast(parts.join(', '), 'success');
+    } else if (failed) {
+        showToast('Could not save the selected leads', 'error');
     }
 }
 
@@ -690,6 +732,8 @@ function initSortHeaders() {
             }
             clearSortClasses();
             th.classList.add(state.sortAsc ? 'sort-asc' : 'sort-desc');
+            const sortSelect = document.getElementById('sort-select');
+            if (sortSelect) sortSelect.value = '';   // desynced from the dropdown's presets now
             applyFilterAndRender();
         });
     });
@@ -697,6 +741,26 @@ function initSortHeaders() {
 
 function clearSortClasses() {
     document.querySelectorAll('#leads-table thead th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+}
+
+/* ===== SORT DROPDOWN ===== */
+function initSortSelect() {
+    document.getElementById('sort-select')?.addEventListener('change', (e) => {
+        clearSortClasses();
+        switch (e.target.value) {
+            case 'name-asc':
+                state.sortCol = 'name';
+                state.sortAsc = true;
+                break;
+            case 'reviews-desc':
+                state.sortCol = 'reviews';
+                state.sortAsc = false;
+                break;
+            default:
+                state.sortCol = null;
+        }
+        applyFilterAndRender();
+    });
 }
 
 /* ===== EXPORT ===== */
@@ -762,12 +826,40 @@ function clearAllLeads() {
     state.allLeads = [];
     state.filteredLeads = [];
     state.seenUrls = new Set();
+    state.selectedUrls = new Set();
+    state.markerByUrl = new Map();
     state.totalScanned = 0;
     state.totalSkipped = 0;
     state.markersLayer.clearLayers();
     document.getElementById('lead-count').innerHTML = '0 leads';
-    document.getElementById('filter-input').value = '';
+    const countBadge = document.getElementById('lead-count-badge');
+    if (countBadge) countBadge.textContent = '0 LEADS';
+    state.sortCol = null;
+    clearSortClasses();
+    const sortSelect = document.getElementById('sort-select');
+    if (sortSelect) sortSelect.value = '';
     renderTable();
+}
+
+/* Drops just the checked leads: removes their pins, their entries in
+   allLeads/seenUrls, and re-renders. Used when Clear is clicked with a
+   selection; with no selection Clear still nukes everything (explodeAndClear). */
+function clearSelectedLeads() {
+    const urls = state.selectedUrls;
+    for (const url of urls) {
+        const marker = state.markerByUrl.get(url);
+        if (marker) { state.markersLayer.removeLayer(marker); state.markerByUrl.delete(url); }
+        state.seenUrls.delete(url);
+    }
+    state.allLeads = state.allLeads.filter(l => !urls.has(l.maps_url));
+    state.selectedUrls = new Set();
+    applyFilterAndRender();
+}
+
+/* Clear button: clears the checked leads, or everything if nothing is checked. */
+function handleClearClick() {
+    if (state.selectedUrls.size > 0) clearSelectedLeads();
+    else explodeAndClear();
 }
 
 /* ===== EXPLOSION ANIMATION ===== */
@@ -944,7 +1036,9 @@ function setLoading(isLoading) {
 
 function showLeadsUI() {
     document.getElementById('export-wrap').classList.remove('hidden');
+    document.getElementById('save-btn').classList.remove('hidden');
     document.getElementById('clear-btn').classList.remove('hidden');
+    document.getElementById('lead-count-badge').classList.remove('hidden');
     document.getElementById('filter-wrap').classList.remove('hidden');
     // On the stacked mobile layout results render below the map, off-screen —
     // bring them into view so a scan visibly "does something".
@@ -959,12 +1053,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initMap();
     initRadiusSlider();
     initSortHeaders();
+    initSortSelect();
     initLocateBtn();
     applyPlanToUI();
 
     document.getElementById('search-btn').addEventListener('click', handleSearch);
     document.getElementById('multi-btn').addEventListener('click', toggleBulkMode);
-    document.getElementById('filter-input').addEventListener('input', applyFilterAndRender);
     document.getElementById('export-btn').addEventListener('click', e => {
         e.stopPropagation();
         document.getElementById('export-menu').classList.toggle('hidden');
@@ -972,7 +1066,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', () => {
         document.getElementById('export-menu')?.classList.add('hidden');
     });
-    document.getElementById('clear-btn').addEventListener('click', explodeAndClear);
+    document.getElementById('clear-btn').addEventListener('click', handleClearClick);
+    document.getElementById('save-btn').addEventListener('click', bulkSaveSelected);
+    document.getElementById('select-all-leads').addEventListener('change', e => {
+        selectAllLeads(e.target.checked);
+    });
+    document.getElementById('leads-tbody').addEventListener('change', e => {
+        if (e.target.classList.contains('row-select')) {
+            toggleRowSelection(e.target.dataset.url, e.target.checked);
+        }
+    });
 
     document.getElementById('category-input').addEventListener('keydown', e => {
         if (e.key === 'Enter') handleSearch();

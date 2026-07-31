@@ -108,7 +108,7 @@ ROLLOVER_MONTHS = 3   # unused leads roll over up to this many months' worth
 # Everyone now scans against a lead balance. The only uncapped accounts are the
 # admin and anyone already on a legacy paid tier, who stay grandfathered.
 FREE_RADIUS_M     = 8_000     # ~5mi
-PRO_RADIUS_M      = 24_140    # ~15mi
+PRO_RADIUS_M      = 48_280    # ~30mi
 FREE_PORTAL_LIMIT = 5
 PAID_TIERS = {"pro", "starter", "business", "unlimited"}
 
@@ -134,12 +134,32 @@ PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
 # nextPageToken must be named in the mask or the API omits it and pagination
 # silently stops after the first 20 results, whatever max_pages says.
 FIELD_MASK        = (
-    "places.id,places.displayName,places.formattedAddress,"
+    "places.id,places.displayName,places.formattedAddress,places.addressComponents,"
     "places.googleMapsUri,places.location,places.businessStatus,"
     "places.websiteUri,"
     "places.nationalPhoneNumber,places.rating,places.userRatingCount,"
     "nextPageToken"
 )
+
+
+def _short_city(place: dict) -> str:
+    """'City, ST' from addressComponents — the list column needs a locality,
+    not the full street address. addressComponents is Basic Data, so it rides
+    free on a call that already pays for Enterprise + Atmosphere fields.
+    Falls back to the full formatted address if components are missing or the
+    place doesn't fit the locality/admin-area shape (e.g. some rural areas)."""
+    components = place.get("addressComponents") or []
+    city = None
+    state = None
+    for comp in components:
+        types = comp.get("types", [])
+        if not city and ("locality" in types or "postal_town" in types or "sublocality" in types):
+            city = comp.get("shortText") or comp.get("longText")
+        if not state and "administrative_area_level_1" in types:
+            state = comp.get("shortText") or comp.get("longText")
+    if city and state:
+        return f"{city}, {state}"
+    return place.get("formattedAddress", "")
 
 # ── App ──────────────────────────────────────────────────────────────────────
 def _get_version():
@@ -189,6 +209,12 @@ _EXPECTED_PRICES = {
     "STRIPE_PRICE_PACK_SCALE":    ("Scale pack",      PACK_PRICE_IDS.get("scale"),         8900, None),
     "STRIPE_PRICE_AGENCY":        ("Agency monthly",  AGENCY_PRICE_IDS.get("agency"),      2000, "month"),
     "STRIPE_PRICE_AGENCY_PLUS":   ("Agency plus",     AGENCY_PRICE_IDS.get("agency-plus"), 3900, "month"),
+}
+
+# Reverse of the table above — price id -> friendly label, for showing "Plan:
+# Agency Plus" on a subscription instead of a raw Stripe price id.
+PRICE_ID_TO_LABEL = {
+    price_id: label for label, price_id, _cents, _interval in _EXPECTED_PRICES.values() if price_id
 }
 
 def _log_billing_config() -> None:
@@ -304,13 +330,31 @@ def grant_leads(user: User, count: int, cap_months: int | None = None) -> int:
     """Add leads to the balance, optionally capping it at cap_months' worth.
 
     Used by the recurring plans so unused leads roll over but do not pile up
-    forever. Returns the number actually added."""
+    forever. Returns the number actually added.
+
+    Also maintains lead_credits_total, the cap for the *current* credit
+    cycle, so the dashboard can show "used X / Y":
+      - If the balance was <= 0 before this grant, a fresh cycle starts:
+        the total resets to exactly what was just granted.
+      - If the balance was > 0, the current cycle is extended: the total
+        grows by the same amount that was just added, so "used" stays the
+        same as before the top-up."""
     before = user.lead_credits or 0
     after = before + count
     if cap_months is not None:
         after = min(after, count * cap_months)
     user.lead_credits = max(before, after)   # never take leads away
-    return user.lead_credits - before
+    added = user.lead_credits - before
+
+    if before <= 0:
+        user.lead_credits_total = added
+    else:
+        # `or before` covers accounts granted before this column existed —
+        # treat their existing balance as this cycle's starting point rather
+        # than fabricating a false "used" number.
+        user.lead_credits_total = (user.lead_credits_total or before) + added
+
+    return added
 
 def usage_info(user: User) -> dict:
     available = available_leads(user)
@@ -320,6 +364,7 @@ def usage_info(user: User) -> dict:
         "free_used": user.leads_used or 0,
         "free_limit": None,
         "credits": user.lead_credits or 0,
+        "credits_total": user.lead_credits_total or user.lead_credits or 0,  # fallback = 0 used, for pre-migration balances
         "available": available,                     # None = uncapped
         "used": user.leads_used or 0,               # legacy field, kept for old UI
         "limit": None,                              # legacy field, kept for old UI
@@ -387,13 +432,33 @@ async def serve_how_it_works(request: Request):
 async def serve_cold_calling(request: Request):
     return templates.TemplateResponse("cold-calling.html", _ctx(request))
 
-@app.get("/resources")
-async def serve_resources(request: Request):
-    return templates.TemplateResponse("resources.html", _ctx(request))
-
 @app.get("/contact")
 async def serve_contact(request: Request):
     return templates.TemplateResponse("contact.html", _ctx(request))
+
+@app.get("/blog")
+async def serve_blog(request: Request):
+    return templates.TemplateResponse("blog.html", _ctx(request))
+
+@app.get("/blog/finding-businesses-without-a-website")
+async def serve_blog_finding_businesses(request: Request):
+    return templates.TemplateResponse("blog-finding-businesses-without-a-website.html", _ctx(request))
+
+@app.get("/blog/cold-outreach-script-web-design")
+async def serve_blog_cold_outreach(request: Request):
+    return templates.TemplateResponse("blog-cold-outreach-script-web-design.html", _ctx(request))
+
+@app.get("/blog/signs-a-business-needs-a-website")
+async def serve_blog_signs_needs_website(request: Request):
+    return templates.TemplateResponse("blog-signs-a-business-needs-a-website.html", _ctx(request))
+
+@app.get("/blog/how-much-to-charge-small-business-website")
+async def serve_blog_how_much_to_charge(request: Request):
+    return templates.TemplateResponse("blog-how-much-to-charge-small-business-website.html", _ctx(request))
+
+@app.get("/blog/follow-up-system-freelance-web-design")
+async def serve_blog_follow_up_system(request: Request):
+    return templates.TemplateResponse("blog-follow-up-system-freelance-web-design.html", _ctx(request))
 
 @app.get("/login")
 async def serve_login(request: Request):
@@ -630,6 +695,77 @@ async def set_password(
     db.commit()
     return {"ok": True, "has_password": True}
 
+_OAUTH_FIELDS = {"google": "google_id", "facebook": "facebook_id", "github": "github_id"}
+
+class OAuthUnlinkBody(BaseModel):
+    provider: str  # "google" | "facebook" | "github"
+
+@app.post("/api/auth/oauth/unlink")
+async def oauth_unlink(
+    body: OAuthUnlinkBody,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    field = _OAUTH_FIELDS.get(body.provider)
+    if not field:
+        raise HTTPException(status_code=400, detail="Unknown provider.")
+    if not getattr(user, field):
+        raise HTTPException(status_code=400, detail="That account isn't connected.")
+    # Refuse to remove the only way this user can sign back in.
+    linked_count = sum(1 for f in _OAUTH_FIELDS.values() if getattr(user, f))
+    if not user.password_hash and linked_count <= 1:
+        raise HTTPException(
+            status_code=400,
+            detail="Set a password first, or connect another provider, before disconnecting your only sign-in method.",
+        )
+    setattr(user, field, None)
+    db.commit()
+    return {"ok": True}
+
+class PreferencesBody(BaseModel):
+    marketing_opt_out: bool
+
+@app.patch("/api/account/preferences")
+async def update_preferences(
+    body: PreferencesBody,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    user.marketing_opt_out = body.marketing_opt_out
+    db.commit()
+    return {"ok": True, "marketing_opt_out": user.marketing_opt_out}
+
+@app.post("/api/account/delete")
+async def delete_own_account(
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Self-service account deletion. Mirrors admin_delete_user's cleanup but
+    scoped to the caller's own account, and refuses while a Stripe
+    subscription is still active so nothing is left billing an account that
+    no longer exists — the user must cancel via Manage subscription first."""
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    if user.email == ADMIN_EMAIL:
+        raise HTTPException(status_code=400, detail="The admin account can't be deleted this way.")
+    if user.stripe_subscription_id:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "ACTIVE_SUBSCRIPTION",
+                "message": "Cancel your subscription first from Manage subscription, then delete your account.",
+            },
+        )
+    db.query(SavedClient).filter(SavedClient.user_id == user.id).delete(synchronize_session=False)
+    db.query(SearchLog).filter(SearchLog.user_email == user.email).delete(synchronize_session=False)
+    db.delete(user)
+    db.commit()
+    return {"ok": True}
+
 @app.get("/api/healthz")
 async def healthz(db: Session = Depends(get_db)):
     try:
@@ -650,6 +786,10 @@ async def me(user=Depends(get_current_user)):
         "is_admin": is_admin,
         "has_password": bool(user.password_hash),  # false for Google-only accounts
         "google": bool(user.google_id),
+        "facebook": bool(user.facebook_id),
+        "github": bool(user.github_id),
+        "marketing_opt_out": bool(user.marketing_opt_out),
+        "created_at": user.created_at.isoformat() if user.created_at else None,
         "plan": plan_payload(user),
         "usage": usage_info(user),
     }
@@ -947,9 +1087,22 @@ async def admin_send_promo(
     if not recipients:
         raise HTTPException(status_code=400, detail="No recipients selected.")
 
+    # Respect the user-controlled opt-out (Settings > Notifications) — a hand-picked
+    # list can still include someone who opted out since this one, so filter here too.
+    opted_out = {
+        e.lower() for (e,) in db.query(User.email)
+        .filter(func.lower(User.email).in_([r.lower() for r in recipients]), User.marketing_opt_out.is_(True))
+        .all()
+    }
+    skipped = [e for e in recipients if e.lower() in opted_out]
+    recipients = [e for e in recipients if e.lower() not in opted_out]
+    if not recipients:
+        raise HTTPException(status_code=400, detail="All selected recipients have opted out of marketing email.")
+
     html_body = build_promo_html()
     text_body = build_promo_text()
-    sent, failed, results = 0, 0, []
+    sent, failed = 0, 0
+    results = [{"email": e, "ok": False, "error": "opted out"} for e in skipped]
     async with httpx.AsyncClient(timeout=30) as client:
         for e in recipients:
             ok, err = False, None
@@ -1024,22 +1177,70 @@ async def admin_searches(user=Depends(get_current_user), db: Session = Depends(g
         for r in rows
     ]
 
+def _resolve_oauth_user(db: Session, provider_field: str, provider_id: str, email: str, state: str | None):
+    """Shared account-resolution logic for OAuth login/link callbacks.
+
+    Returns (user, error_code, mode). Exactly one of (user, error_code) is set.
+
+    Login mode (default — no state, or state doesn't decode to a logged-in
+    user): looks up by provider id first, so a provider linked under a
+    different email than the account's primary still logs into the right
+    account; falls back to email, then creates a new account if neither
+    matches.
+
+    Link mode (state decodes to a logged-in user via the account dropdown's
+    "Connect" button): requires the OAuth email to match that user's own
+    account exactly, and refuses if the provider identity already belongs to
+    a DIFFERENT account, to avoid silently merging or hijacking accounts."""
+    link_user_id = decode_jwt(state) if state else None
+
+    if link_user_id:
+        link_user = db.query(User).filter(User.id == link_user_id).first()
+        if not link_user:
+            return None, "link_failed", "link"
+        if link_user.email != email:
+            return None, "email_mismatch", "link"
+        other = db.query(User).filter(
+            getattr(User, provider_field) == provider_id, User.id != link_user.id
+        ).first()
+        if other:
+            return None, "already_linked", "link"
+        setattr(link_user, provider_field, provider_id)
+        db.commit()
+        return link_user, None, "link"
+
+    user = db.query(User).filter(getattr(User, provider_field) == provider_id).first()
+    if not user:
+        user = db.query(User).filter(User.email == email).first()
+    if not user:
+        user = User(email=email, **{provider_field: provider_id})
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif not getattr(user, provider_field):
+        setattr(user, provider_field, provider_id)
+        db.commit()
+    return user, None, "login"
+
 @app.get("/api/auth/google")
-async def google_login():
+async def google_login(link_token: str | None = None):
     redirect_uri = f"{BASE_URL}/api/auth/google/callback"
-    params = urlencode({
+    params = {
         "client_id": GOOGLE_CLIENT_ID,
         "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": "openid email profile",
         "access_type": "offline",
-    })
-    return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{params}")
+    }
+    if link_token:
+        params["state"] = link_token
+    return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}")
 
 @app.get("/api/auth/google/callback")
 async def google_callback(
     code: str | None = None,
     error: str | None = None,
+    state: str | None = None,
     db: Session = Depends(get_db),
 ):
     if error or not code:
@@ -1072,15 +1273,11 @@ async def google_callback(
     if not email:
         raise HTTPException(status_code=400, detail="No email from Google.")
 
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        user = User(email=email, google_id=g_id)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    elif not user.google_id:
-        user.google_id = g_id
-        db.commit()
+    user, err, mode = _resolve_oauth_user(db, "google_id", g_id, email, state)
+    if err:
+        return RedirectResponse(f"/?auth_error=google_{err}")
+    if mode == "link":
+        return RedirectResponse("/?linked=google")
 
     jwt_token = create_jwt(user.id)
     return RedirectResponse(f"/?token={jwt_token}")
@@ -1089,24 +1286,27 @@ async def google_callback(
 FACEBOOK_OAUTH_VERSION = "v19.0"
 
 @app.get("/api/auth/facebook")
-async def facebook_login():
+async def facebook_login(link_token: str | None = None):
     if not FACEBOOK_APP_ID or not FACEBOOK_APP_SECRET:
         raise HTTPException(status_code=500, detail="Facebook login not configured.")
     redirect_uri = f"{BASE_URL}/api/auth/facebook/callback"
-    params = urlencode({
+    params = {
         "client_id": FACEBOOK_APP_ID,
         "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": "email public_profile",
-    })
+    }
+    if link_token:
+        params["state"] = link_token
     return RedirectResponse(
-        f"https://www.facebook.com/{FACEBOOK_OAUTH_VERSION}/dialog/oauth?{params}"
+        f"https://www.facebook.com/{FACEBOOK_OAUTH_VERSION}/dialog/oauth?{urlencode(params)}"
     )
 
 @app.get("/api/auth/facebook/callback")
 async def facebook_callback(
     code: str | None = None,
     error: str | None = None,
+    state: str | None = None,
     db: Session = Depends(get_db),
 ):
     if error or not code:
@@ -1141,15 +1341,11 @@ async def facebook_callback(
     if not email:
         return RedirectResponse("/?auth_error=facebook_no_email")
 
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        user = User(email=email, facebook_id=fb_id)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    elif not user.facebook_id:
-        user.facebook_id = fb_id
-        db.commit()
+    user, err, mode = _resolve_oauth_user(db, "facebook_id", fb_id, email, state)
+    if err:
+        return RedirectResponse(f"/?auth_error=facebook_{err}")
+    if mode == "link":
+        return RedirectResponse("/?linked=facebook")
 
     jwt_token = create_jwt(user.id)
     return RedirectResponse(f"/?token={jwt_token}")
@@ -1158,22 +1354,25 @@ async def facebook_callback(
 GITHUB_API_HEADERS = {"Accept": "application/json", "User-Agent": "LeadScanner"}
 
 @app.get("/api/auth/github")
-async def github_login():
+async def github_login(link_token: str | None = None):
     if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
         raise HTTPException(status_code=500, detail="GitHub login not configured.")
     redirect_uri = f"{BASE_URL}/api/auth/github/callback"
-    params = urlencode({
+    params = {
         "client_id": GITHUB_CLIENT_ID,
         "redirect_uri": redirect_uri,
         "scope": "read:user user:email",
         "allow_signup": "true",
-    })
-    return RedirectResponse(f"https://github.com/login/oauth/authorize?{params}")
+    }
+    if link_token:
+        params["state"] = link_token
+    return RedirectResponse(f"https://github.com/login/oauth/authorize?{urlencode(params)}")
 
 @app.get("/api/auth/github/callback")
 async def github_callback(
     code: str | None = None,
     error: str | None = None,
+    state: str | None = None,
     db: Session = Depends(get_db),
 ):
     if error or not code:
@@ -1215,15 +1414,11 @@ async def github_callback(
     if not email:
         return RedirectResponse("/?auth_error=github_no_email")
 
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        user = User(email=email, github_id=gh_id)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    elif not user.github_id:
-        user.github_id = gh_id
-        db.commit()
+    user, err, mode = _resolve_oauth_user(db, "github_id", gh_id, email, state)
+    if err:
+        return RedirectResponse(f"/?auth_error=github_{err}")
+    if mode == "link":
+        return RedirectResponse("/?linked=github")
 
     jwt_token = create_jwt(user.id)
     return RedirectResponse(f"/?token={jwt_token}")
@@ -1395,9 +1590,9 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         if not user and customer_id:
             user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
         if user:
-            user.lead_credits = (user.lead_credits or 0) + credits_to_add
+            added = grant_leads(user, credits_to_add)
             db.commit()
-            print(f"[webhook] granted {credits_to_add} credits to {user.email}", flush=True)
+            print(f"[webhook] granted {added} credits to {user.email} (balance {user.lead_credits})", flush=True)
 
     # ── Recurring lead plans: every paid invoice tops the balance up ─────────
     # invoice.paid fires for the first charge and every renewal, so this is the
@@ -1451,17 +1646,114 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     return {"ok": True}
 
 @app.get("/api/billing/portal")
-async def billing_portal(user=Depends(get_current_user)):
+async def billing_portal(flow: str | None = None, user=Depends(get_current_user)):
+    """flow optionally deep-links straight into one Stripe-hosted screen
+    (payment_method_update, subscription_update) instead of the portal home.
+    Falls back to a plain portal session if that flow isn't configured in the
+    Stripe Dashboard for this account, rather than erroring the whole button."""
     if not user:
         raise HTTPException(status_code=401, detail="Login required.")
     if not user.stripe_customer_id:
         raise HTTPException(status_code=400, detail="No billing account found.")
 
-    session = stripe.billing_portal.Session.create(
-        customer=user.stripe_customer_id,
-        return_url=f"{BASE_URL}/dashboard",
-    )
+    flow_data = None
+    if flow == "payment_method_update":
+        flow_data = {"type": "payment_method_update"}
+    elif flow == "subscription_update" and user.stripe_subscription_id:
+        flow_data = {"type": "subscription_update", "subscription_update": {"subscription": user.stripe_subscription_id}}
+
+    kwargs = {"customer": user.stripe_customer_id, "return_url": f"{BASE_URL}/dashboard"}
+    try:
+        if flow_data:
+            session = stripe.billing_portal.Session.create(flow_data=flow_data, **kwargs)
+        else:
+            session = stripe.billing_portal.Session.create(**kwargs)
+    except stripe.StripeError:
+        session = stripe.billing_portal.Session.create(**kwargs)
     return {"url": session.url}
+
+@app.get("/api/billing/subscription")
+async def billing_subscription(user=Depends(get_current_user)):
+    """Real Stripe data for the Settings > Billing panel: plan, renewal date,
+    payment method on file, and recent invoices. Only meaningful for accounts
+    on a recurring plan — pack-only/free accounts just get has_subscription:false."""
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    if not user.stripe_subscription_id:
+        return {"has_subscription": False}
+
+    try:
+        sub = stripe.Subscription.retrieve(
+            user.stripe_subscription_id,
+            expand=["default_payment_method", "items.data.price"],
+        )
+        sub = sub.to_dict() if hasattr(sub, "to_dict") else sub
+    except stripe.StripeError:
+        return {"has_subscription": False}
+
+    item = ((sub.get("items") or {}).get("data") or [{}])[0]
+    price = item.get("price") or {}
+    price_id = price.get("id")
+
+    pm = sub.get("default_payment_method")
+    card = None
+    if isinstance(pm, dict) and pm.get("type") == "card":
+        c = pm.get("card") or {}
+        card = {"brand": c.get("brand"), "last4": c.get("last4")}
+
+    invoices = []
+    try:
+        inv_list = stripe.Invoice.list(subscription=user.stripe_subscription_id, limit=12)
+        inv_list = inv_list.to_dict() if hasattr(inv_list, "to_dict") else inv_list
+        for inv in inv_list.get("data", []):
+            invoices.append({
+                "date": inv.get("created"),
+                "total": inv.get("total"),
+                "status": inv.get("status"),
+                "url": inv.get("hosted_invoice_url"),
+            })
+    except stripe.StripeError:
+        pass
+
+    return {
+        "has_subscription": True,
+        "plan_label": PRICE_ID_TO_LABEL.get(price_id, "Subscription"),
+        "interval": (price.get("recurring") or {}).get("interval"),
+        "status": sub.get("status"),
+        "current_period_end": sub.get("current_period_end"),
+        "cancel_at_period_end": sub.get("cancel_at_period_end"),
+        "card": card,
+        "invoices": invoices,
+    }
+
+class CancelSubscriptionBody(BaseModel):
+    cancel_at_period_end: bool = True
+
+@app.post("/api/billing/cancel")
+async def cancel_subscription(
+    body: CancelSubscriptionBody,
+    user=Depends(get_current_user),
+):
+    """Toggles cancel-at-period-end — true to cancel (still usable until the
+    current period ends, no refund/proration), false to undo a pending
+    cancellation. Never deletes the subscription outright."""
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    if not user.stripe_subscription_id:
+        raise HTTPException(status_code=400, detail="No active subscription.")
+    try:
+        sub = stripe.Subscription.modify(
+            user.stripe_subscription_id, cancel_at_period_end=body.cancel_at_period_end
+        )
+        sub = sub.to_dict() if hasattr(sub, "to_dict") else sub
+    except stripe.StripeError as e:
+        msg = getattr(e, "user_message", None) or str(e)
+        raise HTTPException(status_code=400, detail=f"Stripe error: {msg}")
+    return {
+        "ok": True,
+        "cancel_at_period_end": sub.get("cancel_at_period_end"),
+        "current_period_end": sub.get("current_period_end"),
+    }
 
 # ── Client portal (saved leads / mini-CRM) ─────────────────────────────────────
 
@@ -1768,7 +2060,7 @@ async def search_leads(
     feats = plan_features(user)
 
     # Per-plan radius cap, enforced server-side (defends crafted requests that bypass
-    # the slider). Free ~5mi, Pro ~15mi. A wide scan tiles into many 8km sub-circles,
+    # the slider). Free ~5mi, Pro ~30mi. A wide scan tiles into many 8km sub-circles,
     # each a paid Places call, so the cap directly bounds worst-case cost. Silent clamp.
     max_radius = feats["max_radius_m"]
     if req.radius_meters > max_radius:
@@ -1819,6 +2111,7 @@ async def search_leads(
         leads = []
         skipped_has_website = 0
         skipped_no_contact = 0
+        skipped_out_of_radius = 0
         for place in all_places:
             if place.get("businessStatus") == "CLOSED_PERMANENTLY":
                 continue
@@ -1832,10 +2125,21 @@ async def search_leads(
                 skipped_no_contact += 1
                 continue
             geo = place.get("location", {})
+            # Places uses locationBias (a soft hint, not a hard boundary), and the
+            # hex-grid sub-circles tile out to req.radius_meters from centre with
+            # their own 8km radius on top — so a result can land well outside the
+            # circle the user drew. Enforce it for real here, free of charge since
+            # we already paid for these results.
+            plat, plng = geo.get("latitude"), geo.get("longitude")
+            if plat is None or plng is None:
+                continue
+            if _haversine_m(req.lat, req.lng, plat, plng) > req.radius_meters:
+                skipped_out_of_radius += 1
+                continue
             leads.append(
                 {
                     "name": place.get("displayName", {}).get("text", "Unknown"),
-                    "city": place.get("formattedAddress", ""),
+                    "city": _short_city(place),
                     "maps_url": place.get("googleMapsUri", ""),
                     "lat": geo.get("latitude"),
                     "lng": geo.get("longitude"),
@@ -1881,6 +2185,7 @@ async def search_leads(
         "total_found": len(all_places),
         "skipped_has_website": skipped_has_website,
         "skipped_no_contact": skipped_no_contact,
+        "skipped_out_of_radius": skipped_out_of_radius,
         "usage": usage_info(user),
         "plan": plan_payload(user),
         "limit_reached": limit_reached,
@@ -1916,10 +2221,10 @@ DEMO_CONCURRENCY  = 8      # all tiles in flight at once keeps the demo snappy
 # withheld details never reach the browser at all.
 DEMO_VISIBLE_LEADS = 3
 
-# Demo scans per IP before the signup wall. One free look, then sign up and buy
-# leads. Set DEMO_SCAN_LIMIT=0 in the env to lift the cap entirely — that is how
-# local dev scans without hitting the wall, and .env.docker does exactly that.
-DEMO_SCAN_LIMIT        = int(os.getenv("DEMO_SCAN_LIMIT", "1"))
+# Demo scans per IP before the signup wall. A few free looks, then sign up and
+# buy leads. Set DEMO_SCAN_LIMIT=0 in the env to lift the cap entirely — that is
+# how local dev scans without hitting the wall, and .env.docker does exactly that.
+DEMO_SCAN_LIMIT        = int(os.getenv("DEMO_SCAN_LIMIT", "3"))
 DEMO_SCAN_WINDOW_HOURS = 24    # rolling window the allowance refills over
 
 # IP -> timestamps of that IP's demo scans, trimmed to the rolling window.
@@ -2031,7 +2336,7 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
         leads.append(
             (dist, {
                 "name": place.get("displayName", {}).get("text", "Unknown"),
-                "city": place.get("formattedAddress", ""),
+                "city": _short_city(place),
                 "phone": phone,
                 "maps_url": place.get("googleMapsUri", ""),
                 "rating": place.get("rating"),

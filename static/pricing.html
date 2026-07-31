@@ -13,6 +13,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pricing - Lead Scanner</title>
     <meta name="description" content="Pay for leads, not for searching. Scan as much as you need, and a pack of 100 is 100 leads. Every one is a verified local business with no website, reviews and a phone number.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://leadscanner.fun/pricing">
+    <meta property="og:title" content="Pricing - Lead Scanner">
+    <meta property="og:description" content="Pay for leads, not for searching. Scan as much as you need, and a pack of 100 is 100 leads. Every one is a verified local business with no website, reviews and a phone number.">
+    <meta property="og:url" content="https://leadscanner.fun/pricing">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://leadscanner.fun/static/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pricing - Lead Scanner">
+    <meta name="twitter:description" content="Pay for leads, not for searching. Scan as much as you need, and a pack of 100 is 100 leads. Every one is a verified local business with no website, reviews and a phone number.">
+    <meta name="twitter:image" content="https://leadscanner.fun/static/og-image.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
@@ -130,10 +141,15 @@
     }
     .pr-subs { display: flex; flex-direction: column; gap: 16px; }
     .pr-sub-card {
+        position: relative;                  /* anchors the "most popular" tag */
         display: flex; align-items: center; justify-content: space-between;
         gap: clamp(20px, 3vw, 44px); flex-wrap: wrap;
         background: #000; border: 1px solid rgba(74,222,128,0.32);
         border-radius: 16px; padding: 26px clamp(22px, 3vw, 34px);
+    }
+    .pr-sub-card.is-featured {
+        border: 1px dashed rgba(74,222,128,0.65);
+        box-shadow: 0 0 34px rgba(74,222,128,0.07);
     }
     .pr-badge {
         display: inline-block; margin-bottom: 14px;
@@ -238,8 +254,7 @@
                     <button type="button" class="pr-pack-cta" data-pack="solo">Start Solo</button>
                 </article>
 
-                <article class="pr-pack is-featured">
-                    <span class="pr-pack-tag">Most popular</span>
+                <article class="pr-pack">
                     <span class="pr-pack-icon" aria-hidden="true"><svg><use href="#ic-business"/></svg></span>
                     <h2 class="pr-pack-name">Business</h2>
                     <p class="pr-pack-price">$49<span>one-time</span></p>
@@ -278,7 +293,8 @@
                     </div>
                 </section>
 
-                <section class="pr-sub-card">
+                <section class="pr-sub-card is-featured">
+                    <span class="pr-pack-tag">Most popular</span>
                     <div class="pr-sub-main">
                         <span class="pr-badge">Lowest per-lead price</span>
                         <h2 class="pr-sub-title"><svg aria-hidden="true"><use href="#ic-recurring"/></svg>Agency plus</h2>

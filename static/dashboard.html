@@ -12,105 +12,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Lead Scanner</title>
+    <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
     <link rel="icon" href="/favicon.ico"/>
     <link rel="shortcut icon" href="/favicon.ico"/>
-    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <link rel="stylesheet" href="/static/page.css?v={{ version }}"/>
+    <style>
+    .dash-shell { max-width: 560px; }               /* narrower than page.css's default 820px */
+    .dash-grid { display: flex; flex-direction: column; gap: 20px; margin-top: 32px; }
+
+    .dash-card {
+        background: #0b0c0e; border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 14px; padding: 24px 26px;
+    }
+    .dash-card-credits { border-color: rgba(62,232,123,0.35); }
+    .dash-card-title {
+        margin: 0 0 14px; color: #fff;
+        font: 700 18px/1.25 'Space Grotesk', sans-serif;
+    }
+    .dash-card p { margin: 0 0 16px; color: #98a2b3; font-size: 15px; line-height: 1.6; }
+    .dash-card p:last-of-type { margin-bottom: 18px; }
+
+    /* Account card */
+    .dash-avatar {
+        width: 64px; height: 64px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(62,232,123,0.12); border: 1px solid rgba(62,232,123,0.5);
+        color: #3ee87b; font-size: 24px; font-weight: 700; margin-bottom: 14px;
+    }
+    .dash-email { margin: 0 0 4px; color: #fff; font-size: 16px; font-weight: 600; word-break: break-all; }
+    .dash-since { margin: 0; color: #7c8798; font-size: 13.5px; }
+
+    /* Progress bar */
+    .dash-used-label { margin: 0 0 10px; color: #fff; font-size: 15px; font-weight: 600; }
+    .dash-track {
+        height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08);
+        overflow: hidden;
+    }
+    .dash-fill {
+        height: 100%; width: 0%; background: #3ee87b; border-radius: inherit;
+        transition: width 0.3s ease;
+    }
+    .dash-pct { margin: 10px 0 18px; color: #7c8798; font-size: 13px; }
+
+    /* Buttons */
+    .dash-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-height: 46px; padding: 0 22px; border-radius: 10px;
+        background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.22);
+        font: 700 14.5px 'Space Grotesk', sans-serif; cursor: pointer; text-decoration: none;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .dash-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.4); text-decoration: none; }
+    .dash-btn-primary { background: #3ee87b; color: #04150a; border: none; }
+    .dash-btn-primary:hover { background: #5cf295; }
+    .dash-btn-danger { border-color: rgba(255,107,107,0.4); color: #ff6b6b; }
+    .dash-btn-danger:hover { background: rgba(255,107,107,0.08); border-color: #ff6b6b; }
+    .dash-btn:disabled { opacity: 0.6; cursor: default; }
+    </style>
 </head>
-<body class="page">
+<body>
     {% if maintenance %}{% include '_maintenance_banner.html' %}{% endif %}
-    <div id="crt-overlay"></div>
+    {% include '_brand_header.html' %}
 
-    <header id="top-bar">
-        <div id="logo">
-            <span id="logo-blink">█</span>
-            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
-        </div>
-    </header>
+    <main class="page-content dash-shell">
+        <h1 class="page-title">Dashboard</h1>
 
-    <nav id="main-nav">
-        <div class="nav-left">
-            <a href="/" class="nav-link">[ HOME ]</a>
-            <a href="/about" class="nav-link">[ ABOUT ]</a>
-            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
-            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
-        </div>
-        <div class="nav-right">
-            <a href="/pricing" class="nav-link">[ PRICING ]</a>
-            <a href="/clients" class="nav-link" id="nav-clients-link" style="display:none">[ MY_CLIENTS ]</a>
-            <a href="/contact" class="nav-link">[ CONTACT ]</a>
-            <a href="/dashboard" class="nav-link active" id="nav-auth-link">[ ACCOUNT ]</a>
-        </div>
-    </nav>
+        <div id="dash-loading"><p class="page-subtitle">Loading&hellip;</p></div>
 
-    <main class="page-content">
-        <h1 class="page-title">&gt; DASHBOARD.EXE</h1>
+        <div id="dash-content" class="dash-grid" style="display:none">
 
-        <div id="dash-loading" class="page-section">
-            <p>LOADING...</p>
-        </div>
+            <section class="dash-card" id="dash-account-card">
+                <div class="dash-avatar" id="dash-avatar"></div>
+                <p class="dash-email" id="dash-email"></p>
+                <p class="dash-since" id="dash-member-since"></p>
+            </section>
 
-        <div id="dash-content" style="display:none">
+            <!-- Lead credits: same card for everyone, metered or unlimited. Only
+                 the CTA button underneath varies (buy / manage / none). -->
+            <section class="dash-card dash-card-credits" id="dash-credits-card" style="display:none">
+                <h2 class="dash-card-title">Lead credits</h2>
+                <p class="dash-used-label" id="dash-used-label"></p>
+                <div class="dash-track"><div class="dash-fill" id="dash-fill"></div></div>
+                <p class="dash-pct" id="dash-pct"></p>
+                <a href="/pricing" class="dash-btn dash-btn-primary" id="dash-buy-btn">Buy more credits</a>
+                <button class="dash-btn" id="dash-portal-btn" onclick="openPortal()" style="display:none">Manage subscription</button>
+            </section>
 
-            <div class="page-section">
-                <h2>&gt; ACCOUNT</h2>
-                <p>Email: <span id="dash-email" class="dash-value"></span></p>
-                <p>Plan: <span id="dash-tier" class="dash-value"></span></p>
-            </div>
+            <section class="dash-card" id="dash-clients-card">
+                <h2 class="dash-card-title">My clients</h2>
+                <p>Save leads into your personal client portal &mdash; call them, log notes, and track status from new to won.</p>
+                <a href="/clients" class="dash-btn">Open client portal</a>
+            </section>
 
-            <!-- FREE plan card -->
-            <div class="page-section" id="dash-free-card" style="display:none">
-                <h2>&gt; YOUR PLAN — FREE</h2>
-                <p id="dash-scans-left" style="font-size:1rem;color:var(--amber);margin-bottom:0.5rem;display:none"></p>
-                <p style="font-size:0.9rem;opacity:0.85">Free includes a 5mi scan radius and up to 5 saved clients. Pro unlocks unlimited scans with no waiting, a 15mi radius, multi-scan, and an unlimited client portal.</p>
-                <a href="/pricing" class="auth-btn paywall-upgrade-btn" style="text-decoration:none;margin-top:0.5rem;display:inline-block">[ ⚡ GET LEADS ]</a>
-            </div>
-
-            <!-- PRO plan card -->
-            <div class="page-section" id="dash-pro-card" style="display:none">
-                <h2>&gt; YOUR PLAN — PRO ⚡</h2>
-                <p style="font-size:0.95rem;opacity:0.9">15mi radius · priority access, no waiting · multi-scan · unlimited client portal. Thank you for supporting Lead Scanner.</p>
-                <button class="auth-btn" id="portal-btn" onclick="openPortal()" style="margin-top:0.5rem">[ MANAGE SUBSCRIPTION ]</button>
-            </div>
-
-            <div class="page-section">
-                <h2>&gt; PASSWORD</h2>
-                <p id="pw-blurb" style="font-size:0.9rem;opacity:0.85"></p>
-                <div id="pw-msg" style="display:none;margin-top:0.6rem;font-size:0.85rem"></div>
-                <form id="set-pw-form" class="auth-form" style="max-width:420px;margin-top:0.75rem">
-                    <div class="form-group" id="current-pw-group" style="display:none">
-                        <label class="form-label">&gt; CURRENT PASSWORD</label>
-                        <input type="password" id="current-pw" class="form-input" autocomplete="current-password">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">&gt; NEW PASSWORD</label>
-                        <input type="password" id="new-pw" class="form-input" minlength="8" autocomplete="new-password" placeholder="at least 8 characters">
-                    </div>
-                    <button type="submit" class="auth-btn" id="set-pw-btn">[ SET PASSWORD ]</button>
-                </form>
-            </div>
-
-            <div class="page-section">
-                <h2>&gt; MY CLIENTS</h2>
-                <p>Save leads into your personal client portal — call them, log notes, and track status from new to won.</p>
-                <a href="/clients" class="auth-btn" style="text-decoration:none;margin-top:0.5rem;display:inline-block">[ OPEN CLIENT PORTAL ]</a>
-            </div>
-
-            <!-- Legacy subscribers (grandfathered) -->
-            <div class="page-section" id="dash-billing-paid" style="display:none">
-                <h2>&gt; BILLING</h2>
-                <button class="auth-btn" id="legacy-portal-btn" onclick="openPortal()">[ MANAGE SUBSCRIPTION ]</button>
-                <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--muted)">You have a legacy subscription. You can manage or cancel it here.</p>
-            </div>
-
-            <div class="page-section">
-                <button class="auth-btn auth-btn-danger" onclick="doLogout()">[ LOGOUT ]</button>
-            </div>
+            <section class="dash-card" id="dash-logout-card">
+                <h2 class="dash-card-title">Log out</h2>
+                <p>Sign out of Lead Scanner on this device.</p>
+                <button class="dash-btn dash-btn-danger" onclick="doLogout()">Log out</button>
+            </section>
 
         </div>
     </main>
@@ -142,93 +146,51 @@
             if (!user) { window.location.href = '/login'; return; }
 
             document.getElementById('dash-loading').style.display = 'none';
-            document.getElementById('dash-content').style.display = 'block';
+            document.getElementById('dash-content').style.display = 'flex';
 
+            // Account card
+            const initial = (user.email || '?').trim().charAt(0).toUpperCase() || '?';
+            document.getElementById('dash-avatar').textContent = initial;
             document.getElementById('dash-email').textContent = user.email;
+            if (user.created_at) {
+                const since = new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                document.getElementById('dash-member-since').textContent = `Member since ${since}`;
+            }
+
+            // Lead credits card: same UI for every account. The balance/total
+            // shown is real either way — unlimited accounts just never draw it
+            // down (see has_unlimited_leads() in main.py), so it reads 0/0
+            // until they've actually been granted credits.
             const plan = user.plan || {};
-            const userIsPro = !!plan.pro;
-            document.getElementById('dash-tier').textContent = userIsPro ? 'PRO ⚡' : 'FREE';
+            const usage = user.usage || {};
+            const remaining = usage.credits || 0;
+            const total = usage.credits_total || 0;
+            const used = Math.max(0, total - remaining);
+            const pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+            document.getElementById('dash-credits-card').style.display = 'block';
+            document.getElementById('dash-used-label').textContent = `Used ${used} / ${total}`;
+            document.getElementById('dash-fill').style.width = pct + '%';
+            document.getElementById('dash-pct').textContent = `${pct}% used`;
 
-            if (userIsPro) {
-                document.getElementById('dash-pro-card').style.display = 'block';
-                // Admins have Pro by virtue of being admin — no subscription to manage.
-                if (user.is_admin) document.getElementById('portal-btn').style.display = 'none';
+            const buyBtn = document.getElementById('dash-buy-btn');
+            const portalBtn = document.getElementById('dash-portal-btn');
+            if (plan.leads_available === null) {
+                // Unlimited (admin or legacy paid tier): nothing to buy. Legacy
+                // grandfathered subscribers can still manage billing; admins
+                // have no real subscription behind their account.
+                buyBtn.style.display = 'none';
+                if (!user.is_admin) portalBtn.style.display = 'inline-flex';
             } else {
-                document.getElementById('dash-free-card').style.display = 'block';
-                // Live lead balance (data from plan_payload). null = uncapped.
-                const leadsLeft = plan.leads_available;
-                if (typeof leadsLeft === 'number') {
-                    const el = document.getElementById('dash-scans-left');
-                    el.textContent = `> ${leadsLeft} lead${leadsLeft === 1 ? '' : 's'} left in your balance`;
-                    el.style.display = 'block';
-                }
+                buyBtn.style.display = 'inline-flex';
+                portalBtn.style.display = 'none';
             }
 
-            // ── Password: set (Google-only accounts) or change ──
-            let hasPassword = !!user.has_password;
-            const pwBlurb = document.getElementById('pw-blurb');
-            const pwCurrentGroup = document.getElementById('current-pw-group');
-            const pwBtn = document.getElementById('set-pw-btn');
-            function renderPwSection() {
-                if (hasPassword) {
-                    pwBlurb.textContent = 'Change your Lead Scanner password.';
-                    pwCurrentGroup.style.display = 'flex';
-                    pwBtn.textContent = '[ CHANGE PASSWORD ]';
-                } else {
-                    pwBlurb.textContent = user.google
-                        ? 'You signed up with Google, so you have no password yet. Set one to also log in with your email and password.'
-                        : 'Set a password to log in with your email and password.';
-                    pwCurrentGroup.style.display = 'none';
-                    pwBtn.textContent = '[ SET PASSWORD ]';
-                }
-            }
-            renderPwSection();
-
-            document.getElementById('set-pw-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const msg = document.getElementById('pw-msg');
-                const newPw = document.getElementById('new-pw').value;
-                const curPw = document.getElementById('current-pw').value;
-                msg.style.display = 'none';
-                if (newPw.length < 8) {
-                    msg.style.color = 'var(--red)';
-                    msg.textContent = '> Password must be at least 8 characters.';
-                    msg.style.display = 'block';
-                    return;
-                }
-                pwBtn.disabled = true;
-                pwBtn.textContent = '[ SAVING... ]';
-                try {
-                    const payload = { password: newPw };
-                    if (hasPassword) payload.current_password = curPw;
-                    const res = await fetch('/api/auth/set-password', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                        body: JSON.stringify(payload),
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.detail || 'Could not save password.');
-                    hasPassword = true;
-                    localStorage.removeItem('ls_user');  // force a fresh profile next load
-                    document.getElementById('new-pw').value = '';
-                    document.getElementById('current-pw').value = '';
-                    msg.style.color = 'var(--green)';
-                    msg.textContent = '> Password saved. You can now log in with your email and password.';
-                    msg.style.display = 'block';
-                } catch (err) {
-                    msg.style.color = 'var(--red)';
-                    msg.textContent = '> ' + err.message;
-                    msg.style.display = 'block';
-                } finally {
-                    pwBtn.disabled = false;
-                    renderPwSection();
-                }
-            });
         })();
 
         async function openPortal() {
-            const btn = document.getElementById('portal-btn');
-            btn.textContent = '[ LOADING... ]';
+            const btn = document.getElementById('dash-portal-btn');
+            const label = btn.textContent;
+            btn.textContent = 'Loading…';
             btn.disabled = true;
             try {
                 const res = await fetch('/api/billing/portal', {
@@ -237,11 +199,11 @@
                 const data = await res.json();
                 if (res.ok) window.location.href = data.url;
                 else {
-                    btn.textContent = '[ MANAGE SUBSCRIPTION ]';
+                    btn.textContent = label;
                     btn.disabled = false;
                 }
             } catch {
-                btn.textContent = '[ MANAGE SUBSCRIPTION ]';
+                btn.textContent = label;
                 btn.disabled = false;
             }
         }

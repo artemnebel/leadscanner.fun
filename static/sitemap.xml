@@ -26,7 +26,43 @@
   </url>
 
   <url>
-    <loc>https://leadscanner.fun/resources</loc>
+    <loc>https://leadscanner.fun/cold-calling</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://leadscanner.fun/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://leadscanner.fun/blog/finding-businesses-without-a-website</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://leadscanner.fun/blog/cold-outreach-script-web-design</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://leadscanner.fun/blog/signs-a-business-needs-a-website</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://leadscanner.fun/blog/how-much-to-charge-small-business-website</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://leadscanner.fun/blog/follow-up-system-freelance-web-design</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

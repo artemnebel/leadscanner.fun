@@ -33,6 +33,7 @@ class User(Base):
     scan_limit = Column(Integer, default=50)        # hidden per-user lifetime scan cap; raise to grant more
     leads_used = Column(Integer, default=0)         # counts Free-tier monthly allotment usage; resets monthly
     lead_credits = Column(Integer, default=0)       # paid credit balance from one-time pack purchases; never resets
+    lead_credits_total = Column(Integer, default=0) # cap for the CURRENT credit cycle (used = total - lead_credits); see grant_leads() in main.py
     usage_reset = Column(Date, default=date.today)  # reset on 1st of each month (Free allotment only)
     daily_scans = Column(Integer, default=0)        # scans used in the current rolling 24h window (free-tier cooldown)
     daily_reset = Column(DateTime, nullable=True)   # end of the current 24h scan window; reset once passed
@@ -44,6 +45,7 @@ class User(Base):
     reset_token_expires = Column(DateTime, nullable=True)
     promo_sent_at = Column(DateTime, nullable=True)  # when the founding-user promo was last emailed (marketing suppression)
     promo_status = Column(String, nullable=True)     # Resend last_event: delivered | bounced | suppressed | delivery_delayed | ...
+    marketing_opt_out = Column(Boolean, default=False)  # user-controlled: skip promo/marketing sends (transactional email unaffected)
 
 
 class PlacesCache(Base):
@@ -98,6 +100,8 @@ def init_db():
         ("total_scans", "INTEGER DEFAULT 0"),
         ("scan_limit", "INTEGER DEFAULT 50"),
         ("lead_credits", "INTEGER DEFAULT 0"),
+        ("lead_credits_total", "INTEGER DEFAULT 0"),
+        ("marketing_opt_out", "BOOLEAN DEFAULT FALSE"),
         ("reset_token", "VARCHAR"),
         ("reset_token_expires", "DATETIME"),
         ("daily_scans", "INTEGER DEFAULT 0"),

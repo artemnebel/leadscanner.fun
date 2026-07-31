@@ -5,6 +5,7 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /dashboard
+Disallow: /clients
 Disallow: /api/
 Disallow: /reset-password
 Disallow: /forgot-password
@@ -38,6 +39,7 @@ User-agent: Bytespider
 Allow: /
 Disallow: /admin
 Disallow: /dashboard
+Disallow: /clients
 Disallow: /api/
 Disallow: /reset-password
 Disallow: /forgot-password

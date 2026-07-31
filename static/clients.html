@@ -15,185 +15,976 @@
     <meta name="robots" content="noindex">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
     <link rel="icon" href="/favicon.ico"/>
     <link rel="shortcut icon" href="/favicon.ico"/>
-    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <link rel="stylesheet" href="/static/page.css?v={{ version }}"/>
     <style>
-        .clients-toolbar { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; justify-content:space-between; margin-bottom:1rem; }
-        .cap-banner { border:1px solid #33ff00; padding:0.6rem 0.9rem; font-size:0.88rem; }
-        .cap-banner.full { border-color:#ffb000; color:#ffb000; }
-        .client-card { border:1px solid var(--border,#2a2a2a); padding:1rem 1.1rem; margin-bottom:0.85rem; background:rgba(0,0,0,0.2); }
-        .client-head { display:flex; flex-wrap:wrap; gap:0.5rem 1rem; align-items:baseline; justify-content:space-between; }
-        .client-name { font-weight:700; font-size:1.05rem; }
-        .client-name a { color:inherit; text-decoration:none; }
-        .client-name a:hover { text-decoration:underline; }
-        .client-meta { opacity:0.7; font-size:0.85rem; }
-        .client-row { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; margin-top:0.6rem; }
-        .call-link { color:#33ff00; text-decoration:none; border:1px solid #33ff00; padding:0.2rem 0.6rem; font-size:0.85rem; }
-        .call-link:hover { background:rgba(51,255,0,0.1); }
-        .client-status { background:transparent; color:inherit; font-family:inherit; border:1px solid var(--border,#2a2a2a); padding:0.25rem 0.4rem; }
-        .client-status[data-status="won"] { border-color:#33ff00; color:#33ff00; }
-        .client-status[data-status="lost"] { border-color:#ff5555; color:#ff5555; }
-        .client-status[data-status="interested"] { border-color:#ffb000; color:#ffb000; }
-        .client-notes { width:100%; box-sizing:border-box; margin-top:0.6rem; background:rgba(0,0,0,0.3); color:inherit; font-family:inherit; border:1px solid var(--border,#2a2a2a); padding:0.5rem; min-height:52px; resize:vertical; }
-        .client-del { background:transparent; border:1px solid #2a2a2a; color:var(--muted,#888); font-family:inherit; cursor:pointer; padding:0.25rem 0.5rem; margin-left:auto; }
-        .client-del:hover { border-color:#ff5555; color:#ff5555; }
-        .empty-clients { opacity:0.7; text-align:center; padding:2rem 1rem; }
+    body { background: #000; }
+
+    /* ===== APP NAV (same component as the app view) ===== */
+    #app-nav {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 20px; height: 62px; padding: 0 22px;
+        background: #000; border-bottom: 1px solid rgba(255,255,255,0.08);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    .an-left, .an-right { display: flex; align-items: center; gap: 8px; }
+    .an-brand {
+        display: inline-flex; align-items: center; gap: 10px;
+        margin-right: 14px; cursor: pointer; user-select: none; text-decoration: none;
+    }
+    .an-brand svg { width: 21px; height: 21px; color: #3ee87b; flex-shrink: 0; }
+    .an-brand span { color: #fff; font-size: 16.5px; font-weight: 700; letter-spacing: -0.02em; }
+    .an-link {
+        padding: 8px 13px; border-radius: 8px; text-decoration: none;
+        color: #98a2b3; font-size: 14.5px; font-weight: 500; white-space: nowrap;
+        transition: color 0.15s ease, background 0.15s ease;
+    }
+    .an-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
+    .an-link.is-active { color: #3ee87b; }
+    .an-account {
+        padding: 8px 18px; border-radius: 999px; text-decoration: none;
+        border: 1px solid rgba(255,255,255,0.22); color: #fff;
+        font-size: 14.5px; font-weight: 600;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .an-account:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.4); }
+    .an-account.an-avatar {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 36px; height: 36px; padding: 0; border-radius: 50%;
+        background: rgba(62,232,123,0.10); border: 1px solid rgba(62,232,123,0.55);
+        color: #3ee87b; font-size: 15px; font-weight: 700; line-height: 1;
+    }
+    .an-account.an-avatar:hover { background: rgba(62,232,123,0.2); border-color: #3ee87b; }
+
+    /* Narrow viewports: Scanner + My clients + Pricing + Account + avatar
+       doesn't fit in ~390px. Pricing/Account are one tap away from the
+       account dropdown (Settings > Billing, View profile), so drop them
+       here and let the rest wrap instead of forcing horizontal scroll. */
+    @media (max-width: 640px) {
+        #app-nav { flex-wrap: wrap; height: auto; min-height: 62px; padding: 10px 14px; gap: 8px; }
+        .an-left, .an-right { flex-wrap: wrap; row-gap: 6px; }
+        .an-link-secondary { display: none; }
+        .an-right .an-link { padding: 7px 10px; font-size: 13.5px; }
+    }
+
+    /* ===== ACCOUNT DROPDOWN ===== */
+    .an-user-wrap { position: relative; }
+    .an-dropdown {
+        position: absolute; top: calc(100% + 10px); right: 0; z-index: 1000;
+        width: 300px; background: #101418; border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+        padding: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    .an-dropdown.hidden { display: none; }
+    .an-dd-panel.hidden { display: none; }
+
+    .an-dd-head { display: flex; align-items: center; gap: 12px; padding: 12px 10px 14px; }
+    .an-dd-avatar {
+        width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(62,232,123,0.12); border: 1px solid rgba(62,232,123,0.5);
+        color: #3ee87b; font-size: 16px; font-weight: 700;
+    }
+    .an-dd-email { color: #fff; font-size: 14px; font-weight: 600; word-break: break-all; line-height: 1.3; }
+    .an-dd-link { display: block; padding: 0 10px 14px 62px; margin-top: -8px; color: #6ea8fe; font-size: 13.5px; text-decoration: none; }
+    .an-dd-link:hover { text-decoration: underline; }
+    .an-dd-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 6px 8px; }
+    .an-dd-item, .an-dd-back {
+        display: flex; align-items: center; gap: 12px; width: 100%;
+        padding: 10px 12px; border-radius: 8px; cursor: pointer;
+        background: none; border: none; color: #e7ebf0;
+        font-family: inherit; font-size: 14px; text-align: left; text-decoration: none;
+    }
+    .an-dd-item:hover, .an-dd-back:hover { background: rgba(255,255,255,0.07); }
+    .an-dd-icon { width: 18px; height: 18px; flex-shrink: 0; color: #98a2b3; }
+    .an-dd-item-value { margin-left: auto; color: #7c8798; font-size: 12.5px; white-space: nowrap; }
+    .an-dd-danger { color: #ff6b6b; }
+    .an-dd-danger .an-dd-icon { color: #ff6b6b; }
+    .an-dd-danger:hover { background: rgba(255,107,107,0.08); }
+    .an-dd-back { font-weight: 600; color: #fff; }
+    .an-dd-back .an-dd-icon { color: #fff; }
+    .an-lang-list { max-height: 320px; overflow-y: auto; padding: 4px 0; }
+    .an-lang-opt {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        width: 100%; padding: 9px 12px; border-radius: 8px; cursor: pointer;
+        background: none; border: none; color: #e7ebf0;
+        font-family: inherit; font-size: 13.5px; text-align: left;
+    }
+    .an-lang-opt:hover { background: rgba(255,255,255,0.07); }
+    .an-lang-check { width: 16px; height: 16px; flex-shrink: 0; color: #3ee87b; visibility: hidden; }
+    .an-lang-opt.is-selected .an-lang-check { visibility: visible; }
+
+    /* ===== SETTINGS MODAL ===== */
+    #settings-modal {
+        position: fixed; inset: 0; z-index: 3000;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.6); padding: 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    #settings-modal.hidden { display: none; }
+    .settings-box {
+        width: 100%; max-width: 680px; max-height: 85vh;
+        background: #101418; border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 16px; box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+        display: flex; flex-direction: column;
+    }
+    .settings-box-head {
+        flex-shrink: 0; background: #101418;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .settings-box-head h2 { margin: 0; color: #fff; font: 700 19px/1.2 'Space Grotesk', sans-serif; }
+    .settings-close {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+        background: none; border: none; color: #98a2b3;
+    }
+    .settings-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .settings-close svg { width: 18px; height: 18px; }
+    .settings-box-body { display: flex; min-height: 0; flex: 1; }
+    .settings-nav {
+        flex: 0 0 168px; padding: 12px; border-right: 1px solid rgba(255,255,255,0.08);
+        display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
+    }
+    .settings-nav-item {
+        display: block; width: 100%; text-align: left; padding: 9px 12px; border-radius: 8px;
+        background: none; border: none; color: #98a2b3; cursor: pointer;
+        font-family: inherit; font-size: 13.5px; font-weight: 500;
+    }
+    .settings-nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .settings-nav-item.is-active { background: rgba(62,232,123,0.1); color: #3ee87b; font-weight: 700; }
+    .settings-panels { flex: 1; min-width: 0; padding: 22px 24px; overflow-y: auto; }
+    .settings-panel.hidden { display: none; }
+    .settings-panel h3 { margin: 0 0 8px; color: #fff; font: 700 15px 'Space Grotesk', sans-serif; }
+    .settings-panel h3 + h3 { margin-top: 22px; }
+    .settings-blurb { margin: 0 0 16px; color: #98a2b3; font-size: 13.5px; line-height: 1.5; }
+    .settings-blurb a { color: #3ee87b; text-decoration: none; }
+    .settings-blurb a:hover { text-decoration: underline; }
+    .settings-pw-msg { margin-bottom: 14px; font-size: 13.5px; }
+    .settings-pw-msg.hidden { display: none; }
+    .settings-form-group { margin-bottom: 16px; }
+    .settings-form-group.hidden { display: none; }
+    .settings-form-group label { display: block; margin-bottom: 7px; color: #98a2b3; font-size: 13px; font-weight: 600; }
+    .settings-form-group input {
+        width: 100%; padding: 11px 13px; box-sizing: border-box;
+        background: #000; color: #fff; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px;
+        font-family: inherit; font-size: 14px; outline: none;
+    }
+    .settings-form-group input:focus { border-color: #3ee87b; box-shadow: 0 0 0 3px rgba(62,232,123,0.15); }
+    .settings-form-group input::placeholder { color: #5b626d; }
+    .settings-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-height: 42px; padding: 0 18px; border-radius: 8px; cursor: pointer;
+        background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.2);
+        font-family: inherit; font-size: 13.5px; font-weight: 700; text-decoration: none;
+    }
+    .settings-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.4); }
+    .settings-btn:disabled { opacity: 0.5; cursor: default; }
+    .settings-pw-submit, .settings-btn-primary { background: #3ee87b; color: #04150a; border: none; }
+    .settings-pw-submit:hover:not(:disabled), .settings-btn-primary:hover { background: #5cf295; }
+    .settings-pw-submit:disabled { opacity: 0.6; cursor: default; }
+    .settings-btn-danger { border-color: rgba(255,107,107,0.4); color: #ff6b6b; background: transparent; }
+    .settings-btn-danger:hover { background: rgba(255,107,107,0.08); border-color: #ff6b6b; }
+    .settings-oauth-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .settings-oauth-row:last-child { border-bottom: none; }
+    .settings-oauth-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .settings-oauth-info svg { width: 22px; height: 22px; flex-shrink: 0; }
+    .settings-oauth-name { color: #fff; font-size: 14px; font-weight: 600; }
+    .settings-oauth-status { color: #7c8798; font-size: 12.5px; margin-top: 2px; }
+    .settings-oauth-status.is-connected { color: #3ee87b; }
+    .settings-used-label { margin: 0 0 10px; color: #fff; font-size: 15px; font-weight: 600; }
+    .settings-track { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .settings-fill { height: 100%; width: 0%; background: #3ee87b; border-radius: inherit; transition: width 0.3s ease; }
+    .settings-pct { margin: 10px 0 18px; color: #7c8798; font-size: 13px; }
+    .settings-billing-actions { display: flex; gap: 10px; }
+    #settings-subscription-block.hidden { display: none; }
+    .settings-plan-card {
+        display: flex; align-items: center; gap: 14px; margin-bottom: 18px;
+        padding: 14px; background: #000; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+    }
+    .settings-plan-icon {
+        width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(62,232,123,0.12); border: 1px solid rgba(62,232,123,0.5); color: #3ee87b;
+    }
+    .settings-plan-icon svg { width: 18px; height: 18px; }
+    .settings-plan-info { flex: 1; min-width: 0; }
+    .settings-plan-name { color: #fff; font-size: 14.5px; font-weight: 700; }
+    .settings-plan-interval { color: #98a2b3; font-size: 12.5px; text-transform: capitalize; margin-top: 2px; }
+    .settings-plan-renew { color: #7c8798; font-size: 12.5px; margin-top: 4px; }
+    .settings-payment-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        margin-bottom: 18px; padding: 14px; background: #000; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+    }
+    .settings-payment-info { display: flex; align-items: center; gap: 12px; color: #fff; font-size: 14px; }
+    .settings-payment-info svg { width: 20px; height: 20px; color: #98a2b3; flex-shrink: 0; }
+    .settings-invoices-wrap { margin-bottom: 18px; }
+    .settings-invoices-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .settings-invoices-table th {
+        text-align: left; padding: 8px 10px; color: #7c8798; font-weight: 600;
+        font-size: 11.5px; letter-spacing: 0.04em; text-transform: uppercase;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .settings-invoices-table td { padding: 10px; color: #cbd2dc; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .settings-invoices-table a { color: #3ee87b; text-decoration: none; }
+    .settings-invoices-table a:hover { text-decoration: underline; }
+    .settings-invoice-status { text-transform: capitalize; }
+    .settings-invoice-status.is-paid { color: #3ee87b; }
+    .settings-cancel-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 14px;
+        padding: 14px; background: #000; border: 1px solid rgba(255,107,107,0.25); border-radius: 12px;
+    }
+    .settings-cancel-label { color: #fff; font-size: 14px; font-weight: 700; }
+    .settings-cancel-row .settings-blurb { margin: 4px 0 0; }
+    .settings-toggle-row { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+    .settings-toggle-row input { width: 17px; height: 17px; margin-top: 2px; accent-color: #3ee87b; cursor: pointer; }
+    .settings-toggle-title { display: block; color: #fff; font-size: 14px; font-weight: 600; }
+    .settings-toggle-sub { display: block; color: #7c8798; font-size: 12.5px; margin-top: 3px; line-height: 1.5; }
+    .settings-danger-title { color: #ff6b6b !important; }
+    #settings-delete-confirm { margin-top: 14px; }
+    #settings-delete-confirm.hidden { display: none; }
+    #settings-delete-confirm label { display: block; margin-bottom: 8px; color: #98a2b3; font-size: 13px; }
+    #settings-delete-confirm-input {
+        width: 100%; padding: 11px 13px; box-sizing: border-box; margin-bottom: 12px;
+        background: #000; color: #fff; border: 1px solid rgba(255,107,107,0.35); border-radius: 8px;
+        font-family: inherit; font-size: 14px; outline: none;
+    }
+    .settings-delete-confirm-actions { display: flex; gap: 10px; }
+    @media (max-width: 560px) {
+        .settings-box-body { flex-direction: column; }
+        .settings-nav { flex: 0 0 auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .settings-panels { padding: 18px 20px; }
+    }
+
+    /* ===== CLIENTS PAGE ===== */
+    .cl-shell { max-width: 1160px; padding-top: 32px; }
+    .cl-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 26px; }
+    .cl-title { margin: 0; color: #fff; font: 700 clamp(26px, 3vw, 34px)/1.2 'Space Grotesk', sans-serif; }
+    .cl-subtitle { margin: 6px 0 0; color: #98a2b3; font-size: 14.5px; }
+    .cl-btn-scan {
+        display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+        padding: 0 22px; min-height: 46px; border-radius: 10px;
+        background: #3ee87b; color: #04150a; font: 700 14.5px 'Space Grotesk', sans-serif;
+        text-decoration: none; border: none;
+    }
+    .cl-btn-scan:hover { background: #5cf295; }
+
+    .cl-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
+    .cl-stat {
+        min-width: 0; /* lets grid tracks shrink below the label's min-content width instead of overflowing */
+        background: #0b0c0e; border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 18px 20px;
+    }
+    @media (max-width: 480px) {
+        .cl-stats { grid-template-columns: repeat(2, 1fr); }
+        .cl-stat { padding: 14px 16px; }
+    }
+    .cl-stat-label { color: #7c8798; font: 500 11px 'JetBrains Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; }
+    .cl-stat-value { margin-top: 8px; font: 700 30px 'Space Grotesk', sans-serif; }
+    .cl-stat-value.st-new { color: #fff; }
+    .cl-stat-value.st-contacted { color: #ffb000; }
+    .cl-stat-value.st-followup { color: #4d9fff; }
+    .cl-stat-value.st-won { color: #3ee87b; }
+
+    .cl-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+    .cl-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .cl-tab {
+        padding: 9px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.14);
+        background: #0b0c0e; color: #98a2b3; font: 600 13px 'Space Grotesk', sans-serif; cursor: pointer;
+    }
+    .cl-tab:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .cl-tab.is-active { background: #fff; color: #04150a; border-color: #fff; }
+    .cl-search {
+        display: flex; align-items: center; gap: 8px; padding: 0 14px; height: 40px; min-width: 220px;
+        background: #0b0c0e; border: 1px solid rgba(255,255,255,0.14); border-radius: 999px;
+    }
+    .cl-search svg { width: 15px; height: 15px; color: #7c8798; flex-shrink: 0; }
+    .cl-search input { flex: 1; min-width: 0; background: none; border: none; outline: none; color: #fff; font: 14px 'Inter', sans-serif; }
+    .cl-search input::placeholder { color: #5b626d; }
+
+    .cl-table-wrap { background: #0b0c0e; border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; overflow: hidden; }
+    .cl-table { width: 100%; border-collapse: collapse; }
+    .cl-table th {
+        text-align: left; padding: 12px 20px; color: #6b7280; font: 500 11px 'JetBrains Mono', monospace;
+        letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .cl-table td { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #cbd2dc; font-size: 14px; vertical-align: middle; }
+    .cl-table tbody tr:last-child td { border-bottom: none; }
+    .cl-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+    .cl-name a { color: #fff; font-weight: 600; text-decoration: none; }
+    .cl-name a:hover { color: #3ee87b; text-decoration: underline; }
+    .cl-phone a { color: #98a2b3; text-decoration: none; }
+    .cl-phone a:hover { color: #3ee87b; }
+
+    .cl-status-select {
+        appearance: none; -webkit-appearance: none; cursor: pointer;
+        padding: 5px 26px 5px 12px; border-radius: 999px; font: 700 11px 'JetBrains Mono', monospace;
+        letter-spacing: 0.06em; text-transform: uppercase; background-color: transparent;
+        background-repeat: no-repeat; background-position: right 8px center; background-size: 10px;
+        border: 1.5px solid; color: inherit;
+    }
+    .cl-status-select[data-status="new"] { border-color: #4d9fff; color: #4d9fff; }
+    .cl-status-select[data-status="contacted"] { border-color: #ffb000; color: #ffb000; }
+    .cl-status-select[data-status="interested"] { border-color: #ff8a3d; color: #ff8a3d; }
+    .cl-status-select[data-status="lost"] { border-color: #ff6b6b; color: #ff6b6b; }
+    .cl-status-select[data-status="won"] { background-color: #3ee87b; border-color: #3ee87b; color: #04150a; }
+    .cl-status-select option { background: #101418; color: #fff; }
+
+    .cl-note-cell { max-width: 240px; cursor: pointer; }
+    .cl-note-preview { color: #98a2b3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .cl-note-preview.is-empty { color: #5b626d; font-style: italic; }
+    .cl-note-cell:hover .cl-note-preview { color: #fff; }
+
+    .cl-saved { color: #7c8798; font-size: 13px; white-space: nowrap; }
+    .cl-del-btn {
+        background: none; border: none; color: #5b626d; cursor: pointer;
+        width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .cl-del-btn:hover { color: #ff6b6b; background: rgba(255,107,107,0.08); }
+    .cl-del-btn svg { width: 15px; height: 15px; }
+
+    .cl-empty { text-align: center; padding: 70px 20px; color: #7c8798; }
+    .cl-empty svg { width: 48px; height: 48px; color: #3ee87b; margin-bottom: 16px; }
+    .cl-empty-title { color: #fff; font: 700 16px 'Space Grotesk', sans-serif; margin-bottom: 6px; }
+
+    .cl-cap-banner {
+        margin-bottom: 18px; padding: 12px 16px; border-radius: 10px;
+        background: rgba(255,176,0,0.08); border: 1px solid rgba(255,176,0,0.35);
+        color: #ffb000; font-size: 13.5px;
+    }
+    .cl-cap-banner a { color: inherit; text-decoration: underline; }
+
+    /* ===== NOTES MODAL ===== */
+    #note-modal {
+        position: fixed; inset: 0; z-index: 3100; display: flex; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.6); padding: 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    #note-modal.hidden { display: none; }
+    .note-box {
+        width: 100%; max-width: 460px; background: #101418; border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 16px; box-shadow: 0 24px 60px rgba(0,0,0,0.55); padding: 22px 24px;
+    }
+    .note-box-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .note-box-head h2 { margin: 0; color: #fff; font: 700 17px 'Space Grotesk', sans-serif; }
+    .note-box-sub { color: #7c8798; font-size: 13px; margin-bottom: 16px; }
+    .note-close {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+        background: none; border: none; color: #98a2b3;
+    }
+    .note-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .note-close svg { width: 17px; height: 17px; }
+    #note-textarea {
+        width: 100%; min-height: 140px; box-sizing: border-box; padding: 12px 14px;
+        background: #000; color: #fff; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
+        font-family: inherit; font-size: 14px; line-height: 1.6; resize: vertical; outline: none;
+    }
+    #note-textarea:focus { border-color: #3ee87b; box-shadow: 0 0 0 3px rgba(62,232,123,0.15); }
+    .note-box-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+    #note-save-msg { font-size: 13px; color: #3ee87b; margin-right: auto; align-self: center; opacity: 0; transition: opacity 0.2s ease; }
+    #note-save-msg.is-visible { opacity: 1; }
     </style>
 </head>
-<body class="page">
+<body>
     {% if maintenance %}{% include '_maintenance_banner.html' %}{% endif %}
-    {% if maintenance %}{% include '_maintenance_notice.html' %}{% endif %}
-    <div id="crt-overlay"></div>
 
-    <header id="top-bar">
-        <div id="logo">
-            <span id="logo-blink">█</span>
-            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+    <nav id="app-nav">
+        <div class="an-left">
+            <a href="/" class="an-brand">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5.5 6.5 11 12l-5.5 5.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/>
+                    <rect x="12.6" y="15.3" width="7" height="2.3" fill="currentColor"/>
+                </svg>
+                <span>LeadScanner</span>
+            </a>
         </div>
-    </header>
+        <div class="an-right">
+            <a href="/" class="an-link">Scanner</a>
+            <a href="/clients" class="an-link is-active">My clients</a>
+            <a href="/pricing" class="an-link an-link-secondary">Pricing</a>
+            <a href="/dashboard" class="an-link an-link-secondary">Account</a>
+            <div class="an-user-wrap" id="an-user-wrap">
+                <a href="/login" class="an-account" id="nav-auth-link" data-plain="1">Log in</a>
 
-    <nav id="main-nav">
-        <div class="nav-left">
-            <a href="/" class="nav-link">[ HOME ]</a>
-            <a href="/about" class="nav-link">[ ABOUT ]</a>
-            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
-            <a href="/resources" class="nav-link">[ RESOURCES ]</a>
-        </div>
-        <div class="nav-right">
-            <a href="/pricing" class="nav-link">[ PRICING ]</a>
-            <a href="/clients" class="nav-link active" id="nav-clients-link">[ MY_CLIENTS ]</a>
-            <a href="/contact" class="nav-link">[ CONTACT ]</a>
-            <a href="/dashboard" class="nav-link" id="nav-auth-link">[ ACCOUNT ]</a>
+                <div class="an-dropdown hidden" id="an-dropdown" role="menu" aria-hidden="true">
+                    <div class="an-dd-panel" id="an-dd-panel-main">
+                        <div class="an-dd-head">
+                            <span class="an-dd-avatar" id="an-dd-avatar"></span>
+                            <span class="an-dd-email" id="an-dd-email"></span>
+                        </div>
+                        <a href="/dashboard" class="an-dd-link">View profile</a>
+                        <div class="an-dd-sep"></div>
+                        <button type="button" class="an-dd-item" id="an-dd-settings-open">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            Settings
+                        </button>
+                        <button type="button" class="an-dd-item" id="an-dd-lang-open">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            Language
+                            <span class="an-dd-item-value" id="an-dd-lang-current">English (United States)</span>
+                        </button>
+                        <a href="/contact" class="an-dd-item">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            Help
+                        </a>
+                        <div class="an-dd-sep"></div>
+                        <button type="button" class="an-dd-item an-dd-danger" id="an-dd-logout">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Log out
+                        </button>
+                    </div>
+
+                    <div class="an-dd-panel hidden" id="an-dd-panel-lang">
+                        <button type="button" class="an-dd-back" id="an-dd-lang-back">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                            Language
+                        </button>
+                        <div class="an-dd-sep"></div>
+                        <div class="an-lang-list" id="an-lang-list">
+                            <button type="button" class="an-lang-opt is-selected" data-lang="en-US" data-label="English (United States)">
+                                English (United States)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="fr-FR" data-label="Français (France)">
+                                Français (France)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="de-DE" data-label="Deutsch (Deutschland)">
+                                Deutsch (Deutschland)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="hi-IN" data-label="हिन्दी (भारत)">
+                                हिन्दी (भारत)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="id-ID" data-label="Indonesia (Indonesia)">
+                                Indonesia (Indonesia)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="it-IT" data-label="Italiano (Italia)">
+                                Italiano (Italia)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="ja-JP" data-label="日本語 (日本)">
+                                日本語 (日本)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="ko-KR" data-label="한국어(대한민국)">
+                                한국어(대한민국)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="pt-BR" data-label="Português (Brasil)">
+                                Português (Brasil)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="es-419" data-label="Español (Latinoamérica)">
+                                Español (Latinoamérica)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="es-ES" data-label="Español (España)">
+                                Español (España)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 
-    <main class="page-content">
-        <h1 class="page-title">&gt; MY_CLIENTS.EXE</h1>
-
-        <div id="clients-loading" class="page-section"><p>LOADING...</p></div>
-
-        <div id="clients-body" style="display:none">
-            <div class="clients-toolbar">
-                <div id="cap-banner"></div>
-                <a href="/" class="auth-btn" style="text-decoration:none">[ + SCAN FOR LEADS ]</a>
+    <main class="page-content cl-shell">
+        <div class="cl-head">
+            <div>
+                <h1 class="cl-title">My clients</h1>
+                <p class="cl-subtitle" id="cl-subtitle">Loading&hellip;</p>
             </div>
-            <div id="clients-list"></div>
+            <a href="/" class="cl-btn-scan">+ Scan for leads</a>
+        </div>
+
+        <div id="cl-cap-banner" class="cl-cap-banner" style="display:none"></div>
+
+        <div id="cl-loading"><p class="page-subtitle">Loading&hellip;</p></div>
+
+        <div id="cl-body" style="display:none">
+            <div class="cl-stats">
+                <div class="cl-stat"><div class="cl-stat-label">New</div><div class="cl-stat-value st-new" id="cl-count-new">0</div></div>
+                <div class="cl-stat"><div class="cl-stat-label">Contacted</div><div class="cl-stat-value st-contacted" id="cl-count-contacted">0</div></div>
+                <div class="cl-stat"><div class="cl-stat-label">Follow-up</div><div class="cl-stat-value st-followup" id="cl-count-followup">0</div></div>
+                <div class="cl-stat"><div class="cl-stat-label">Won</div><div class="cl-stat-value st-won" id="cl-count-won">0</div></div>
+            </div>
+
+            <div class="cl-toolbar">
+                <div class="cl-tabs" id="cl-tabs">
+                    <button type="button" class="cl-tab is-active" data-filter="all">All <span id="cl-tab-all-count">0</span></button>
+                    <button type="button" class="cl-tab" data-filter="new">New</button>
+                    <button type="button" class="cl-tab" data-filter="contacted">Contacted</button>
+                    <button type="button" class="cl-tab" data-filter="interested">Follow-up</button>
+                    <button type="button" class="cl-tab" data-filter="won">Won</button>
+                </div>
+                <div class="cl-search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+                    <input type="text" id="cl-search-input" placeholder="Search clients...">
+                </div>
+            </div>
+
+            <div class="cl-table-wrap">
+                <table class="cl-table">
+                    <thead>
+                        <tr>
+                            <th>Business</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th>Last note</th>
+                            <th>Saved</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cl-tbody"></tbody>
+                </table>
+                <div class="cl-empty" id="cl-empty" style="display:none">
+                    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="19" stroke="currentColor" stroke-width="1.6" stroke-dasharray="4 4" opacity="0.55"/><circle cx="24" cy="24" r="2.4" fill="currentColor"/></svg>
+                    <div class="cl-empty-title" id="cl-empty-title">No saved clients yet</div>
+                    <p id="cl-empty-text">Run a scan and save a lead to start building your pipeline.</p>
+                </div>
+            </div>
         </div>
     </main>
 
+    <!-- ===== NOTES MODAL ===== -->
+    <div id="note-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="note-modal-title">
+        <div class="note-box">
+            <div class="note-box-head">
+                <h2 id="note-modal-title">Note</h2>
+                <button type="button" class="note-close" id="note-close-btn" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <p class="note-box-sub" id="note-box-sub"></p>
+            <textarea id="note-textarea" placeholder="Call notes, next steps, anything worth remembering..."></textarea>
+            <div class="note-box-actions">
+                <span id="note-save-msg">Saved</span>
+                <button type="button" class="settings-btn" id="note-cancel-btn">Cancel</button>
+                <button type="button" class="settings-btn settings-btn-primary" id="note-save-btn">Save note</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SETTINGS MODAL ===== -->
+    <div id="settings-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+        <div class="settings-box">
+            <div class="settings-box-head">
+                <h2 id="settings-modal-title">Settings</h2>
+                <button type="button" class="settings-close" id="settings-close-btn" aria-label="Close settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="settings-box-body">
+                <nav class="settings-nav" id="settings-nav">
+                    <button type="button" class="settings-nav-item is-active" data-panel="account">Account</button>
+                    <button type="button" class="settings-nav-item" data-panel="connected">Connected accounts</button>
+                    <button type="button" class="settings-nav-item" data-panel="billing">Billing</button>
+                    <button type="button" class="settings-nav-item" data-panel="notifications">Notifications</button>
+                    <button type="button" class="settings-nav-item" data-panel="privacy">Privacy</button>
+                </nav>
+
+                <div class="settings-panels">
+
+                    <section class="settings-panel" data-panel="account">
+                        <h3>Account</h3>
+                        <p class="settings-blurb">Signed in as <strong id="settings-account-email"></strong></p>
+
+                        <h3>Password</h3>
+                        <p id="settings-pw-blurb" class="settings-blurb"></p>
+                        <div id="settings-pw-msg" class="settings-pw-msg hidden"></div>
+                        <form id="settings-pw-form">
+                            <div class="settings-form-group hidden" id="settings-current-pw-group">
+                                <label for="settings-current-pw">Current password</label>
+                                <input type="password" id="settings-current-pw" autocomplete="current-password">
+                            </div>
+                            <div class="settings-form-group">
+                                <label for="settings-new-pw">New password</label>
+                                <input type="password" id="settings-new-pw" minlength="8" autocomplete="new-password" placeholder="at least 8 characters">
+                            </div>
+                            <button type="submit" class="settings-pw-submit" id="settings-pw-btn">Set password</button>
+                        </form>
+                    </section>
+
+                    <section class="settings-panel hidden" data-panel="connected">
+                        <h3>Connected accounts</h3>
+                        <p class="settings-blurb">Connect a provider to log in faster next time, or disconnect one you no longer use.</p>
+
+                        <div class="settings-oauth-row" data-provider="google">
+                            <div class="settings-oauth-info">
+                                <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.259c-.806.54-1.837.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                                    <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                                </svg>
+                                <div>
+                                    <div class="settings-oauth-name">Google</div>
+                                    <div class="settings-oauth-status" data-role="status">Not connected</div>
+                                </div>
+                            </div>
+                            <button type="button" class="settings-btn" data-role="action">Connect</button>
+                        </div>
+
+                        {% if facebook_enabled %}
+                        <div class="settings-oauth-row" data-provider="facebook">
+                            <div class="settings-oauth-info">
+                                <svg viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                                </svg>
+                                <div>
+                                    <div class="settings-oauth-name">Facebook</div>
+                                    <div class="settings-oauth-status" data-role="status">Not connected</div>
+                                </div>
+                            </div>
+                            <button type="button" class="settings-btn" data-role="action">Connect</button>
+                        </div>
+                        {% endif %}
+
+                        {% if github_enabled %}
+                        <div class="settings-oauth-row" data-provider="github">
+                            <div class="settings-oauth-info">
+                                <svg viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.05-.02-2.06-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.09 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23.96-.27 1.98-.4 3-.41 1.02.01 2.04.14 3 .41 2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.81 1.1.81 2.22 0 1.61-.01 2.9-.01 3.29 0 .32.21.7.83.58C20.56 22.29 24 17.79 24 12.5 24 5.87 18.63.5 12 .5z"/>
+                                </svg>
+                                <div>
+                                    <div class="settings-oauth-name">GitHub</div>
+                                    <div class="settings-oauth-status" data-role="status">Not connected</div>
+                                </div>
+                            </div>
+                            <button type="button" class="settings-btn" data-role="action">Connect</button>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <section class="settings-panel hidden" data-panel="billing">
+                        <h3>Lead credits</h3>
+                        <p class="settings-used-label" id="settings-used-label"></p>
+                        <div class="settings-track"><div class="settings-fill" id="settings-fill"></div></div>
+                        <p class="settings-pct" id="settings-pct"></p>
+                        <div class="settings-billing-actions">
+                            <a href="/pricing" class="settings-btn settings-btn-primary" id="settings-buy-btn">Buy more credits</a>
+                        </div>
+
+                        <div id="settings-subscription-block" class="hidden">
+                            <h3>Subscription</h3>
+                            <div class="settings-plan-card">
+                                <div class="settings-plan-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+                                </div>
+                                <div class="settings-plan-info">
+                                    <div class="settings-plan-name" id="settings-plan-name"></div>
+                                    <div class="settings-plan-interval" id="settings-plan-interval"></div>
+                                    <div class="settings-plan-renew" id="settings-plan-renew"></div>
+                                </div>
+                                <button type="button" class="settings-btn" id="settings-adjust-plan-btn">Adjust plan</button>
+                            </div>
+
+                            <h3>Payment method</h3>
+                            <div class="settings-payment-row">
+                                <div class="settings-payment-info">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                    <span id="settings-payment-summary">No card on file</span>
+                                </div>
+                                <button type="button" class="settings-btn" id="settings-update-payment-btn">Update</button>
+                            </div>
+
+                            <h3>Invoices</h3>
+                            <div class="settings-invoices-wrap">
+                                <table class="settings-invoices-table" id="settings-invoices-table">
+                                    <thead><tr><th>Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+                                    <tbody id="settings-invoices-tbody"></tbody>
+                                </table>
+                                <p class="settings-blurb" id="settings-invoices-empty" style="display:none">No invoices yet.</p>
+                            </div>
+
+                            <h3 class="settings-danger-title">Cancellation</h3>
+                            <div class="settings-cancel-row">
+                                <div>
+                                    <div class="settings-cancel-label" id="settings-cancel-label">Cancel plan</div>
+                                    <p class="settings-blurb" id="settings-cancel-blurb"></p>
+                                </div>
+                                <button type="button" class="settings-btn settings-btn-danger" id="settings-cancel-btn">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="settings-panel hidden" data-panel="notifications">
+                        <h3>Notifications</h3>
+                        <label class="settings-toggle-row">
+                            <input type="checkbox" id="settings-marketing-toggle">
+                            <span>
+                                <span class="settings-toggle-title">Product updates &amp; promotions</span>
+                                <span class="settings-toggle-sub">Occasional email about new features and offers. Account and billing email always send regardless of this setting.</span>
+                            </span>
+                        </label>
+                    </section>
+
+                    <section class="settings-panel hidden" data-panel="privacy">
+                        <h3>Privacy</h3>
+                        <p class="settings-blurb">
+                            <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> &middot;
+                            <a href="/terms" target="_blank" rel="noopener">Terms of Service</a>
+                        </p>
+
+                        <h3 class="settings-danger-title">Delete account</h3>
+                        <p class="settings-blurb">Permanently deletes your account, saved clients, and search history. This can't be undone.</p>
+                        <div id="settings-delete-msg" class="settings-pw-msg hidden"></div>
+                        <button type="button" class="settings-btn settings-btn-danger" id="settings-delete-open-btn">Delete my account</button>
+                        <div id="settings-delete-confirm" class="hidden">
+                            <label for="settings-delete-confirm-input">Type <strong id="settings-delete-email-hint"></strong> to confirm</label>
+                            <input type="text" id="settings-delete-confirm-input" autocomplete="off" spellcheck="false">
+                            <div class="settings-delete-confirm-actions">
+                                <button type="button" class="settings-btn" id="settings-delete-cancel-btn">Cancel</button>
+                                <button type="button" class="settings-btn settings-btn-danger" id="settings-delete-confirm-btn" disabled>Permanently delete</button>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
     <script src="/static/auth.js?v={{ version }}"></script>
     <script>
-        const STATUSES = ['new', 'contacted', 'interested', 'won', 'lost'];
+        const STATUS_LABELS = { new: 'New', contacted: 'Contacted', interested: 'Follow-up', won: 'Won', lost: 'Lost' };
+        let allClients = [];
+        let activeFilter = 'all';
+        let searchQuery = '';
+        let planInfo = null;
+        let activeNoteId = null;
 
         function esc(str) {
             return String(str ?? '')
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
-
         function authHeaders(json) {
             const h = { 'Authorization': `Bearer ${getToken()}` };
             if (json) h['Content-Type'] = 'application/json';
             return h;
         }
-
-        function renderCapBanner(plan, count) {
-            const el = document.getElementById('cap-banner');
-            if (!plan || plan.pro || plan.portal_limit == null) {
-                el.textContent = `${count} client${count !== 1 ? 's' : ''} saved`;
-                el.className = '';
-                return;
-            }
-            const limit = plan.portal_limit;
-            const full = count >= limit;
-            el.innerHTML = `${count}/${limit} saved on Free` +
-                (full ? ' — <a href="/pricing" style="color:inherit">see pricing</a> to lift the limit' : '');
-            el.className = 'cap-banner' + (full ? ' full' : '');
+        function timeAgo(iso) {
+            if (!iso) return '';
+            const diffMs = Date.now() - new Date(iso).getTime();
+            const mins = Math.floor(diffMs / 60000);
+            if (mins < 60) return mins <= 1 ? 'just now' : `${mins} minutes ago`;
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+            const days = Math.floor(hours / 24);
+            if (days < 7) return days === 1 ? '1 day ago' : `${days} days ago`;
+            const weeks = Math.floor(days / 7);
+            if (weeks < 5) return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+            const months = Math.floor(days / 30);
+            return months <= 1 ? '1 month ago' : `${months} months ago`;
         }
 
-        function clientCard(c) {
-            const card = document.createElement('div');
-            card.className = 'client-card';
-            card.dataset.id = c.id;
+        function renderCapBanner() {
+            const el = document.getElementById('cl-cap-banner');
+            if (!planInfo || planInfo.pro || planInfo.portal_limit == null) { el.style.display = 'none'; return; }
+            const limit = planInfo.portal_limit;
+            const count = allClients.length;
+            if (count < limit) { el.style.display = 'none'; return; }
+            el.style.display = 'block';
+            el.innerHTML = `You've saved ${count}/${limit} clients on the Free plan &mdash; <a href="/pricing">see pricing</a> to save more.`;
+        }
+
+        function computeCounts() {
+            const counts = { new: 0, contacted: 0, interested: 0, won: 0, lost: 0 };
+            allClients.forEach(c => { if (counts[c.status] !== undefined) counts[c.status]++; });
+            document.getElementById('cl-count-new').textContent = counts.new;
+            document.getElementById('cl-count-contacted').textContent = counts.contacted;
+            document.getElementById('cl-count-followup').textContent = counts.interested;
+            document.getElementById('cl-count-won').textContent = counts.won;
+            document.getElementById('cl-tab-all-count').textContent = allClients.length;
+        }
+
+        function filteredClients() {
+            const q = searchQuery.trim().toLowerCase();
+            return allClients.filter(c => {
+                if (activeFilter !== 'all' && c.status !== activeFilter) return false;
+                if (q && !(c.business_name || '').toLowerCase().includes(q)) return false;
+                return true;
+            });
+        }
+
+        function statusOptionsHtml(selected) {
+            return Object.keys(STATUS_LABELS).map(s =>
+                `<option value="${s}"${s === selected ? ' selected' : ''}>${STATUS_LABELS[s]}</option>`
+            ).join('');
+        }
+
+        function clientRow(c) {
+            const tr = document.createElement('tr');
+            tr.dataset.id = c.id;
 
             const nameHtml = c.maps_url
                 ? `<a href="${esc(c.maps_url)}" target="_blank" rel="noopener">${esc(c.business_name)}</a>`
                 : esc(c.business_name);
-            const ratingHtml = (c.rating != null)
-                ? `${Number(c.rating).toFixed(1)} ★ (${c.reviews ?? 0})` : '';
+            const phoneHtml = c.phone
+                ? `<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`
+                : '<span style="color:#5b626d">&mdash;</span>';
+            const noteText = (c.notes || '').trim();
+            const notePreview = noteText ? esc(noteText.split('\n')[0]) : 'Add a note';
 
-            const options = STATUSES.map(s =>
-                `<option value="${s}"${s === c.status ? ' selected' : ''}>${s.toUpperCase()}</option>`).join('');
-
-            const callHtml = c.phone
-                ? `<a class="call-link" href="tel:${esc(c.phone)}">📞 CALL ${esc(c.phone)}</a>`
-                : `<span class="client-meta">no phone</span>`;
-
-            card.innerHTML = `
-                <div class="client-head">
-                    <span class="client-name">${nameHtml}</span>
-                    <span class="client-meta">${esc(c.city || '')}${ratingHtml ? ' · ' + ratingHtml : ''}</span>
-                </div>
-                <div class="client-row">
-                    ${callHtml}
-                    <select class="client-status" data-status="${esc(c.status)}">${options}</select>
-                    <button class="client-del">[ DELETE ]</button>
-                </div>
-                <textarea class="client-notes" placeholder="Call notes...">${esc(c.notes || '')}</textarea>
+            tr.innerHTML = `
+                <td class="cl-name" title="${esc(c.city || '')}">${nameHtml}</td>
+                <td class="cl-phone">${phoneHtml}</td>
+                <td>
+                    <select class="cl-status-select" data-status="${esc(c.status)}">${statusOptionsHtml(c.status)}</select>
+                </td>
+                <td class="cl-note-cell">
+                    <span class="cl-note-preview${noteText ? '' : ' is-empty'}">${notePreview}</span>
+                </td>
+                <td class="cl-saved">${timeAgo(c.created_at)}</td>
+                <td>
+                    <button type="button" class="cl-del-btn" title="Remove">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </td>
             `;
 
-            const statusSel = card.querySelector('.client-status');
+            const statusSel = tr.querySelector('.cl-status-select');
             statusSel.addEventListener('change', () => {
                 statusSel.dataset.status = statusSel.value;
                 patchClient(c.id, { status: statusSel.value });
+                c.status = statusSel.value;
+                computeCounts();
+                if (activeFilter !== 'all' && activeFilter !== c.status) renderTable();
             });
 
-            const notes = card.querySelector('.client-notes');
-            let lastNotes = c.notes || '';
-            notes.addEventListener('blur', () => {
-                if (notes.value === lastNotes) return;
-                lastNotes = notes.value;
-                patchClient(c.id, { notes: notes.value });
-            });
+            tr.querySelector('.cl-note-cell').addEventListener('click', () => openNoteModal(c));
+            tr.querySelector('.cl-del-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteClient(c.id); });
 
-            card.querySelector('.client-del').addEventListener('click', () => deleteClient(c.id, card));
-            return card;
+            return tr;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('cl-tbody');
+            const empty = document.getElementById('cl-empty');
+            const rows = filteredClients();
+            tbody.innerHTML = '';
+            if (allClients.length === 0) {
+                empty.style.display = 'block';
+                document.getElementById('cl-empty-title').textContent = 'No saved clients yet';
+                document.getElementById('cl-empty-text').textContent = 'Run a scan and save a lead to start building your pipeline.';
+                return;
+            }
+            if (rows.length === 0) {
+                empty.style.display = 'block';
+                document.getElementById('cl-empty-title').textContent = 'No matches';
+                document.getElementById('cl-empty-text').textContent = 'Try a different filter or search term.';
+                return;
+            }
+            empty.style.display = 'none';
+            rows.forEach(c => tbody.appendChild(clientRow(c)));
         }
 
         async function patchClient(id, body) {
             try {
-                await fetch(`/api/clients/${id}`, {
-                    method: 'PATCH', headers: authHeaders(true), body: JSON.stringify(body),
-                });
+                await fetch(`/api/clients/${id}`, { method: 'PATCH', headers: authHeaders(true), body: JSON.stringify(body) });
             } catch { /* best-effort; UI already reflects the change */ }
         }
 
-        async function deleteClient(id, card) {
+        async function deleteClient(id) {
             if (!confirm('Remove this client?')) return;
             try {
                 const res = await fetch(`/api/clients/${id}`, { method: 'DELETE', headers: authHeaders() });
-                if (res.ok) { card.remove(); loadClients(); }
+                if (res.ok) {
+                    allClients = allClients.filter(c => c.id !== id);
+                    computeCounts();
+                    renderTable();
+                    renderCapBanner();
+                    document.getElementById('cl-subtitle').textContent =
+                        `${allClients.length} saved · track every lead from new to won`;
+                }
             } catch { /* ignore */ }
         }
 
+        // ── Notes modal ──────────────────────────────────────────────────────────
+        function openNoteModal(client) {
+            activeNoteId = client.id;
+            document.getElementById('note-modal-title').textContent = client.business_name || 'Note';
+            document.getElementById('note-box-sub').textContent = client.phone || client.city || '';
+            document.getElementById('note-textarea').value = client.notes || '';
+            document.getElementById('note-save-msg').classList.remove('is-visible');
+            document.getElementById('note-modal').classList.remove('hidden');
+            document.getElementById('note-textarea').focus();
+        }
+        function closeNoteModal() {
+            document.getElementById('note-modal').classList.add('hidden');
+            activeNoteId = null;
+        }
+        async function saveActiveNote() {
+            if (!activeNoteId) return;
+            const value = document.getElementById('note-textarea').value;
+            const btn = document.getElementById('note-save-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                await patchClient(activeNoteId, { notes: value });
+                const client = allClients.find(c => c.id === activeNoteId);
+                if (client) client.notes = value;
+                renderTable();
+                const msg = document.getElementById('note-save-msg');
+                msg.classList.add('is-visible');
+                setTimeout(() => msg.classList.remove('is-visible'), 1500);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save note';
+            }
+        }
+
+        document.getElementById('note-close-btn').addEventListener('click', closeNoteModal);
+        document.getElementById('note-cancel-btn').addEventListener('click', closeNoteModal);
+        document.getElementById('note-save-btn').addEventListener('click', saveActiveNote);
+        document.getElementById('note-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'note-modal') closeNoteModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !document.getElementById('note-modal').classList.contains('hidden')) closeNoteModal();
+        });
+
+        // ── Tabs + search ────────────────────────────────────────────────────────
+        document.querySelectorAll('.cl-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.cl-tab').forEach(t => t.classList.remove('is-active'));
+                tab.classList.add('is-active');
+                activeFilter = tab.dataset.filter;
+                renderTable();
+            });
+        });
+        document.getElementById('cl-search-input').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            renderTable();
+        });
+
+        // ── Load ─────────────────────────────────────────────────────────────────
         async function loadClients() {
             const res = await fetch('/api/clients', { headers: authHeaders() });
             if (res.status === 401) { window.location.href = '/login'; return; }
             const data = await res.json();
-            const list = document.getElementById('clients-list');
-            list.innerHTML = '';
-            const clients = data.clients || [];
-            renderCapBanner(data.plan, clients.length);
-            if (clients.length === 0) {
-                list.innerHTML = '<div class="empty-clients">&gt; No saved clients yet. Run a scan and hit <strong>+ SAVE</strong> on a lead to add it here.</div>';
-                return;
-            }
-            clients.forEach(c => list.appendChild(clientCard(c)));
+            allClients = data.clients || [];
+            planInfo = data.plan || null;
+            document.getElementById('cl-subtitle').textContent =
+                `${allClients.length} saved · track every lead from new to won`;
+            computeCounts();
+            renderCapBanner();
+            renderTable();
         }
 
         (async function init() {
@@ -201,10 +992,10 @@
             if (!token) { window.location.href = '/login'; return; }
             try {
                 await loadClients();
-                document.getElementById('clients-loading').style.display = 'none';
-                document.getElementById('clients-body').style.display = 'block';
+                document.getElementById('cl-loading').style.display = 'none';
+                document.getElementById('cl-body').style.display = 'block';
             } catch {
-                document.getElementById('clients-loading').innerHTML = '<p>&gt; ERR: could not load clients.</p>';
+                document.getElementById('cl-loading').innerHTML = '<p>Could not load clients.</p>';
             }
         })();
     </script>

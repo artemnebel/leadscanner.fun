@@ -22,10 +22,11 @@ Lead Scanner uses live Google Places data (not archived databases), so every res
 
 ## Pricing
 
-Lead Scanner has a Free plan and a paid Pro plan.
+Lead Scanner is pay-per-lead: you buy leads, not search time. Nothing is counted until a verified lead lands in your list.
 
-- Free: $0, a ~5-mile scan radius plus a starter client portal (up to 5 saved clients). No credit card required.
-- Pro: $49/month or $490/year, unlimited scans with no waiting, ~15-mile radius, multi-scan, and an unlimited client portal (call, notes, status pipeline).
+- One-time lead packs: Solo ($15 / 100 leads), Business ($49 / 500 leads), Scale ($89 / 1,000 leads). Leads never expire.
+- Monthly subscriptions: Agency ($20/mo / 300 leads) and Agency Plus ($39/mo / 700 leads). Unused leads roll over for up to 3 months. Cancel anytime.
+- A short unauthenticated demo (a few free scans) is available on the homepage before signup is required.
 
 See https://leadscanner.fun/pricing for full details.
 
@@ -35,7 +36,7 @@ See https://leadscanner.fun/pricing for full details.
 - [How it works](https://leadscanner.fun/how-it-works): step-by-step walkthrough
 - [Pricing](https://leadscanner.fun/pricing): Free vs Pro plans
 - [Cold calling guide](https://leadscanner.fun/cold-calling): how to convert scanned leads
-- [Resources](https://leadscanner.fun/resources): guides on lead generation for web designers
+- [Blog](https://leadscanner.fun/blog): guides on finding, pitching, pricing, and following up with web design clients
 - [About](https://leadscanner.fun/about): background on the project
 - [Contact](https://leadscanner.fun/contact): support and feedback
 

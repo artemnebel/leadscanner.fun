@@ -319,6 +319,20 @@ def main():
         print(f"Skipping {before - len(recipients)} already-sent (promo_sent_at set); "
               f"{len(recipients)} remaining. Use --resend-all to override.")
 
+    # Opted out (Settings > Notifications) — always respected, unlike --resend-all.
+    db = SessionLocal()
+    try:
+        opted_out = {
+            (e or "").lower()
+            for (e,) in db.query(User.email).filter(User.marketing_opt_out.is_(True)).all()
+        }
+    finally:
+        db.close()
+    before = len(recipients)
+    recipients = [e for e in recipients if e.lower() not in opted_out]
+    if before != len(recipients):
+        print(f"Skipping {before - len(recipients)} opted-out of marketing email; {len(recipients)} remaining.")
+
     if not args.yes:
         print("Dry run - re-run with --yes to actually send.")
         for e in recipients[:10]:

@@ -11,22 +11,22 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lead Scanner - Free Tool to Find Local Businesses Without a Website</title>
+    <title>Lead Scanner - Find Local Businesses Without a Website</title>
     <meta name="description" content="Find local businesses with no website. Search any city on an interactive map and export leads. Pay for leads, not for searching: a pack of 100 is 100 leads.">
-    <meta name="keywords" content="free lead generation, web design leads, businesses without website, local business finder, lead generation tool">
+    <meta name="keywords" content="lead generation, web design leads, businesses without website, local business finder, lead generation tool">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://leadscanner.fun/">
     <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-    <meta property="og:title" content="Lead Scanner - Free Business Lead Finder">
-    <meta property="og:description" content="Scan any city. Find local businesses with no website. Export leads in seconds. Free to start — no card required.">
+    <meta property="og:title" content="Lead Scanner - Local Business Lead Finder">
+    <meta property="og:description" content="Scan any city. Find local businesses with no website. Export leads in seconds. Try the free demo, no signup required.">
     <meta property="og:url" content="https://leadscanner.fun/">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://leadscanner.fun/static/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Lead Scanner - Free Business Lead Finder">
-    <meta name="twitter:description" content="Scan any city. Find local businesses with no website. Export leads in seconds. Free to start.">
+    <meta name="twitter:title" content="Lead Scanner - Local Business Lead Finder">
+    <meta name="twitter:description" content="Scan any city. Find local businesses with no website. Export leads in seconds.">
     <meta name="twitter:image" content="https://leadscanner.fun/static/og-image.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,12 +46,15 @@
           "@type": "SoftwareApplication",
           "name": "Lead Scanner",
           "url": "https://leadscanner.fun/",
-          "description": "Lead Scanner finds local businesses without a website. Search any city by category, scan an interactive map, and export phone numbers and Google Maps links as CSV, JSON, or XLSX. Free to start, with a Pro plan for working leads at volume.",
+          "description": "Lead Scanner finds local businesses without a website. Search any city by category, scan an interactive map, and export phone numbers and Google Maps links as CSV, JSON, or XLSX. Try a free demo scan with no signup required, then pay per lead: one-time packs or a monthly subscription for ongoing volume.",
           "applicationCategory": "BusinessApplication",
           "operatingSystem": "Web",
           "offers": [
-            { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD", "description": "Scan within a ~5-mile radius, plus a starter client portal. No credit card required." },
-            { "@type": "Offer", "name": "Pro", "price": "49", "priceCurrency": "USD", "description": "Priority access — unlimited scans with no waiting, a ~15-mile radius, multi-scan, and an unlimited client portal. $49/month or $490/year." }
+            { "@type": "Offer", "name": "Solo pack", "price": "15", "priceCurrency": "USD", "description": "100 leads, one-time purchase. Leads never expire." },
+            { "@type": "Offer", "name": "Business pack", "price": "49", "priceCurrency": "USD", "description": "500 leads, one-time purchase. Leads never expire." },
+            { "@type": "Offer", "name": "Scale pack", "price": "89", "priceCurrency": "USD", "description": "1,000 leads, one-time purchase. Leads never expire." },
+            { "@type": "Offer", "name": "Agency monthly", "price": "20", "priceCurrency": "USD", "description": "300 leads every month, subscription. Unused leads roll over for up to 3 months." },
+            { "@type": "Offer", "name": "Agency plus", "price": "39", "priceCurrency": "USD", "description": "700 leads every month, subscription. Unused leads roll over for up to 3 months." }
           ],
           "featureList": [
             "Interactive map-based business scanning",
@@ -79,7 +82,7 @@
             {
               "@type": "Question",
               "name": "Is Lead Scanner free to use?",
-              "acceptedAnswer": { "@type": "Answer", "text": "Yes. Lead Scanner is free to start, with a ~5-mile scan radius and a starter client portal, no credit card required. Pro ($49/month) adds unlimited scans with no waiting, a ~15-mile radius, multi-scan, and an unlimited client portal." }
+              "acceptedAnswer": { "@type": "Answer", "text": "You can try a free interactive demo scan on the homepage with no signup required. Beyond the demo, Lead Scanner is pay-per-lead: nothing is counted until a verified lead lands in your list. A pack of 100 leads starts at $15 and leads never expire; monthly subscriptions are available for ongoing volume." }
             },
             {
               "@type": "Question",
@@ -399,6 +402,248 @@
     }
     .an-account.an-avatar:hover { background: rgba(62,232,123,0.2); border-color: #3ee87b; }
 
+    /* Narrow viewports: the full row (logo + How it works + Pricing + My
+       clients + avatar) doesn't fit in ~390px. Drop the least essential
+       link and let the rest wrap instead of forcing horizontal scroll. */
+    @media (max-width: 640px) {
+        #app-nav { flex-wrap: wrap; height: auto; min-height: 62px; padding: 10px 14px; gap: 8px; }
+        .an-left, .an-right { flex-wrap: wrap; row-gap: 6px; }
+        .an-left .an-link { display: none; }
+        .an-right .an-link { padding: 7px 10px; font-size: 13.5px; }
+    }
+
+    /* ===== ACCOUNT DROPDOWN ===== */
+    .an-user-wrap { position: relative; }
+    .an-dropdown {
+        position: absolute; top: calc(100% + 10px); right: 0; z-index: 1000;
+        width: 300px; background: #101418; border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+        padding: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    .an-dropdown.hidden { display: none; }
+    .an-dd-panel.hidden { display: none; }
+
+    .an-dd-head { display: flex; align-items: center; gap: 12px; padding: 12px 10px 14px; }
+    .an-dd-avatar {
+        width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(62,232,123,0.12); border: 1px solid rgba(62,232,123,0.5);
+        color: #3ee87b; font-size: 16px; font-weight: 700;
+    }
+    .an-dd-email {
+        color: #fff; font-size: 14px; font-weight: 600; word-break: break-all; line-height: 1.3;
+    }
+    .an-dd-link {
+        display: block; padding: 0 10px 14px 62px; margin-top: -8px;
+        color: #6ea8fe; font-size: 13.5px; text-decoration: none;
+    }
+    .an-dd-link:hover { text-decoration: underline; }
+
+    .an-dd-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 6px 8px; }
+
+    .an-dd-item, .an-dd-back {
+        display: flex; align-items: center; gap: 12px; width: 100%;
+        padding: 10px 12px; border-radius: 8px; cursor: pointer;
+        background: none; border: none; color: #e7ebf0;
+        font-family: inherit; font-size: 14px; text-align: left; text-decoration: none;
+    }
+    .an-dd-item:hover, .an-dd-back:hover { background: rgba(255,255,255,0.07); }
+    .an-dd-icon { width: 18px; height: 18px; flex-shrink: 0; color: #98a2b3; }
+    .an-dd-item-value { margin-left: auto; color: #7c8798; font-size: 12.5px; white-space: nowrap; }
+    .an-dd-danger { color: #ff6b6b; }
+    .an-dd-danger .an-dd-icon { color: #ff6b6b; }
+    .an-dd-danger:hover { background: rgba(255,107,107,0.08); }
+    .an-dd-back { font-weight: 600; color: #fff; }
+    .an-dd-back .an-dd-icon { color: #fff; }
+
+    .an-lang-list { max-height: 320px; overflow-y: auto; padding: 4px 0; }
+    .an-lang-opt {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        width: 100%; padding: 9px 12px; border-radius: 8px; cursor: pointer;
+        background: none; border: none; color: #e7ebf0;
+        font-family: inherit; font-size: 13.5px; text-align: left;
+    }
+    .an-lang-opt:hover { background: rgba(255,255,255,0.07); }
+    .an-lang-check { width: 16px; height: 16px; flex-shrink: 0; color: #3ee87b; visibility: hidden; }
+    .an-lang-opt.is-selected .an-lang-check { visibility: visible; }
+
+    /* ===== SETTINGS MODAL ===== */
+    #settings-modal {
+        position: fixed; inset: 0; z-index: 3000;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.6); padding: 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    #settings-modal.hidden { display: none; }
+    .settings-box {
+        width: 100%; max-width: 680px; max-height: 85vh;
+        background: #101418; border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 16px; box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+        display: flex; flex-direction: column;
+    }
+    .settings-box-head {
+        flex-shrink: 0; background: #101418;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .settings-box-head h2 { margin: 0; color: #fff; font: 700 19px/1.2 'Space Grotesk', sans-serif; }
+    .settings-close {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+        background: none; border: none; color: #98a2b3;
+    }
+    .settings-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .settings-close svg { width: 18px; height: 18px; }
+
+    .settings-box-body { display: flex; min-height: 0; flex: 1; }
+
+    /* Sidebar nav — same "swap panels by toggling .hidden" idiom as the
+       account dropdown's Language sub-panel, generalized to N panels. */
+    .settings-nav {
+        flex: 0 0 168px; padding: 12px; border-right: 1px solid rgba(255,255,255,0.08);
+        display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
+    }
+    .settings-nav-item {
+        display: block; width: 100%; text-align: left; padding: 9px 12px; border-radius: 8px;
+        background: none; border: none; color: #98a2b3; cursor: pointer;
+        font-family: inherit; font-size: 13.5px; font-weight: 500;
+    }
+    .settings-nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .settings-nav-item.is-active { background: rgba(62,232,123,0.1); color: #3ee87b; font-weight: 700; }
+
+    .settings-panels { flex: 1; min-width: 0; padding: 22px 24px; overflow-y: auto; }
+    .settings-panel.hidden { display: none; }
+    .settings-panel h3 { margin: 0 0 8px; color: #fff; font: 700 15px 'Space Grotesk', sans-serif; }
+    .settings-panel h3 + h3 { margin-top: 22px; }
+    .settings-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 18px 0; }
+    .settings-blurb { margin: 0 0 16px; color: #98a2b3; font-size: 13.5px; line-height: 1.5; }
+    .settings-blurb a { color: #3ee87b; text-decoration: none; }
+    .settings-blurb a:hover { text-decoration: underline; }
+    .settings-pw-msg { margin-bottom: 14px; font-size: 13.5px; }
+    .settings-pw-msg.hidden { display: none; }
+
+    .settings-form-group { margin-bottom: 16px; }
+    .settings-form-group.hidden { display: none; }
+    .settings-form-group label {
+        display: block; margin-bottom: 7px; color: #98a2b3; font-size: 13px; font-weight: 600;
+    }
+    .settings-form-group input {
+        width: 100%; padding: 11px 13px; box-sizing: border-box;
+        background: #000; color: #fff; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px;
+        font-family: inherit; font-size: 14px; outline: none;
+    }
+    .settings-form-group input:focus { border-color: #3ee87b; box-shadow: 0 0 0 3px rgba(62,232,123,0.15); }
+    .settings-form-group input::placeholder { color: #5b626d; }
+
+    /* Generic settings button — ghost by default, primary/danger variants */
+    .settings-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-height: 42px; padding: 0 18px; border-radius: 8px; cursor: pointer;
+        background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.2);
+        font-family: inherit; font-size: 13.5px; font-weight: 700; text-decoration: none;
+    }
+    .settings-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.4); }
+    .settings-btn:disabled { opacity: 0.5; cursor: default; }
+    .settings-pw-submit, .settings-btn-primary {
+        background: #3ee87b; color: #04150a; border: none;
+    }
+    .settings-pw-submit:hover:not(:disabled), .settings-btn-primary:hover { background: #5cf295; }
+    .settings-pw-submit:disabled { opacity: 0.6; cursor: default; }
+    .settings-btn-danger { border-color: rgba(255,107,107,0.4); color: #ff6b6b; background: transparent; }
+    .settings-btn-danger:hover { background: rgba(255,107,107,0.08); border-color: #ff6b6b; }
+
+    /* Connected accounts */
+    .settings-oauth-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .settings-oauth-row:last-child { border-bottom: none; }
+    .settings-oauth-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .settings-oauth-info svg { width: 22px; height: 22px; flex-shrink: 0; }
+    .settings-oauth-name { color: #fff; font-size: 14px; font-weight: 600; }
+    .settings-oauth-status { color: #7c8798; font-size: 12.5px; margin-top: 2px; }
+    .settings-oauth-status.is-connected { color: #3ee87b; }
+
+    /* Lead credits bar (mirrors dashboard.html's) */
+    .settings-used-label { margin: 0 0 10px; color: #fff; font-size: 15px; font-weight: 600; }
+    .settings-track { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .settings-fill { height: 100%; width: 0%; background: #3ee87b; border-radius: inherit; transition: width 0.3s ease; }
+    .settings-pct { margin: 10px 0 18px; color: #7c8798; font-size: 13px; }
+    .settings-billing-actions { display: flex; gap: 10px; }
+
+    /* Subscription block: plan card, payment method, invoices, cancellation */
+    #settings-subscription-block.hidden { display: none; }
+    .settings-plan-card {
+        display: flex; align-items: center; gap: 14px; margin-bottom: 18px;
+        padding: 14px; background: #000; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+    }
+    .settings-plan-icon {
+        width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(62,232,123,0.12); border: 1px solid rgba(62,232,123,0.5); color: #3ee87b;
+    }
+    .settings-plan-icon svg { width: 18px; height: 18px; }
+    .settings-plan-info { flex: 1; min-width: 0; }
+    .settings-plan-name { color: #fff; font-size: 14.5px; font-weight: 700; }
+    .settings-plan-interval { color: #98a2b3; font-size: 12.5px; text-transform: capitalize; margin-top: 2px; }
+    .settings-plan-renew { color: #7c8798; font-size: 12.5px; margin-top: 4px; }
+
+    .settings-payment-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        margin-bottom: 18px; padding: 14px; background: #000; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+    }
+    .settings-payment-info { display: flex; align-items: center; gap: 12px; color: #fff; font-size: 14px; }
+    .settings-payment-info svg { width: 20px; height: 20px; color: #98a2b3; flex-shrink: 0; }
+
+    .settings-invoices-wrap { margin-bottom: 18px; }
+    .settings-invoices-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .settings-invoices-table th {
+        text-align: left; padding: 8px 10px; color: #7c8798; font-weight: 600;
+        font-size: 11.5px; letter-spacing: 0.04em; text-transform: uppercase;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .settings-invoices-table td {
+        padding: 10px; color: #cbd2dc; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .settings-invoices-table a { color: #3ee87b; text-decoration: none; }
+    .settings-invoices-table a:hover { text-decoration: underline; }
+    .settings-invoice-status { text-transform: capitalize; }
+    .settings-invoice-status.is-paid { color: #3ee87b; }
+
+    .settings-cancel-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 14px;
+        padding: 14px; background: #000; border: 1px solid rgba(255,107,107,0.25); border-radius: 12px;
+    }
+    .settings-cancel-label { color: #fff; font-size: 14px; font-weight: 700; }
+    .settings-cancel-row .settings-blurb { margin: 4px 0 0; }
+
+    /* Notifications toggle */
+    .settings-toggle-row { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+    .settings-toggle-row input { width: 17px; height: 17px; margin-top: 2px; accent-color: #3ee87b; cursor: pointer; }
+    .settings-toggle-title { display: block; color: #fff; font-size: 14px; font-weight: 600; }
+    .settings-toggle-sub { display: block; color: #7c8798; font-size: 12.5px; margin-top: 3px; line-height: 1.5; }
+
+    /* Danger zone / delete account */
+    .settings-danger-title { color: #ff6b6b !important; }
+    #settings-delete-confirm { margin-top: 14px; }
+    #settings-delete-confirm.hidden { display: none; }
+    #settings-delete-confirm label { display: block; margin-bottom: 8px; color: #98a2b3; font-size: 13px; }
+    #settings-delete-confirm-input {
+        width: 100%; padding: 11px 13px; box-sizing: border-box; margin-bottom: 12px;
+        background: #000; color: #fff; border: 1px solid rgba(255,107,107,0.35); border-radius: 8px;
+        font-family: inherit; font-size: 14px; outline: none;
+    }
+    .settings-delete-confirm-actions { display: flex; gap: 10px; }
+
+    @media (max-width: 560px) {
+        .settings-box-body { flex-direction: column; }
+        .settings-nav {
+            flex: 0 0 auto; flex-direction: row; flex-wrap: wrap;
+            border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .settings-panels { padding: 18px 20px; }
+    }
+
     /* --results-w is owned by the drag handle below and restored from
        localStorage, so the width the user picks survives a reload. */
     #content {
@@ -424,8 +669,9 @@
     body.is-resizing { cursor: col-resize; user-select: none; }
     #map-section, #leads-section {
         position: relative; border: 1px solid rgba(255,255,255,0.09);
-        border-radius: 16px; overflow: hidden; background: #0a0b0d; min-width: 0;
+        border-radius: 20px; overflow: hidden; background: #0a0b0d; min-width: 0;
     }
+    #leads-section { background: #000; }
     #map { height: 100%; width: 100%; }
 
     /* Floating toolbar over the map */
@@ -438,7 +684,7 @@
     #search-form .input-wrap {
         display: flex; align-items: center; gap: 9px; flex: 1 1 240px; min-width: 200px;
         height: 44px; padding: 0 14px;
-        background: #0d0f11; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
+        background: #000; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
     }
     #search-form .input-wrap:focus-within { border-color: #3ee87b; }
     .sf-icon { width: 17px; height: 17px; color: #7c8798; flex-shrink: 0; }
@@ -451,12 +697,28 @@
     #search-form .btn-term {
         display: inline-flex; align-items: center; justify-content: center; gap: 8px;
         height: 44px; padding: 0 16px; border-radius: 10px; cursor: pointer;
-        background: #0d0f11; border: 1px solid rgba(255,255,255,0.14); color: #e7ebf0;
+        background: #000; border: 1px solid rgba(255,255,255,0.14); color: #e7ebf0;
         font-family: inherit; font-size: 14px; font-weight: 600; white-space: nowrap;
         transition: background 0.15s ease, border-color 0.15s ease;
+        box-shadow: none; animation: none; text-shadow: none;   /* reset legacy CRT glow/glitch from style.css */
     }
-    #search-form .btn-term:hover { background: #14171a; border-color: rgba(255,255,255,0.3); }
+    #search-form .btn-term:hover {
+        background: #1a1a1a; border-color: rgba(255,255,255,0.3);
+        box-shadow: none; animation: none;
+    }
+    #search-form .btn-term:active { transform: none; box-shadow: none; }
     #search-form .btn-term svg { width: 16px; height: 16px; flex-shrink: 0; }
+    /* Multi-zone "armed" state: flat amber accent, no CRT glow/blur — style.css's
+       #multi-btn.bulk-active still ships the old terminal glow, which read as a
+       fuzzy halo that made the label hard to read against this flat dark button. */
+    #multi-btn.bulk-active {
+        background: rgba(255,176,0,0.12); border-color: #ffb000; color: #ffb000;
+        text-shadow: none; box-shadow: none; animation: none;
+    }
+    #multi-btn.bulk-active:hover {
+        background: #ffb000; border-color: #ffb000; color: #04150a;
+        text-shadow: none; box-shadow: none;
+    }
     #search-form .btn-primary {
         background: #3ee87b; border-color: #3ee87b; color: #04150a;
         font-weight: 700; letter-spacing: 0.02em; padding: 0 24px;
@@ -467,7 +729,7 @@
     #radius-group {
         display: flex; flex-direction: row;   /* style.css stacks this column */
         align-items: center; gap: 11px; height: 44px; padding: 0 14px;
-        background: #0d0f11; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
+        background: #000; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
     }
     #radius-group label { color: #98a2b3; font-size: 14px; font-weight: 500; }
     #radius-group #radius-label {
@@ -500,38 +762,78 @@
     /* Results panel */
     #leads-section { display: flex; flex-direction: column; }
     #leads-header {
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        padding: 16px 18px 12px; border-bottom: none; flex-shrink: 0;
+        display: flex; align-items: center; gap: 14px;
+        padding: 22px 22px 16px; border-bottom: none; flex-shrink: 0;
     }
     .ls-title {
         margin: 0; color: #fff; letter-spacing: -0.02em;
-        font: 700 18px/1.2 'Space Grotesk', sans-serif;
+        font: 700 26px/1.2 'Space Grotesk', sans-serif;
     }
+    .ls-count-badge {
+        color: #3ee87b; font-family: 'JetBrains Mono', monospace;
+        font-size: 12.5px; font-weight: 700; letter-spacing: 0.1em;
+    }
+    .ls-count-badge.hidden { display: none; }
+    #header-btns { margin-left: auto; display: flex; gap: 8px; }
     #leads-header .btn-term {
         padding: 6px 12px; border-radius: 8px; cursor: pointer;
         background: none; border: 1px solid rgba(255,255,255,0.16); color: #98a2b3;
         font-family: inherit; font-size: 13px;
+        box-shadow: none; animation: none; text-shadow: none;   /* reset legacy CRT glow/glitch */
     }
-    #leads-header .btn-term:hover { color: #fff; border-color: rgba(255,255,255,0.35); }
+    #leads-header .btn-term:hover {
+        color: #fff; border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.06);
+        box-shadow: none; animation: none;
+    }
+    #leads-header .btn-term:active { transform: none; box-shadow: none; }
+    #leads-header .btn-term:disabled {
+        opacity: 0.35; cursor: not-allowed; animation: none;
+    }
+    #leads-header .btn-term:disabled:hover { background: none; border-color: rgba(255,255,255,0.16); color: #98a2b3; }
 
     #table-container { flex: 1; overflow-y: auto; }
     #leads-table thead th {
         position: sticky; top: 0; z-index: 2;
-        background: #0a0b0d; border-bottom: 1px solid rgba(255,255,255,0.08);
-        padding: 8px 18px; text-align: left;
+        background: #000; border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding: 10px 20px; text-align: left;
         color: #6b7280; font-family: 'JetBrains Mono', monospace;
         font-size: 10.5px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
     }
     #leads-table td {
-        padding: 11px 18px; border-bottom: 1px solid rgba(255,255,255,0.05);
-        color: #cbd2dc; font-size: 13.5px;
+        padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06);
+        color: #cbd2dc; font-size: 14px;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
     #leads-table tbody tr:hover td { background: rgba(255,255,255,0.03); }
-    /* Phone and address are dropped here: the panel is narrow and the screenshot
-       shows name, rating and save only. They stay in the export. */
-    #leads-table th[data-col="phone"], #leads-table td:nth-child(2),
-    #leads-table th[data-col="city"],  #leads-table td:nth-child(4) { display: none; }
+    #leads-table th.select-col, #leads-table td.select-cell {
+        width: 20px; padding-left: 20px; padding-right: 0;
+    }
+    /* Rounded-square checkbox, drawn by hand: native checkboxes ignore
+       border-radius once accent-color takes over rendering in most browsers. */
+    #leads-table .row-select, #select-all-leads {
+        appearance: none; -webkit-appearance: none; margin: 0; position: relative;
+        width: 18px; height: 18px; flex-shrink: 0; cursor: pointer;
+        border: 1.5px solid rgba(255,255,255,0.28); border-radius: 6px; background: transparent;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    #leads-table .row-select:hover, #select-all-leads:hover { border-color: rgba(255,255,255,0.5); }
+    #leads-table .row-select:checked, #select-all-leads:checked { background: #3ee87b; border-color: #3ee87b; }
+    #leads-table .row-select:checked::after, #select-all-leads:checked::after {
+        content: ''; position: absolute; left: 5px; top: 1px;
+        width: 5px; height: 9px; border: solid #04150a; border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+    #select-all-leads:indeterminate { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.4); }
+    #leads-table tbody tr.is-selected td { background: rgba(62,232,123,0.06); }
+    .rating-value { color: #3ee87b; font-weight: 600; }
+    /* The star glyph has far less "ink" than the bold digits next to it, so at
+       identical color it still reads as a lighter green. A hairline stroke in
+       the same color thickens it to match the number's visual weight. */
+    .rating-star { -webkit-text-stroke: 0.45px currentColor; }
+    /* Review count nests inside .rating-value so it inherits the same green —
+       style.css's #leads-table tbody td.muted rule (a leftover dark terminal
+       green) doesn't apply here since this isn't a td.muted. */
+    .rating-reviews { font-weight: 400; }
     /* style.css puts nowrap and a border on table cells; the empty state is a
        block of prose sitting in one, so both have to go. */
     #table-container, #leads-table, #leads-table tbody, #leads-table tr { border: none; }
@@ -551,35 +853,44 @@
         font-family: inherit; font-size: 13.5px; line-height: 1.55; white-space: normal;
     }
 
-    /* Filter bar, revealed by app.js once there are results. */
-    #filter-wrap { padding: 10px 18px 0; flex-shrink: 0; }
-    #filter-wrap .input-wrap {
-        display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px;
-        background: #0d0f11; border: 1px solid rgba(255,255,255,0.12); border-radius: 9px;
+    /* Sort dropdown, revealed by app.js once there are results. */
+    #filter-wrap { padding: 10px 22px 0; flex-shrink: 0; }
+    .sort-select {
+        width: 100%; height: 38px; padding: 0 36px 0 14px; margin: 0;
+        background: #000 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2398a2b3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center;
+        background-size: 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 9px;
+        color: #fff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 13.5px; appearance: none; -webkit-appearance: none; cursor: pointer; outline: none;
     }
-    #filter-wrap .prompt { color: #6b7280; font-size: 13px; }
-    #filter-input {
-        flex: 1; min-width: 0; background: none; border: none; outline: none; color: #fff;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        font-size: 13.5px;
-    }
-    #filter-input::placeholder { color: #5b626d; }
+    .sort-select:focus { border-color: #3ee87b; }
+    .sort-select option { background: #101418; color: #fff; }
 
     /* Business names: the terminal theme made these glowing green links. */
     #leads-table td a, #leads-table .lead-name {
         color: #fff; text-decoration: none; font-weight: 600;
     }
     #leads-table td a:hover { color: #3ee87b; text-decoration: underline; }
+    /* Phone is secondary info next to the name, so it stays a plain gray
+       rather than competing white text. */
+    #leads-table td a.phone-link { color: #98a2b3; font-weight: 500; }
+    #leads-table td a.phone-link:hover { color: #3ee87b; }
+    /* style.css's #leads-table tbody td.muted rule colors this a dark
+       terminal green (--dim); this is a flat gray in the new design, used for
+       the address column and the phone/rating placeholder dash. */
+    #leads-table .muted, #leads-table tbody td.muted { color: #7c8798; }
+    /* The old terminal theme drew an orange [^]/[v] caret after a sort click;
+       drop it, the header still sorts, it just doesn't need the indicator. */
+    #leads-table thead th.sort-asc .sort-icon::after,
+    #leads-table thead th.sort-desc .sort-icon::after { content: none; }
     /* style.css sets this red with !important, so the override needs it too. */
     #lead-count .found-text {
         color: #fff !important; text-shadow: none !important; font-weight: 700;
     }
     #lead-count .count-meta { color: #5b626d; }
-    #filter-wrap .prompt { display: none; }
 
     #leads-foot {
         display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        padding: 12px 18px; border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;
+        padding: 16px 22px; border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;
     }
     #export-wrap { position: relative; flex-shrink: 0; }
     #lead-count {
@@ -589,11 +900,26 @@
     }
     #lead-count .found-text, #lead-count .count-meta { text-shadow: none !important; }
     #export-btn {
-        padding: 8px 16px; border-radius: 8px; cursor: pointer;
-        background: #3ee87b; border: none; color: #04150a;
+        padding: 10px 20px; border-radius: 999px; cursor: pointer;
+        background: #1a1d21; border: 1px solid rgba(255,255,255,0.12); color: #fff;
         font-family: inherit; font-size: 13.5px; font-weight: 700;
+        box-shadow: none; animation: none; text-shadow: none;   /* reset legacy CRT glow/glitch */
     }
-    #export-btn:hover { background: #5cf295; }
+    #export-btn:hover { background: #24282d; box-shadow: none; animation: none; }
+    #export-btn:active { transform: none; box-shadow: none; }
+
+    /* Export menu opens upward: it lives at the bottom of the results panel, so
+       expanding downward (style.css's default) pushed the format list off-screen. */
+    .export-menu {
+        top: auto; bottom: calc(100% + 6px);
+        background: #101418; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
+        overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .export-opt {
+        color: #e7ebf0; border-bottom: 1px solid rgba(255,255,255,0.08);
+        font-family: inherit; font-size: 13px;
+    }
+    .export-opt:hover { background: rgba(255,255,255,0.08); color: #fff; }
 
     #site-footer { display: none; }   /* the app is a full-height workspace now */
 
@@ -1168,20 +1494,6 @@
 
             <div class="lp-menu">
                 <div class="lp-item">
-                    <button type="button" class="lp-link">Use Cases
-                        <svg class="lp-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    <div class="lp-dropdown">
-                        <div class="lp-dd-cols">
-                            <div class="lp-dd-col">
-                                <a class="lp-dd-link" href="/">Agencies</a>
-                                <a class="lp-dd-link" href="/">Freelancers</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lp-item">
                     <button type="button" class="lp-link">Resources
                         <svg class="lp-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                     </button>
@@ -1190,7 +1502,6 @@
                             <div class="lp-dd-col">
                                 <div class="lp-dd-group-label">Learn</div>
                                 <a class="lp-dd-link" href="/how-it-works">How It Works</a>
-                                <a class="lp-dd-link" href="/resources">Resources</a>
                                 <a class="lp-dd-link" href="/blog">Blog</a>
                             </div>
                             <div class="lp-dd-col">
@@ -1274,7 +1585,7 @@
         <section class="lp-demo" id="demo">
             <h2 class="lp-demo-title">See It Scan In Real Time</h2>
             <p class="lp-demo-sub">Drop a pin on any city and Lead Scanner sweeps the radius for local businesses without a website.</p>
-            <a href="/signup" class="lp-demo-cta">Start For Free</a>
+            <a href="/signup" class="lp-demo-cta">Create Account</a>
             <div class="lp-demo-box">
                 <div id="demo-map"></div>
                 <div class="lp-demo-controls">
@@ -1466,9 +1777,9 @@
                         <a href="/pricing">Pricing</a>
                     </div>
                     <div class="lp-footer-col">
-                        <h2 class="lp-footer-h">Use Cases</h2>
-                        <a href="/">Agencies</a>
-                        <a href="/">Freelancers</a>
+                        <h2 class="lp-footer-h">Resources</h2>
+                        <a href="/blog">Blog</a>
+                        <a href="/cold-calling">Cold Calling Guide</a>
                     </div>
                     <div class="lp-footer-col">
                         <h2 class="lp-footer-h">Company</h2>
@@ -1510,12 +1821,96 @@
                 <span id="logo-blink">LeadScanner</span>
             </span>
             <a href="/how-it-works" class="an-link">How it works</a>
-            <a href="/resources" class="an-link">Resources</a>
         </div>
         <div class="an-right">
             <a href="/pricing" class="an-link">Pricing</a>
             <a href="/clients" class="an-link" id="nav-clients-link" style="display:none">My clients</a>
-            <a href="/login" class="an-account" id="nav-auth-link" data-plain="1">Log in</a>
+            <div class="an-user-wrap" id="an-user-wrap">
+                <a href="/login" class="an-account" id="nav-auth-link" data-plain="1">Log in</a>
+
+                <div class="an-dropdown hidden" id="an-dropdown" role="menu" aria-hidden="true">
+                    <div class="an-dd-panel" id="an-dd-panel-main">
+                        <div class="an-dd-head">
+                            <span class="an-dd-avatar" id="an-dd-avatar"></span>
+                            <span class="an-dd-email" id="an-dd-email"></span>
+                        </div>
+                        <a href="/dashboard" class="an-dd-link">View profile</a>
+                        <div class="an-dd-sep"></div>
+                        <button type="button" class="an-dd-item" id="an-dd-settings-open">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            Settings
+                        </button>
+                        <button type="button" class="an-dd-item" id="an-dd-lang-open">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            Language
+                            <span class="an-dd-item-value" id="an-dd-lang-current">English (United States)</span>
+                        </button>
+                        <a href="/contact" class="an-dd-item">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            Help
+                        </a>
+                        <div class="an-dd-sep"></div>
+                        <button type="button" class="an-dd-item an-dd-danger" id="an-dd-logout">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Log out
+                        </button>
+                    </div>
+
+                    <div class="an-dd-panel hidden" id="an-dd-panel-lang">
+                        <button type="button" class="an-dd-back" id="an-dd-lang-back">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                            Language
+                        </button>
+                        <div class="an-dd-sep"></div>
+                        <div class="an-lang-list" id="an-lang-list">
+                            <button type="button" class="an-lang-opt is-selected" data-lang="en-US" data-label="English (United States)">
+                                English (United States)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="fr-FR" data-label="Français (France)">
+                                Français (France)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="de-DE" data-label="Deutsch (Deutschland)">
+                                Deutsch (Deutschland)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="hi-IN" data-label="हिन्दी (भारत)">
+                                हिन्दी (भारत)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="id-ID" data-label="Indonesia (Indonesia)">
+                                Indonesia (Indonesia)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="it-IT" data-label="Italiano (Italia)">
+                                Italiano (Italia)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="ja-JP" data-label="日本語 (日本)">
+                                日本語 (日本)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="ko-KR" data-label="한국어(대한민국)">
+                                한국어(대한민국)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="pt-BR" data-label="Português (Brasil)">
+                                Português (Brasil)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="es-419" data-label="Español (Latinoamérica)">
+                                Español (Latinoamérica)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                            <button type="button" class="an-lang-opt" data-lang="es-ES" data-label="Español (España)">
+                                Español (España)
+                                <svg class="an-lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -1524,7 +1919,7 @@
             <div id="search-form">
                 <div class="input-wrap">
                     <svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-                    <input type="text" id="category-input" placeholder="Business category, e.g. salon"/>
+                    <input type="text" id="category-input" placeholder="Business category, e.g. restaurants"/>
                 </div>
                 <button id="search-btn" class="btn-term btn-primary">SCAN</button>
                 <div class="sf-divider" aria-hidden="true"></div>
@@ -1533,7 +1928,7 @@
                     <!-- Steps one mile at a time (1609m), so the label lands on whole
                          numbers. Default 16093m is exactly 10 miles. app.js lowers
                          max to the plan's cap. -->
-                    <input type="range" id="radius-slider" min="1609" max="24140" step="1609" value="16093"/>
+                    <input type="range" id="radius-slider" min="1609" max="48280" step="1609" value="16093"/>
                     <span id="radius-label">10mi</span>
                 </div>
                 <button id="locate-btn" class="btn-term" title="Center on my location">
@@ -1557,25 +1952,28 @@
         <aside id="leads-section">
             <div id="leads-header">
                 <h2 class="ls-title">Results</h2>
+                <span class="ls-count-badge hidden" id="lead-count-badge">0 LEADS</span>
                 <div id="header-btns">
-                    <button id="clear-btn" class="btn-term hidden">Clear</button>
+                    <button id="save-btn" class="btn-term hidden" disabled title="Check leads below, or use the header checkbox to select all">Save</button>
+                    <button id="clear-btn" class="btn-term hidden" title="Clears checked leads, or everything if none are checked">Clear</button>
                 </div>
             </div>
             <div id="filter-wrap" class="hidden">
-                <div class="input-wrap filter-input-wrap">
-                    <span class="prompt">$</span>
-                    <input type="text" id="filter-input" placeholder="Filter results"/>
-                </div>
+                <select id="sort-select" class="sort-select">
+                    <option value="">Default order</option>
+                    <option value="name-asc">Name (A&ndash;Z)</option>
+                    <option value="reviews-desc">Most reviews</option>
+                </select>
             </div>
             <div id="table-container">
                 <table id="leads-table">
                     <thead>
                         <tr>
+                            <th class="select-col"><input type="checkbox" id="select-all-leads" title="Select all"></th>
                             <th data-col="name">NAME <span class="sort-icon"></span></th>
                             <th data-col="phone">PHONE <span class="sort-icon"></span></th>
                             <th data-col="rating">RATING <span class="sort-icon"></span></th>
                             <th data-col="city">ADDRESS <span class="sort-icon"></span></th>
-                            <th class="save-col">SAVE</th>
                         </tr>
                     </thead>
                     <tbody id="leads-tbody">
@@ -1634,6 +2032,186 @@
     </footer>
 
     <div id="toast-container"></div>
+
+    <!-- ===== SETTINGS MODAL ===== -->
+    <div id="settings-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+        <div class="settings-box">
+            <div class="settings-box-head">
+                <h2 id="settings-modal-title">Settings</h2>
+                <button type="button" class="settings-close" id="settings-close-btn" aria-label="Close settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="settings-box-body">
+                <nav class="settings-nav" id="settings-nav">
+                    <button type="button" class="settings-nav-item is-active" data-panel="account">Account</button>
+                    <button type="button" class="settings-nav-item" data-panel="connected">Connected accounts</button>
+                    <button type="button" class="settings-nav-item" data-panel="billing">Billing</button>
+                    <button type="button" class="settings-nav-item" data-panel="notifications">Notifications</button>
+                    <button type="button" class="settings-nav-item" data-panel="privacy">Privacy</button>
+                </nav>
+
+                <div class="settings-panels">
+
+                    <section class="settings-panel" data-panel="account">
+                        <h3>Account</h3>
+                        <p class="settings-blurb">Signed in as <strong id="settings-account-email"></strong></p>
+
+                        <h3>Password</h3>
+                        <p id="settings-pw-blurb" class="settings-blurb"></p>
+                        <div id="settings-pw-msg" class="settings-pw-msg hidden"></div>
+                        <form id="settings-pw-form">
+                            <div class="settings-form-group hidden" id="settings-current-pw-group">
+                                <label for="settings-current-pw">Current password</label>
+                                <input type="password" id="settings-current-pw" autocomplete="current-password">
+                            </div>
+                            <div class="settings-form-group">
+                                <label for="settings-new-pw">New password</label>
+                                <input type="password" id="settings-new-pw" minlength="8" autocomplete="new-password" placeholder="at least 8 characters">
+                            </div>
+                            <button type="submit" class="settings-pw-submit" id="settings-pw-btn">Set password</button>
+                        </form>
+                    </section>
+
+                    <section class="settings-panel hidden" data-panel="connected">
+                        <h3>Connected accounts</h3>
+                        <p class="settings-blurb">Connect a provider to log in faster next time, or disconnect one you no longer use.</p>
+
+                        <div class="settings-oauth-row" data-provider="google">
+                            <div class="settings-oauth-info">
+                                <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.259c-.806.54-1.837.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                                    <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                                </svg>
+                                <div>
+                                    <div class="settings-oauth-name">Google</div>
+                                    <div class="settings-oauth-status" data-role="status">Not connected</div>
+                                </div>
+                            </div>
+                            <button type="button" class="settings-btn" data-role="action">Connect</button>
+                        </div>
+
+                        {% if facebook_enabled %}
+                        <div class="settings-oauth-row" data-provider="facebook">
+                            <div class="settings-oauth-info">
+                                <svg viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                                </svg>
+                                <div>
+                                    <div class="settings-oauth-name">Facebook</div>
+                                    <div class="settings-oauth-status" data-role="status">Not connected</div>
+                                </div>
+                            </div>
+                            <button type="button" class="settings-btn" data-role="action">Connect</button>
+                        </div>
+                        {% endif %}
+
+                        {% if github_enabled %}
+                        <div class="settings-oauth-row" data-provider="github">
+                            <div class="settings-oauth-info">
+                                <svg viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.05-.02-2.06-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.09 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23.96-.27 1.98-.4 3-.41 1.02.01 2.04.14 3 .41 2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.81 1.1.81 2.22 0 1.61-.01 2.9-.01 3.29 0 .32.21.7.83.58C20.56 22.29 24 17.79 24 12.5 24 5.87 18.63.5 12 .5z"/>
+                                </svg>
+                                <div>
+                                    <div class="settings-oauth-name">GitHub</div>
+                                    <div class="settings-oauth-status" data-role="status">Not connected</div>
+                                </div>
+                            </div>
+                            <button type="button" class="settings-btn" data-role="action">Connect</button>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <section class="settings-panel hidden" data-panel="billing">
+                        <h3>Lead credits</h3>
+                        <p class="settings-used-label" id="settings-used-label"></p>
+                        <div class="settings-track"><div class="settings-fill" id="settings-fill"></div></div>
+                        <p class="settings-pct" id="settings-pct"></p>
+                        <div class="settings-billing-actions">
+                            <a href="/pricing" class="settings-btn settings-btn-primary" id="settings-buy-btn">Buy more credits</a>
+                        </div>
+
+                        <div id="settings-subscription-block" class="hidden">
+                            <h3>Subscription</h3>
+                            <div class="settings-plan-card">
+                                <div class="settings-plan-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+                                </div>
+                                <div class="settings-plan-info">
+                                    <div class="settings-plan-name" id="settings-plan-name"></div>
+                                    <div class="settings-plan-interval" id="settings-plan-interval"></div>
+                                    <div class="settings-plan-renew" id="settings-plan-renew"></div>
+                                </div>
+                                <button type="button" class="settings-btn" id="settings-adjust-plan-btn">Adjust plan</button>
+                            </div>
+
+                            <h3>Payment method</h3>
+                            <div class="settings-payment-row">
+                                <div class="settings-payment-info">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                    <span id="settings-payment-summary">No card on file</span>
+                                </div>
+                                <button type="button" class="settings-btn" id="settings-update-payment-btn">Update</button>
+                            </div>
+
+                            <h3>Invoices</h3>
+                            <div class="settings-invoices-wrap">
+                                <table class="settings-invoices-table" id="settings-invoices-table">
+                                    <thead><tr><th>Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+                                    <tbody id="settings-invoices-tbody"></tbody>
+                                </table>
+                                <p class="settings-blurb" id="settings-invoices-empty" style="display:none">No invoices yet.</p>
+                            </div>
+
+                            <h3 class="settings-danger-title">Cancellation</h3>
+                            <div class="settings-cancel-row">
+                                <div>
+                                    <div class="settings-cancel-label" id="settings-cancel-label">Cancel plan</div>
+                                    <p class="settings-blurb" id="settings-cancel-blurb"></p>
+                                </div>
+                                <button type="button" class="settings-btn settings-btn-danger" id="settings-cancel-btn">Cancel</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="settings-panel hidden" data-panel="notifications">
+                        <h3>Notifications</h3>
+                        <label class="settings-toggle-row">
+                            <input type="checkbox" id="settings-marketing-toggle">
+                            <span>
+                                <span class="settings-toggle-title">Product updates &amp; promotions</span>
+                                <span class="settings-toggle-sub">Occasional email about new features and offers. Account and billing email always send regardless of this setting.</span>
+                            </span>
+                        </label>
+                    </section>
+
+                    <section class="settings-panel hidden" data-panel="privacy">
+                        <h3>Privacy</h3>
+                        <p class="settings-blurb">
+                            <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> &middot;
+                            <a href="/terms" target="_blank" rel="noopener">Terms of Service</a>
+                        </p>
+
+                        <h3 class="settings-danger-title">Delete account</h3>
+                        <p class="settings-blurb">Permanently deletes your account, saved clients, and search history. This can't be undone.</p>
+                        <div id="settings-delete-msg" class="settings-pw-msg hidden"></div>
+                        <button type="button" class="settings-btn settings-btn-danger" id="settings-delete-open-btn">Delete my account</button>
+                        <div id="settings-delete-confirm" class="hidden">
+                            <label for="settings-delete-confirm-input">Type <strong id="settings-delete-email-hint"></strong> to confirm</label>
+                            <input type="text" id="settings-delete-confirm-input" autocomplete="off" spellcheck="false">
+                            <div class="settings-delete-confirm-actions">
+                                <button type="button" class="settings-btn" id="settings-delete-cancel-btn">Cancel</button>
+                                <button type="button" class="settings-btn settings-btn-danger" id="settings-delete-confirm-btn" disabled>Permanently delete</button>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         const ov = document.getElementById('landing-overlay');
@@ -1781,7 +2359,7 @@
             // no scan count anywhere, so the demo's size stays a server-side detail.
             function showDemoLimit() {
                 show('<div class="lp-demo-note">You\'ve reached the demo limit. '
-                    + '<a href="/signup">Create a free account</a> to keep scanning.</div>');
+                    + '<a href="/signup">Create an account</a> and buy a lead pack to keep scanning.</div>');
             }
 
             async function runScan() {
