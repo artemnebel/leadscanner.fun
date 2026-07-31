@@ -429,8 +429,10 @@ async def serve_how_it_works(request: Request):
     return templates.TemplateResponse("how-it-works.html", _ctx(request))
 
 @app.get("/cold-calling")
-async def serve_cold_calling(request: Request):
-    return templates.TemplateResponse("cold-calling.html", _ctx(request))
+async def redirect_cold_calling():
+    # Retired as a standalone page and folded into the blog; redirect rather
+    # than 404 since this URL was already indexed with its own SEO metadata.
+    return RedirectResponse("/blog/cold-calling-script-for-web-designers", status_code=301)
 
 @app.get("/contact")
 async def serve_contact(request: Request):
@@ -447,6 +449,10 @@ async def serve_blog_finding_businesses(request: Request):
 @app.get("/blog/cold-outreach-script-web-design")
 async def serve_blog_cold_outreach(request: Request):
     return templates.TemplateResponse("blog-cold-outreach-script-web-design.html", _ctx(request))
+
+@app.get("/blog/cold-calling-script-for-web-designers")
+async def serve_blog_cold_calling_script(request: Request):
+    return templates.TemplateResponse("blog-cold-calling-script-for-web-designers.html", _ctx(request))
 
 @app.get("/blog/signs-a-business-needs-a-website")
 async def serve_blog_signs_needs_website(request: Request):

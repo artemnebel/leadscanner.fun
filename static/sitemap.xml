@@ -26,12 +26,6 @@
   </url>
 
   <url>
-    <loc>https://leadscanner.fun/cold-calling</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
     <loc>https://leadscanner.fun/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -63,6 +57,12 @@
 
   <url>
     <loc>https://leadscanner.fun/blog/follow-up-system-freelance-web-design</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://leadscanner.fun/blog/cold-calling-script-for-web-designers</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

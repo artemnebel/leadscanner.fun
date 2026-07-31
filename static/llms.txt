@@ -18,7 +18,7 @@ Lead Scanner uses live Google Places data (not archived databases), so every res
 - Live data from Google Maps — never stale
 - Only returns businesses with a phone number AND no website (no wasted leads)
 - Export to CSV, JSON, or XLSX
-- Free to start with no credit card required; Pro unlocks unlimited scans with no waiting
+- Pay-per-lead: one-time packs or monthly subscriptions, plus a short free demo scan with no signup required
 
 ## Pricing
 
@@ -34,9 +34,8 @@ See https://leadscanner.fun/pricing for full details.
 
 - [Home / scanner](https://leadscanner.fun/): the live map-based scanner
 - [How it works](https://leadscanner.fun/how-it-works): step-by-step walkthrough
-- [Pricing](https://leadscanner.fun/pricing): Free vs Pro plans
-- [Cold calling guide](https://leadscanner.fun/cold-calling): how to convert scanned leads
-- [Blog](https://leadscanner.fun/blog): guides on finding, pitching, pricing, and following up with web design clients
+- [Pricing](https://leadscanner.fun/pricing): lead packs and subscription plans
+- [Blog](https://leadscanner.fun/blog): guides on finding, pitching, pricing, and following up with web design clients, including a [cold calling script](https://leadscanner.fun/blog/cold-calling-script-for-web-designers)
 - [About](https://leadscanner.fun/about): background on the project
 - [Contact](https://leadscanner.fun/contact): support and feedback
 
