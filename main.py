@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Form, Depends, Request
+from fastapi import FastAPI, HTTPException, Form, Depends, Request, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -1138,26 +1138,110 @@ async def admin_send_promo(
     db.commit()
     return {"sent": sent, "failed": failed, "results": results}
 
+def _month_add(d: date, months: int) -> date:
+    """First-of-month, `months` away from d's month (may be negative)."""
+    total = d.year * 12 + (d.month - 1) + months
+    return date(total // 12, total % 12 + 1, 1)
+
 @app.get("/api/admin/stats")
-async def admin_stats(user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def admin_stats(
+    range_param: str = Query("month", alias="range"),  # NOT named `range` — that would shadow the builtin for the whole function body
+    anchor: str | None = None,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Signup/scan activity for a navigable period, so old data is never lost —
+    every past week/month/year stays reachable via `anchor`, since SearchLog and
+    User rows are never pruned. `range` is week|month|year; daily buckets for
+    week/month, monthly buckets (rolled up from daily rows in Python, so this
+    works the same on sqlite and Postgres) for year."""
     if not user or user.email != ADMIN_EMAIL:
         raise HTTPException(status_code=403, detail="Forbidden.")
-    days = 30
-    start = date.today() - timedelta(days=days - 1)
 
-    def daily(rows):
-        by_day = {str(d)[:10]: int(c or 0) for d, c in rows}
-        return [
-            {"date": str(start + timedelta(days=i)), "count": by_day.get(str(start + timedelta(days=i)), 0)}
-            for i in range(days)
-        ]
+    range_ = range_param if range_param in ("week", "month", "year") else "month"
+    today = date.today()
+    try:
+        anchor_date = date.fromisoformat(anchor) if anchor else today
+    except ValueError:
+        anchor_date = today
 
-    signups = db.query(func.date(User.created_at), func.count(User.id)) \
-        .filter(User.created_at >= start).group_by(func.date(User.created_at)).all()
-    searches = db.query(func.date(SearchLog.created_at), func.count(SearchLog.id)) \
-        .filter(SearchLog.created_at >= start).group_by(func.date(SearchLog.created_at)).all()
+    if range_ == "week":
+        period_start = anchor_date - timedelta(days=anchor_date.weekday())  # Monday
+        period_end_excl = period_start + timedelta(days=7)
+        label = f"{period_start.strftime('%b %d')} – {(period_end_excl - timedelta(days=1)).strftime('%b %d, %Y')}"
+        prev_anchor = period_start - timedelta(days=7)
+        next_anchor = period_start + timedelta(days=7)
+    elif range_ == "year":
+        period_start = date(anchor_date.year, 1, 1)
+        period_end_excl = date(anchor_date.year + 1, 1, 1)
+        label = str(anchor_date.year)
+        prev_anchor = date(anchor_date.year - 1, 1, 1)
+        next_anchor = date(anchor_date.year + 1, 1, 1)
+    else:  # month
+        period_start = anchor_date.replace(day=1)
+        period_end_excl = _month_add(period_start, 1)
+        label = period_start.strftime("%B %Y")
+        prev_anchor = _month_add(period_start, -1)
+        next_anchor = period_end_excl
 
-    return {"signups_by_day": daily(signups), "searches_by_day": daily(searches)}
+    def daily_counts(model_date_col):
+        rows = db.query(func.date(model_date_col), func.count()) \
+            .filter(model_date_col >= period_start, model_date_col < period_end_excl) \
+            .group_by(func.date(model_date_col)).all()
+        return {str(d)[:10]: int(c or 0) for d, c in rows}
+
+    signup_days = daily_counts(User.created_at)
+    search_days = daily_counts(SearchLog.created_at)
+
+    if range_ == "year":
+        # Roll the day-level counts up into 12 monthly buckets in Python —
+        # keeps this portable across sqlite (dev) and Postgres (prod) instead
+        # of relying on a Postgres-only date_trunc.
+        month_starts = [_month_add(period_start, i) for i in range(12)]
+        def bucket(by_day):
+            out = []
+            for i, m in enumerate(month_starts):
+                m_end_excl = month_starts[i + 1] if i + 1 < 12 else period_end_excl
+                total = sum(c for day, c in by_day.items() if m.isoformat() <= day < m_end_excl.isoformat())
+                out.append({"date": f"{m.year:04d}-{m.month:02d}", "label": m.strftime("%b"), "count": total})
+            return out
+        buckets_signups = bucket(signup_days)
+        buckets_searches = bucket(search_days)
+    else:
+        n_days = (period_end_excl - period_start).days
+        bucket_days = [period_start + timedelta(days=i) for i in range(n_days)]
+        def bucket(by_day):
+            return [
+                {"date": str(d), "label": d.strftime("%-d") if range_ == "month" else d.strftime("%a"),
+                 "count": by_day.get(str(d), 0)}
+                for d in bucket_days
+            ]
+        buckets_signups = bucket(signup_days)
+        buckets_searches = bucket(search_days)
+
+    # The earliest a "prev" click can usefully go: before the very first user's
+    # signup there is nothing to show. Still allowed (just renders empty) —
+    # this is only used to grey out the arrow client-side.
+    earliest = db.query(func.min(User.created_at)).scalar()
+    earliest_date = earliest.date() if earliest else today
+
+    return {
+        "range": range_,
+        "anchor": str(period_start),
+        "label": label,
+        "signups_by_day": buckets_signups,
+        "searches_by_day": buckets_searches,
+        "totals": {
+            "signups": sum(d["count"] for d in buckets_signups),
+            "scans": sum(d["count"] for d in buckets_searches),
+        },
+        "nav": {
+            "prev": str(prev_anchor),
+            "next": str(next_anchor),
+            "can_next": next_anchor <= today,
+            "has_earlier_data": earliest_date < period_start,
+        },
+    }
 
 @app.get("/api/admin/searches")
 async def admin_searches(user=Depends(get_current_user), db: Session = Depends(get_db)):

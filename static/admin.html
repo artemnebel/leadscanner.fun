@@ -15,200 +15,379 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
     <link rel="icon" href="/favicon.ico"/>
     <link rel="shortcut icon" href="/favicon.ico"/>
-    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <link rel="stylesheet" href="/static/page.css?v={{ version }}"/>
     <style>
-        /* ── KPI cards ─────────────────────────────────────────────── */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 0.75rem;
-            margin-bottom: 1.25rem;
-        }
-        .kpi-card {
-            border: 1px solid var(--muted);
-            padding: 0.9rem 1rem;
-            background: #060a06;
-            transition: border-color 0.18s ease;
-        }
-        .kpi-card:hover { border-color: var(--green); }
-        .kpi-label {
-            font-size: 0.62rem;
-            color: var(--muted);
-            letter-spacing: 0.12em;
-            margin-bottom: 0.35rem;
-        }
-        .kpi-val {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--green);
-            font-variant-numeric: tabular-nums;
-            line-height: 1;
-        }
-        .kpi-val.accent { color: var(--amber); }
+    body { background: #000; }
 
-        /* ── Charts ────────────────────────────────────────────────── */
-        .chart-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-        @media (max-width: 720px) { .chart-row { grid-template-columns: 1fr; } }
-        .chart-panel { border: 1px solid var(--muted); padding: 0.9rem 1rem; background: #060a06; }
-        .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.6rem; }
-        .chart-title { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.12em; }
-        .chart-total { font-size: 0.7rem; color: var(--green); font-variant-numeric: tabular-nums; }
-        .bars { display: flex; align-items: flex-end; gap: 2px; height: 64px; }
-        .bar { flex: 1 1 0; min-width: 2px; background: var(--muted); transition: background 0.15s ease; }
-        .bar:hover { background: var(--amber); }
-        .bar.hot { background: var(--green); }
-        .chart-axis { display: flex; justify-content: space-between; font-size: 0.55rem; color: var(--muted); margin-top: 4px; }
+    /* ===== APP NAV (same component as the app view / clients page) ===== */
+    #app-nav {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 20px; height: 62px; padding: 0 22px;
+        background: #000; border-bottom: 1px solid rgba(255,255,255,0.08);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    .an-left, .an-right { display: flex; align-items: center; gap: 8px; }
+    .an-brand {
+        display: inline-flex; align-items: center; gap: 10px;
+        margin-right: 14px; cursor: pointer; user-select: none; text-decoration: none;
+    }
+    .an-brand svg { width: 21px; height: 21px; color: #3ee87b; flex-shrink: 0; }
+    .an-brand span { color: #fff; font-size: 16.5px; font-weight: 700; letter-spacing: -0.02em; }
+    .an-link {
+        padding: 8px 13px; border-radius: 8px; text-decoration: none;
+        color: #98a2b3; font-size: 14.5px; font-weight: 500; white-space: nowrap;
+        transition: color 0.15s ease, background 0.15s ease;
+    }
+    .an-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
+    .an-link.is-active { color: #3ee87b; }
+    .an-account {
+        padding: 8px 18px; border-radius: 999px; text-decoration: none;
+        border: 1px solid rgba(255,255,255,0.22); color: #fff;
+        font-size: 14.5px; font-weight: 600;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .an-account:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.4); }
+    .an-account.an-avatar {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 36px; height: 36px; padding: 0; border-radius: 50%;
+        background: rgba(62,232,123,0.10); border: 1px solid rgba(62,232,123,0.55);
+        color: #3ee87b; font-size: 15px; font-weight: 700; line-height: 1;
+    }
+    .an-account.an-avatar:hover { background: rgba(62,232,123,0.2); border-color: #3ee87b; }
 
-        /* ── Users link card ───────────────────────────────────────── */
-        .users-link-blurb { color: var(--muted); font-size: 0.82rem; margin: 0 0 0.75rem; line-height: 1.6; }
-        .admin-btn {
-            display: inline-block;
-            background: var(--bg);
-            border: 1px solid var(--muted);
-            color: var(--green);
-            font-family: inherit;
-            font-size: 0.82rem;
-            letter-spacing: 0.06em;
-            padding: 9px 18px;
-            cursor: pointer;
-            text-decoration: none;
-            white-space: nowrap;
-            transition: border-color 0.18s ease, color 0.18s ease;
-        }
-        .admin-btn:hover { border-color: var(--green); color: var(--amber); }
+    @media (max-width: 640px) {
+        #app-nav { flex-wrap: wrap; height: auto; min-height: 62px; padding: 10px 14px; gap: 8px; }
+        .an-left, .an-right { flex-wrap: wrap; row-gap: 6px; }
+        .an-link-secondary { display: none; }
+        .an-right .an-link { padding: 7px 10px; font-size: 13.5px; }
+    }
 
-        /* ── Tables (top categories + recent searches) ─────────────── */
-        .table-scroll { max-height: 460px; overflow-y: auto; overflow-x: auto; border: 1px solid #111; }
-        .admin-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.82rem;
-        }
-        .admin-table th {
-            text-align: left;
-            padding: 8px 10px;
-            border-bottom: 1px solid var(--green);
-            color: var(--muted);
-            letter-spacing: 0.08em;
-            font-weight: 700;
-            white-space: nowrap;
-            position: sticky;
-            top: 0;
-            background: var(--bg);
-            z-index: 2;
-        }
-        .admin-table td {
-            padding: 7px 10px;
-            border-bottom: 1px solid #111;
-            color: var(--green);
-            font-variant-numeric: tabular-nums;
-            white-space: nowrap;
-        }
-        .admin-table tbody tr:nth-child(even) td { background: #070c07; }
-        .col-num { text-align: right; }
-        .muted   { color: var(--muted); }
+    /* ===== ACCOUNT DROPDOWN (minimal: avatar + email + log out) ===== */
+    .an-user-wrap { position: relative; }
+    .an-dropdown {
+        position: absolute; top: calc(100% + 10px); right: 0; z-index: 1000;
+        width: 260px; background: #101418; border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+        padding: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    .an-dropdown.hidden { display: none; }
+    .an-dd-head { display: flex; align-items: center; gap: 12px; padding: 12px 10px 14px; }
+    .an-dd-avatar {
+        width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(62,232,123,0.12); border: 1px solid rgba(62,232,123,0.5);
+        color: #3ee87b; font-size: 16px; font-weight: 700;
+    }
+    .an-dd-email { color: #fff; font-size: 14px; font-weight: 600; word-break: break-all; line-height: 1.3; }
+    .an-dd-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 6px 8px; }
+    .an-dd-item {
+        display: flex; align-items: center; gap: 12px; width: 100%;
+        padding: 10px 12px; border-radius: 8px; cursor: pointer;
+        background: none; border: none; color: #e7ebf0;
+        font-family: inherit; font-size: 14px; text-align: left; text-decoration: none;
+    }
+    .an-dd-item:hover { background: rgba(255,255,255,0.07); }
+    .an-dd-icon { width: 18px; height: 18px; flex-shrink: 0; color: #98a2b3; }
+    .an-dd-danger { color: #ff6b6b; }
+    .an-dd-danger .an-dd-icon { color: #ff6b6b; }
+    .an-dd-danger:hover { background: rgba(255,107,107,0.08); }
+
+    /* ===== Overview page (ov-*) ===== */
+    .ov-shell { max-width: 1280px; padding-top: 32px; }
+    .ov-eyebrow {
+        margin: 0; color: #3ee87b; font: 500 12px 'JetBrains Mono', monospace;
+        letter-spacing: 0.16em; text-transform: uppercase;
+    }
+    .ov-title {
+        margin: 10px 0 28px; color: #fff; letter-spacing: -0.02em;
+        font: 700 clamp(28px, 3.4vw, 38px)/1.2 'Space Grotesk', sans-serif;
+    }
+    .ov-loading { padding: 3rem 0; color: #7c8798; font-size: 14px; }
+
+    /* ── KPI cards ─────────────────────────────────────────────────── */
+    .ov-kpi-grid {
+        display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px;
+        margin-bottom: 26px;
+    }
+    @media (max-width: 1000px) { .ov-kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 560px) { .ov-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    .ov-kpi {
+        min-width: 0; padding: 18px 18px; border-radius: 14px;
+        background: #0b0c0e; border: 1px solid rgba(255,255,255,0.08);
+        transition: border-color 0.15s ease;
+    }
+    .ov-kpi:hover { border-color: rgba(62,232,123,0.4); }
+    .ov-kpi-label {
+        color: #7c8798; font: 500 11px 'JetBrains Mono', monospace;
+        letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .ov-kpi-val {
+        margin-top: 10px; color: #fff; font-variant-numeric: tabular-nums;
+        font: 700 28px 'Space Grotesk', sans-serif;
+    }
+    .ov-kpi-val.accent { color: #ffb545; }
+    .ov-kpi-val.green { color: #3ee87b; }
+
+    /* ── Chart controls + panels ──────────────────────────────────── */
+    .ov-chart-controls {
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 12px; margin-bottom: 14px;
+    }
+    .ov-range-toggle { display: inline-flex; gap: 4px; background: #0b0c0e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 3px; }
+    .ov-range-btn {
+        border: none; background: none; color: #7c8798; cursor: pointer;
+        padding: 6px 14px; border-radius: 8px; font: 600 13px 'Inter', sans-serif;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .ov-range-btn:hover { color: #cbd2dc; }
+    .ov-range-btn.is-active { background: rgba(62,232,123,0.14); color: #3ee87b; }
+    .ov-period-nav { display: inline-flex; align-items: center; gap: 10px; }
+    .ov-period-btn {
+        width: 30px; height: 30px; border-radius: 8px;
+        background: #0b0c0e; border: 1px solid rgba(255,255,255,0.1); color: #cbd2dc;
+        cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+        transition: border-color 0.15s ease, opacity 0.15s ease;
+    }
+    .ov-period-btn:hover:not(:disabled) { border-color: rgba(62,232,123,0.5); color: #3ee87b; }
+    .ov-period-btn:disabled { opacity: 0.35; cursor: default; }
+    .ov-period-label {
+        min-width: 140px; text-align: center; color: #fff;
+        font: 700 14px 'Space Grotesk', sans-serif;
+    }
+
+    .ov-chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 30px; }
+    @media (max-width: 800px) { .ov-chart-row { grid-template-columns: 1fr; } }
+    .ov-chart-panel {
+        padding: 20px 22px; border-radius: 14px;
+        background: #0b0c0e; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .ov-chart-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+    .ov-chart-title { color: #fff; font: 700 15px 'Space Grotesk', sans-serif; }
+    .ov-chart-total { color: #7c8798; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .ov-bars { display: flex; align-items: flex-end; gap: 3px; height: 90px; }
+    .ov-bar {
+        flex: 1 1 0; min-width: 2px; border-radius: 2px 2px 0 0;
+        background: rgba(62,232,123,0.22); transition: background 0.15s ease;
+    }
+    .ov-bar:hover { background: rgba(62,232,123,0.55); }
+    .ov-bar.is-peak { background: #3ee87b; }
+    .ov-chart-axis { display: flex; justify-content: space-between; margin-top: 8px; color: #5b626d; font-size: 11.5px; }
+    .ov-chart-labels { display: flex; gap: 3px; margin-top: 6px; }
+    .ov-chart-labels span { flex: 1 1 0; text-align: center; color: #5b626d; font-size: 10.5px; }
+
+    /* ── Users section ─────────────────────────────────────────────── */
+    .ov-section { margin-bottom: 34px; }
+    .ov-section-head {
+        display: flex; align-items: flex-end; justify-content: space-between;
+        flex-wrap: wrap; gap: 14px; margin-bottom: 18px;
+    }
+    .ov-h2 { margin: 0 0 6px; color: #fff; font: 700 22px 'Space Grotesk', sans-serif; }
+    .ov-h2-sub { margin: 0; color: #7c8798; font-size: 14px; max-width: 520px; line-height: 1.5; }
+    .ov-section-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .ov-search {
+        width: 220px; padding: 9px 14px; border-radius: 9px;
+        background: #0b0c0e; border: 1px solid rgba(255,255,255,0.12); color: #fff;
+        font-family: inherit; font-size: 14px;
+    }
+    .ov-search::placeholder { color: #5b626d; }
+    .ov-search:focus { outline: none; border-color: rgba(62,232,123,0.5); }
+    .ov-btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 9px 16px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+        background: #0b0c0e; border: 1px solid rgba(255,255,255,0.14); color: #cbd2dc;
+        font-family: inherit; font-size: 13.5px; font-weight: 600;
+        transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .ov-btn:hover { border-color: rgba(255,255,255,0.35); color: #fff; }
+    .ov-btn svg { width: 14px; height: 14px; }
+    .ov-link { color: #3ee87b; font-size: 13.5px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+    .ov-link:hover { text-decoration: underline; }
+
+    .ov-table-wrap {
+        border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: #0b0c0e;
+        overflow: hidden;
+    }
+    .ov-table-scroll { max-height: 480px; overflow-y: auto; overflow-x: auto; }
+    .ov-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .ov-table th {
+        position: sticky; top: 0; z-index: 1; background: #0b0c0e;
+        text-align: left; padding: 12px 16px; white-space: nowrap;
+        color: #7c8798; font: 600 11px 'JetBrains Mono', monospace;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .ov-table td {
+        padding: 12px 16px; white-space: nowrap; color: #cbd2dc;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        font-variant-numeric: tabular-nums;
+    }
+    .ov-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+    .ov-table tbody tr:last-child td { border-bottom: none; }
+    .ov-col-num { text-align: right; }
+    .ov-cell-email { max-width: 260px; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+    .ov-empty-row td { color: #5b626d; text-align: center; padding: 30px 16px; }
+
+    .ov-pill {
+        display: inline-flex; align-items: center; padding: 3px 11px; border-radius: 999px;
+        font: 700 11px 'JetBrains Mono', monospace; letter-spacing: 0.05em;
+    }
+    .ov-pill-paid { color: #3ee87b; border: 1px solid rgba(62,232,123,0.45); background: rgba(62,232,123,0.08); }
+    .ov-pill-free { color: #7c8798; border: 1px solid rgba(255,255,255,0.16); }
+
+    /* ── Bottom two-column cards ───────────────────────────────────── */
+    .ov-bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 800px) { .ov-bottom-row { grid-template-columns: 1fr; } }
+    .ov-card {
+        border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: #0b0c0e;
+        padding: 20px 22px;
+    }
+    .ov-card h3 { margin: 0 0 14px; color: #fff; font: 700 15px 'Space Grotesk', sans-serif; }
+    .ov-cat-row {
+        display: flex; align-items: center; gap: 12px; padding: 8px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13.5px;
+    }
+    .ov-cat-row:last-child { border-bottom: none; }
+    .ov-cat-rank { color: #5b626d; width: 16px; flex-shrink: 0; }
+    .ov-cat-name { flex: 1; color: #e7ebf0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ov-cat-count { color: #3ee87b; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .ov-search-row {
+        display: flex; align-items: center; gap: 12px; padding: 8px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;
+    }
+    .ov-search-row:last-child { border-bottom: none; }
+    .ov-search-when { color: #5b626d; flex-shrink: 0; width: 100px; font-variant-numeric: tabular-nums; }
+    .ov-search-email { flex: 1; color: #e7ebf0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ov-search-cat { color: #7c8798; flex-shrink: 0; }
     </style>
 </head>
-<body class="page">
+<body>
     {% if maintenance %}{% include '_maintenance_banner.html' %}{% endif %}
-    <div id="crt-overlay"></div>
 
-    <header id="top-bar">
-        <div id="logo">
-            <span id="logo-blink">█</span>
-            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+    <nav id="app-nav">
+        <div class="an-left">
+            <a href="/" class="an-brand">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5.5 6.5 11 12l-5.5 5.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/>
+                    <rect x="12.6" y="15.3" width="7" height="2.3" fill="currentColor"/>
+                </svg>
+                <span>LeadScanner</span>
+            </a>
         </div>
-    </header>
-
-    <nav id="main-nav">
-        <div class="nav-left">
-            <a href="/" class="nav-link">[ HOME ]</a>
-            <a href="/about" class="nav-link">[ ABOUT ]</a>
-            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
-        </div>
-        <div class="nav-right">
-            <a href="/contact" class="nav-link">[ CONTACT ]</a>
-            <a href="/pricing" class="nav-link">[ PRICING ]</a>
-            <a href="/dashboard" class="nav-link" id="nav-auth-link">[ ACCOUNT ]</a>
+        <div class="an-right">
+            <a href="/" class="an-link an-link-secondary">Home</a>
+            <a href="/pricing" class="an-link an-link-secondary">Pricing</a>
+            <a href="/admin" class="an-link is-active">Admin</a>
+            <div class="an-user-wrap" id="an-user-wrap">
+                <a href="/login" class="an-account" id="nav-auth-link" data-plain="1">Log in</a>
+                <div class="an-dropdown hidden" id="an-dropdown" role="menu" aria-hidden="true">
+                    <div class="an-dd-panel" id="an-dd-panel-main">
+                        <div class="an-dd-head">
+                            <span class="an-dd-avatar" id="an-dd-avatar"></span>
+                            <span class="an-dd-email" id="an-dd-email"></span>
+                        </div>
+                        <div class="an-dd-sep"></div>
+                        <a href="/dashboard" class="an-dd-item">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M6.5 19a6 6 0 0 1 11 0"/></svg>
+                            My account
+                        </a>
+                        <div class="an-dd-sep"></div>
+                        <button type="button" class="an-dd-item an-dd-danger" id="an-dd-logout">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Log out
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 
-    <main class="page-content">
-        <h1 class="page-title">&gt; ADMIN.EXE</h1>
+    <main class="page-content ov-shell">
+        <p class="ov-eyebrow">Admin</p>
+        <h1 class="ov-title">Overview</h1>
 
-        <div id="admin-loading" class="page-section">
-            <p>LOADING...</p>
-        </div>
+        <div id="ov-loading" class="ov-loading">Loading…</div>
 
-        <div id="admin-content" style="display:none">
+        <div id="ov-content" style="display:none">
+            <div class="ov-kpi-grid" id="ov-kpi-grid"></div>
 
-            <div class="page-section">
-                <h2>&gt; OVERVIEW</h2>
-                <div class="kpi-grid" id="kpi-grid"></div>
-                <div class="chart-row">
-                    <div class="chart-panel">
-                        <div class="chart-head">
-                            <span class="chart-title">SIGNUPS (30D)</span>
-                            <span class="chart-total" id="chart-signups-total"></span>
-                        </div>
-                        <div class="bars" id="chart-signups"></div>
-                        <div class="chart-axis"><span id="chart-signups-start"></span><span>today</span></div>
+            <div class="ov-chart-controls">
+                <div class="ov-range-toggle" id="ov-range-toggle">
+                    <button type="button" class="ov-range-btn" data-range="week">Week</button>
+                    <button type="button" class="ov-range-btn is-active" data-range="month">Month</button>
+                    <button type="button" class="ov-range-btn" data-range="year">Year</button>
+                </div>
+                <div class="ov-period-nav">
+                    <button type="button" class="ov-period-btn" id="ov-prev" title="Previous period" aria-label="Previous period">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <span class="ov-period-label" id="ov-period-label">—</span>
+                    <button type="button" class="ov-period-btn" id="ov-next" title="Next period" aria-label="Next period">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="ov-chart-row">
+                <div class="ov-chart-panel">
+                    <div class="ov-chart-head">
+                        <span class="ov-chart-title">Signups</span>
+                        <span class="ov-chart-total" id="ov-signups-total"></span>
                     </div>
-                    <div class="chart-panel">
-                        <div class="chart-head">
-                            <span class="chart-title">SCANS (30D)</span>
-                            <span class="chart-total" id="chart-scans-total"></span>
-                        </div>
-                        <div class="bars" id="chart-scans"></div>
-                        <div class="chart-axis"><span id="chart-scans-start"></span><span>today</span></div>
+                    <div class="ov-bars" id="ov-chart-signups"></div>
+                    <div class="ov-chart-labels" id="ov-labels-signups"></div>
+                </div>
+                <div class="ov-chart-panel">
+                    <div class="ov-chart-head">
+                        <span class="ov-chart-title">Scans</span>
+                        <span class="ov-chart-total" id="ov-scans-total"></span>
+                    </div>
+                    <div class="ov-bars" id="ov-chart-scans"></div>
+                    <div class="ov-chart-labels" id="ov-labels-scans"></div>
+                </div>
+            </div>
+
+            <div class="ov-section">
+                <div class="ov-section-head">
+                    <div>
+                        <h2 class="ov-h2">Users</h2>
+                        <p class="ov-h2-sub">Activity, plan, and scans at a glance. <a href="/admin/users" class="ov-link">Manage users →</a> for scan caps, promo email, and delete.</p>
+                    </div>
+                    <div class="ov-section-tools">
+                        <input type="text" class="ov-search" id="ov-user-search" placeholder="Search email…" autocomplete="off">
+                        <button type="button" class="ov-btn" id="ov-export-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Export CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="ov-table-wrap">
+                    <div class="ov-table-scroll">
+                        <table class="ov-table">
+                            <thead>
+                                <tr><th>Email</th><th>Plan</th><th class="ov-col-num">Scans</th><th class="ov-col-num">Leads</th><th>Joined</th><th></th></tr>
+                            </thead>
+                            <tbody id="ov-user-body"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <div class="page-section">
-                <h2>&gt; USERS</h2>
-                <p class="users-link-blurb">All users and their info — activity, per-user details, scan caps, CSV export, and promo email sending — live on a dedicated admin page.</p>
-                <a href="/admin/users" class="admin-btn">[ MANAGE USERS → ]</a>
-            </div>
-
-            <div class="page-section">
-                <h2>&gt; TOP CATEGORIES</h2>
-                <div style="overflow-x:auto">
-                    <table class="admin-table">
-                        <thead>
-                            <tr><th>#</th><th>CATEGORY</th><th class="col-num">SEARCHES</th></tr>
-                        </thead>
-                        <tbody id="top-cat-body"></tbody>
-                    </table>
+            <div class="ov-bottom-row">
+                <div class="ov-card">
+                    <h3>Top categories</h3>
+                    <div id="ov-top-categories"></div>
+                </div>
+                <div class="ov-card">
+                    <h3>Recent searches</h3>
+                    <div id="ov-recent-searches"></div>
                 </div>
             </div>
-
-            <div class="page-section">
-                <h2>&gt; RECENT SEARCHES</h2>
-                <div class="table-scroll">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>#</th><th>WHEN</th><th>EMAIL</th>
-                                <th>CATEGORY</th><th>RADIUS</th><th class="col-num">RESULTS</th>
-                            </tr>
-                        </thead>
-                        <tbody id="search-table-body"></tbody>
-                    </table>
-                </div>
-            </div>
-
         </div>
     </main>
 
@@ -218,77 +397,178 @@
         const token = getToken();
         if (!token) { window.location.href = '/login'; return; }
 
-        // ── Fetch users (for KPI aggregates) ───────────────────────
         let users;
         try {
             const res = await fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + token } });
             if (res.status === 401 || res.status === 403) { window.location.href = '/login'; return; }
             users = await res.json();
         } catch (e) {
-            document.getElementById('admin-loading').textContent = 'ERROR: Could not load admin data.';
+            document.getElementById('ov-loading').textContent = 'Error: could not load admin data.';
             return;
         }
 
-        document.getElementById('admin-loading').style.display = 'none';
-        document.getElementById('admin-content').style.display = 'block';
+        document.getElementById('ov-loading').style.display = 'none';
+        document.getElementById('ov-content').style.display = 'block';
 
         // ── Helpers ────────────────────────────────────────────────
         const parseDate = (s) => s ? new Date(s.replace(' ', 'T')) : null;
         const DAY = 86400000;
         const now = Date.now();
-        const fmtDateTime = (s) => s ? s.slice(0, 16).replace('T', ' ') : '-';
-        function el(tag, cls, text) {
-            const n = document.createElement(tag);
-            if (cls) n.className = cls;
-            if (text != null) n.textContent = text;
-            return n;
-        }
+        const fmtDate = (s) => s ? s.slice(0, 10) : '-';
+        const fmtDateTime = (s) => s ? s.slice(5, 16).replace('T', ' ') : '-';
 
         // ── KPI cards ──────────────────────────────────────────────
         const sum = (arr, f) => arr.reduce((a, u) => a + (f(u) || 0), 0);
         const within7 = (s) => { const d = parseDate(s); return d && (now - d.getTime()) <= 7 * DAY; };
         const kpis = [
-            { label: 'TOTAL USERS', val: users.length },
-            { label: 'NEW (7D)', val: users.filter(u => within7(u.created_at)).length },
-            { label: 'ACTIVE (7D)', val: users.filter(u => within7(u.last_active)).length },
-            { label: 'TOTAL SCANS', val: sum(users, u => u.total_scans) },
-            { label: 'LEADS PULLED', val: sum(users, u => u.leads_found), accent: true },
-            { label: 'PAID USERS', val: users.filter(u => u.has_stripe).length },
-            { label: 'EMAILS SENT', val: users.filter(u => u.promo_sent_at).length, accent: true },
+            { label: 'Total users', val: users.length },
+            { label: 'New (7d)', val: users.filter(u => within7(u.created_at)).length, cls: 'green' },
+            { label: 'Active (7d)', val: users.filter(u => within7(u.last_active)).length },
+            { label: 'Total scans', val: sum(users, u => u.total_scans) },
+            { label: 'Leads pulled', val: sum(users, u => u.leads_found), cls: 'accent' },
+            { label: 'Paid users', val: users.filter(u => u.has_stripe).length },
         ];
-        document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
-            `<div class="kpi-card"><div class="kpi-label">${k.label}</div>` +
-            `<div class="kpi-val${k.accent ? ' accent' : ''}">${k.val.toLocaleString()}</div></div>`
+        document.getElementById('ov-kpi-grid').innerHTML = kpis.map(k =>
+            `<div class="ov-kpi"><div class="ov-kpi-label">${k.label}</div>` +
+            `<div class="ov-kpi-val${k.cls ? ' ' + k.cls : ''}">${k.val.toLocaleString()}</div></div>`
         ).join('');
 
-        // ── Activity charts (30-day signups + scans) ───────────────
-        function renderBars(containerId, totalId, startId, series) {
+        // ── Charts: week / month / year, navigable, never loses history ──
+        let currentRange = 'month';
+        let currentAnchor = null;  // null = current period
+
+        function renderBars(containerId, labelsId, totalId, series, rangeMode) {
             const box = document.getElementById(containerId);
-            if (!box || !series || !series.length) return;
+            const labelsBox = document.getElementById(labelsId);
+            if (!box) return;
             const max = Math.max(1, ...series.map(d => d.count));
             const total = series.reduce((a, d) => a + d.count, 0);
             box.innerHTML = '';
+            labelsBox.innerHTML = '';
             series.forEach(d => {
                 const bar = document.createElement('div');
-                bar.className = 'bar' + (d.count === max && max > 0 ? ' hot' : '');
+                bar.className = 'ov-bar' + (d.count === max && max > 0 ? ' is-peak' : '');
                 bar.style.height = Math.max(2, Math.round((d.count / max) * 100)) + '%';
                 bar.title = d.date + ' — ' + d.count;
                 box.appendChild(bar);
+
+                // Per-bar labels make sense for week (7) and year (12); month (28-31)
+                // is too dense, so it keeps the start/end axis line instead.
+                if (rangeMode !== 'month') {
+                    const lab = document.createElement('span');
+                    lab.textContent = d.label;
+                    labelsBox.appendChild(lab);
+                }
             });
             document.getElementById(totalId).textContent = total.toLocaleString() + ' total';
-            document.getElementById(startId).textContent = series[0].date.slice(5);
         }
-        (async function loadCharts() {
-            try {
-                const r = await fetch('/api/admin/stats', { headers: { 'Authorization': 'Bearer ' + token } });
-                if (!r.ok) return;
-                const s = await r.json();
-                renderBars('chart-signups', 'chart-signups-total', 'chart-signups-start', s.signups_by_day);
-                renderBars('chart-scans', 'chart-scans-total', 'chart-scans-start', s.searches_by_day);
-            } catch (e) { /* charts optional */ }
-        })();
 
-        // ── Global sections: top categories + recent searches ──────
+        async function loadStats() {
+            const params = new URLSearchParams({ range: currentRange });
+            if (currentAnchor) params.set('anchor', currentAnchor);
+            const r = await fetch('/api/admin/stats?' + params.toString(), { headers: { 'Authorization': 'Bearer ' + token } });
+            if (!r.ok) return;
+            const s = await r.json();
+
+            document.getElementById('ov-period-label').textContent = s.label;
+            document.getElementById('ov-prev').disabled = false;
+            document.getElementById('ov-next').disabled = !s.nav.can_next;
+            document.getElementById('ov-prev').dataset.anchor = s.nav.prev;
+            document.getElementById('ov-next').dataset.anchor = s.nav.next;
+
+            renderBars('ov-chart-signups', 'ov-labels-signups', 'ov-signups-total', s.signups_by_day, s.range);
+            renderBars('ov-chart-scans', 'ov-labels-scans', 'ov-scans-total', s.searches_by_day, s.range);
+        }
+
+        document.querySelectorAll('.ov-range-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.range === currentRange) return;
+                document.querySelectorAll('.ov-range-btn').forEach(b => b.classList.remove('is-active'));
+                btn.classList.add('is-active');
+                currentRange = btn.dataset.range;
+                currentAnchor = null;  // jump back to "now" when switching granularity
+                loadStats();
+            });
+        });
+        document.getElementById('ov-prev').addEventListener('click', (e) => {
+            currentAnchor = e.currentTarget.dataset.anchor;
+            loadStats();
+        });
+        document.getElementById('ov-next').addEventListener('click', (e) => {
+            if (e.currentTarget.disabled) return;
+            currentAnchor = e.currentTarget.dataset.anchor;
+            loadStats();
+        });
+        loadStats().catch(() => {});
+
+        // ── Users table (search + export; full management lives on /admin/users) ──
+        let userFilter = '';
+        function computeRows() {
+            return users
+                .filter(u => u.email.toLowerCase().includes(userFilter))
+                .sort((a, b) => (parseDate(b.created_at)?.getTime() || 0) - (parseDate(a.created_at)?.getTime() || 0));
+        }
+
+        function renderUsers() {
+            const rows = computeRows();
+            const body = document.getElementById('ov-user-body');
+            if (!rows.length) {
+                body.innerHTML = '<tr class="ov-empty-row"><td colspan="6">No users match this search.</td></tr>';
+                return;
+            }
+            body.innerHTML = rows.map(u => {
+                const paid = u.has_stripe;
+                return `<tr>
+                    <td class="ov-cell-email" title="${u.email}">${u.email}</td>
+                    <td><span class="ov-pill ${paid ? 'ov-pill-paid' : 'ov-pill-free'}">${paid ? 'PAID' : 'FREE'}</span></td>
+                    <td class="ov-col-num">${(u.total_scans || 0).toLocaleString()}</td>
+                    <td class="ov-col-num">${(u.leads_found || 0).toLocaleString()}</td>
+                    <td>${fmtDate(u.created_at)}</td>
+                    <td><a class="ov-link" href="/admin/user?email=${encodeURIComponent(u.email)}">View →</a></td>
+                </tr>`;
+            }).join('');
+        }
+        renderUsers();
+
+        let filterTimer;
+        document.getElementById('ov-user-search').addEventListener('input', (e) => {
+            clearTimeout(filterTimer);
+            filterTimer = setTimeout(() => {
+                userFilter = e.target.value.trim().toLowerCase();
+                renderUsers();
+            }, 150);
+        });
+
+        // ── CSV export (respects the current search) ────────────────
+        function csvEscape(v) {
+            const s = v == null ? '' : String(v);
+            return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        }
+        document.getElementById('ov-export-btn').addEventListener('click', () => {
+            const cols = [
+                ['email', u => u.email],
+                ['plan', u => u.has_stripe ? 'paid' : 'free'],
+                ['total_scans', u => u.total_scans || 0],
+                ['leads_found', u => u.leads_found || 0],
+                ['joined', u => u.created_at || ''],
+                ['last_active', u => u.last_active || ''],
+            ];
+            const rows = computeRows();
+            const lines = [cols.map(c => c[0]).join(',')];
+            rows.forEach(u => lines.push(cols.map(c => csvEscape(c[1](u))).join(',')));
+            const csv = '﻿' + lines.join('\r\n') + '\r\n';
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'leadscanner-users-' + new Date().toISOString().slice(0, 10) + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        });
+
+        // ── Top categories + recent searches ─────────────────────────
         let searches = [];
         try {
             const sres = await fetch('/api/admin/searches', { headers: { 'Authorization': 'Bearer ' + token } });
@@ -302,29 +582,25 @@
             if (!catCounts[key]) catCounts[key] = { label: c, count: 0 };
             catCounts[key].count++;
         });
-        const topCats = Object.values(catCounts).sort((a, b) => b.count - a.count).slice(0, 10);
-        const catBody = document.getElementById('top-cat-body');
-        topCats.forEach((c, i) => {
-            const tr = document.createElement('tr');
-            const a = el('td', 'muted', String(i + 1));
-            const b = el('td', null, c.label);
-            const d = el('td', 'col-num', String(c.count));
-            tr.append(a, b, d); catBody.appendChild(tr);
-        });
+        const topCats = Object.values(catCounts).sort((a, b) => b.count - a.count).slice(0, 8);
+        const catBox = document.getElementById('ov-top-categories');
+        catBox.innerHTML = topCats.length
+            ? topCats.map((c, i) => `<div class="ov-cat-row">
+                <span class="ov-cat-rank">${i + 1}</span>
+                <span class="ov-cat-name">${c.label}</span>
+                <span class="ov-cat-count">${c.count}</span>
+              </div>`).join('')
+            : '<div class="ov-h2-sub">No searches yet.</div>';
 
-        const sBody = document.getElementById('search-table-body');
-        searches.forEach((s, i) => {
-            const tr = document.createElement('tr');
-            tr.append(
-                el('td', 'muted', String(i + 1)),
-                el('td', 'muted', fmtDateTime(s.created_at)),
-                el('td', null, s.email || '-'),
-                el('td', null, s.category || '-'),
-                el('td', 'muted', s.radius_meters ? (s.radius_meters / 1000).toFixed(0) + 'km' : '-'),
-                el('td', 'col-num', String(s.results ?? 0)),
-            );
-            sBody.appendChild(tr);
-        });
+        const searchBox = document.getElementById('ov-recent-searches');
+        const recent = searches.slice(0, 8);
+        searchBox.innerHTML = recent.length
+            ? recent.map(s => `<div class="ov-search-row">
+                <span class="ov-search-when">${fmtDateTime(s.created_at)}</span>
+                <span class="ov-search-email" title="${s.email || ''}">${s.email || '-'}</span>
+                <span class="ov-search-cat">${s.category || '-'}</span>
+              </div>`).join('')
+            : '<div class="ov-h2-sub">No searches yet.</div>';
     })();
     </script>
 </body>

@@ -15,118 +15,207 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
     <link rel="icon" href="/favicon.ico"/>
     <link rel="shortcut icon" href="/favicon.ico"/>
-    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <link rel="stylesheet" href="/static/page.css?v={{ version }}"/>
     <style>
-        .back-link {
-            display: inline-block;
-            color: var(--muted);
-            text-decoration: none;
-            font-size: 0.78rem;
-            letter-spacing: 0.06em;
-            margin-bottom: 0.75rem;
+        body { background: #000; }
+
+        /* ===== APP NAV (same component as admin overview) ===== */
+        #app-nav {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 20px; height: 62px; padding: 0 22px;
+            background: #000; border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-        .back-link:hover { color: var(--green); }
-        .detail-title { word-break: break-all; }
+        .an-left, .an-right { display: flex; align-items: center; gap: 8px; }
+        .an-brand {
+            display: inline-flex; align-items: center; gap: 10px;
+            margin-right: 14px; cursor: pointer; user-select: none; text-decoration: none;
+        }
+        .an-brand svg { width: 21px; height: 21px; color: #3ee87b; flex-shrink: 0; }
+        .an-brand span { color: #fff; font-size: 16.5px; font-weight: 700; letter-spacing: -0.02em; }
+        .an-link {
+            padding: 8px 13px; border-radius: 8px; text-decoration: none;
+            color: #98a2b3; font-size: 14.5px; font-weight: 500; white-space: nowrap;
+            transition: color 0.15s ease, background 0.15s ease;
+        }
+        .an-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        .an-link.is-active { color: #3ee87b; }
+        .an-account {
+            padding: 8px 18px; border-radius: 999px; text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.22); color: #fff;
+            font-size: 14.5px; font-weight: 600;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .an-account:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.4); }
+        .an-account.an-avatar {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; padding: 0; border-radius: 50%;
+            background: rgba(62,232,123,0.10); border: 1px solid rgba(62,232,123,0.55);
+            color: #3ee87b; font-size: 15px; font-weight: 700; line-height: 1;
+        }
+        .an-account.an-avatar:hover { background: rgba(62,232,123,0.2); border-color: #3ee87b; }
+        @media (max-width: 640px) {
+            #app-nav { flex-wrap: wrap; height: auto; min-height: 62px; padding: 10px 14px; gap: 8px; }
+            .an-left, .an-right { flex-wrap: wrap; row-gap: 6px; }
+            .an-link-secondary { display: none; }
+            .an-right .an-link { padding: 7px 10px; font-size: 13.5px; }
+        }
+        .an-user-wrap { position: relative; }
+        .an-dropdown {
+            position: absolute; top: calc(100% + 10px); right: 0; z-index: 1000;
+            width: 260px; background: #101418; border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+            padding: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        .an-dropdown.hidden { display: none; }
+        .an-dd-head { display: flex; align-items: center; gap: 12px; padding: 12px 10px 14px; }
+        .an-dd-avatar {
+            width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: rgba(62,232,123,0.12); border: 1px solid rgba(62,232,123,0.5);
+            color: #3ee87b; font-size: 16px; font-weight: 700;
+        }
+        .an-dd-email { color: #fff; font-size: 14px; font-weight: 600; word-break: break-all; line-height: 1.3; }
+        .an-dd-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 6px 8px; }
+        .an-dd-item {
+            display: flex; align-items: center; gap: 12px; width: 100%;
+            padding: 10px 12px; border-radius: 8px; cursor: pointer;
+            background: none; border: none; color: #e7ebf0;
+            font-family: inherit; font-size: 14px; text-align: left; text-decoration: none;
+        }
+        .an-dd-item:hover { background: rgba(255,255,255,0.07); }
+        .an-dd-icon { width: 18px; height: 18px; flex-shrink: 0; color: #98a2b3; }
+        .an-dd-danger { color: #ff6b6b; }
+        .an-dd-danger .an-dd-icon { color: #ff6b6b; }
+        .an-dd-danger:hover { background: rgba(255,107,107,0.08); }
+
+        .page-content { max-width: 1100px; }
+
+        .back-link {
+            display: inline-flex; align-items: center; gap: 6px; margin-bottom: 18px;
+            color: #7c8798; text-decoration: none; font-size: 13.5px; font-weight: 600;
+        }
+        .back-link:hover { color: #3ee87b; }
+        .detail-title { word-break: break-all; font-size: 26px; margin-bottom: 20px; }
 
         /* ── Cards ─────────────────────────────────────────────────── */
         .detail-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 0.9rem;
-            margin-bottom: 1.25rem;
+            gap: 14px;
+            margin-bottom: 20px;
         }
         .card {
-            border: 1px solid var(--muted);
-            background: #060a06;
-            padding: 1rem 1.1rem;
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
+            background: #0b0c0e; padding: 18px 20px;
         }
-        .card.full { margin-bottom: 1.25rem; }
+        .card.full { margin-bottom: 20px; }
         .card h3 {
-            font-size: 0.72rem; color: var(--muted); letter-spacing: 0.12em;
-            border-bottom: 1px solid #111; padding-bottom: 6px; margin: 0 0 0.9rem;
+            font: 600 11px 'JetBrains Mono', monospace; color: #7c8798; letter-spacing: 0.08em;
+            border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; margin: 0 0 14px;
+            text-transform: uppercase;
         }
-        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1rem; }
-        .profile-item .p-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; }
-        .profile-item .p-val { font-size: 0.9rem; color: var(--green); font-variant-numeric: tabular-nums; }
+        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+        .profile-item .p-label { font-size: 10.5px; color: #7c8798; letter-spacing: 0.06em; text-transform: uppercase; }
+        .profile-item .p-val { margin-top: 3px; font-size: 15px; color: #fff; font-variant-numeric: tabular-nums; font-weight: 600; }
 
         .cap-control { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .cap-control input {
-            width: 90px; background: var(--bg); border: 1px solid var(--muted);
-            color: var(--green); font-family: inherit; padding: 6px 8px;
+            width: 90px; background: #000; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px;
+            color: #fff; font-family: inherit; padding: 7px 9px;
         }
-        .cap-control input:focus { outline: none; border-color: var(--green); }
+        .cap-control input:focus { outline: none; border-color: rgba(62,232,123,0.5); }
         .cap-btn {
-            background: none; border: 1px solid var(--muted); color: var(--green);
-            font-family: inherit; font-size: 0.8rem; padding: 6px 12px; cursor: pointer;
+            background: none; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; color: #cbd2dc;
+            font-family: inherit; font-size: 13px; font-weight: 600; padding: 7px 14px; cursor: pointer;
+            transition: border-color 0.15s ease, color 0.15s ease;
         }
-        .cap-btn:hover { border-color: var(--green); color: var(--amber); }
+        .cap-btn:hover { border-color: #3ee87b; color: #3ee87b; }
 
-        .cat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 0.82rem; }
-        .cat-name { flex: 0 0 40%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cat-bar-track { flex: 1; height: 12px; background: #0f1f0f; border: 1px solid var(--muted); }
-        .cat-bar-fill { height: 100%; background: var(--green); }
-        .cat-count { flex: 0 0 auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+        .cat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; font-size: 13.5px; }
+        .cat-name { flex: 0 0 40%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e7ebf0; }
+        .cat-bar-track { flex: 1; height: 10px; border-radius: 5px; background: rgba(255,255,255,0.06); }
+        .cat-bar-fill { height: 100%; border-radius: 5px; background: #3ee87b; }
+        .cat-count { flex: 0 0 auto; color: #7c8798; font-variant-numeric: tabular-nums; }
 
-        #user-map { height: 360px; width: 100%; border: 1px solid var(--muted); background: #060a06; }
-        .map-empty { font-size: 0.8rem; color: var(--muted); padding: 1.5rem; text-align: center; border: 1px dashed var(--muted); }
+        #user-map { height: 360px; width: 100%; border-radius: 12px; background: #0b0c0e; }
+        .map-empty { font-size: 13.5px; color: #7c8798; padding: 1.5rem; text-align: center; border: 1px dashed rgba(255,255,255,0.14); border-radius: 12px; }
 
         /* ── History table ─────────────────────────────────────────── */
-        .table-scroll { max-height: 520px; overflow-y: auto; overflow-x: auto; border: 1px solid #111; }
-        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .table-scroll { max-height: 520px; overflow-y: auto; overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 13.5px; background: #0b0c0e; }
         .admin-table th {
-            text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--green);
-            color: var(--muted); letter-spacing: 0.08em; font-weight: 700; white-space: nowrap;
-            position: sticky; top: 0; background: var(--bg); z-index: 2;
+            text-align: left; padding: 10px 12px; white-space: nowrap;
+            color: #7c8798; font: 600 11px 'JetBrains Mono', monospace; letter-spacing: 0.06em;
+            position: sticky; top: 0; background: #0b0c0e; z-index: 2;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
         .admin-table td {
-            padding: 7px 10px; border-bottom: 1px solid #111; color: var(--green);
+            padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #cbd2dc;
             font-variant-numeric: tabular-nums; white-space: nowrap;
         }
-        .admin-table tbody tr:nth-child(even) td { background: #070c07; }
+        .admin-table tbody tr:last-child td { border-bottom: none; }
         .col-num { text-align: right; }
-        .muted   { color: var(--muted); }
-        .amber   { color: var(--amber); }
-        .detail-loading { padding: 2rem 0; color: var(--muted); }
+        .muted   { color: #7c8798; }
+        .amber   { color: #ffb545; }
+        .detail-loading { padding: 2rem 0; color: #7c8798; }
 
         @media (max-width: 560px) { .profile-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
-<body class="page">
+<body>
     {% if maintenance %}{% include '_maintenance_banner.html' %}{% endif %}
-    <div id="crt-overlay"></div>
 
-    <header id="top-bar">
-        <div id="logo">
-            <span id="logo-blink">█</span>
-            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
+    <nav id="app-nav">
+        <div class="an-left">
+            <a href="/" class="an-brand">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5.5 6.5 11 12l-5.5 5.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/>
+                    <rect x="12.6" y="15.3" width="7" height="2.3" fill="currentColor"/>
+                </svg>
+                <span>LeadScanner</span>
+            </a>
         </div>
-    </header>
-
-    <nav id="main-nav">
-        <div class="nav-left">
-            <a href="/" class="nav-link">[ HOME ]</a>
-            <a href="/about" class="nav-link">[ ABOUT ]</a>
-            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
-        </div>
-        <div class="nav-right">
-            <a href="/contact" class="nav-link">[ CONTACT ]</a>
-            <a href="/pricing" class="nav-link">[ PRICING ]</a>
-            <a href="/dashboard" class="nav-link" id="nav-auth-link">[ ACCOUNT ]</a>
+        <div class="an-right">
+            <a href="/" class="an-link an-link-secondary">Home</a>
+            <a href="/pricing" class="an-link an-link-secondary">Pricing</a>
+            <a href="/admin" class="an-link is-active">Admin</a>
+            <div class="an-user-wrap" id="an-user-wrap">
+                <a href="/login" class="an-account" id="nav-auth-link" data-plain="1">Log in</a>
+                <div class="an-dropdown hidden" id="an-dropdown" role="menu" aria-hidden="true">
+                    <div class="an-dd-panel" id="an-dd-panel-main">
+                        <div class="an-dd-head">
+                            <span class="an-dd-avatar" id="an-dd-avatar"></span>
+                            <span class="an-dd-email" id="an-dd-email"></span>
+                        </div>
+                        <div class="an-dd-sep"></div>
+                        <a href="/dashboard" class="an-dd-item">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M6.5 19a6 6 0 0 1 11 0"/></svg>
+                            My account
+                        </a>
+                        <div class="an-dd-sep"></div>
+                        <button type="button" class="an-dd-item an-dd-danger" id="an-dd-logout">
+                            <svg class="an-dd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Log out
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 
     <main class="page-content">
-        <a href="/admin/users" class="back-link">[ ← BACK TO USERS ]</a>
-        <h1 class="page-title detail-title" id="page-title">&gt; USER</h1>
+        <a href="/admin/users" class="back-link">&larr; Back to users</a>
+        <h1 class="page-title detail-title" id="page-title">User</h1>
 
-        <div id="detail-loading" class="detail-loading">LOADING...</div>
+        <div id="detail-loading" class="detail-loading">Loading…</div>
         <div id="detail-content" style="display:none"></div>
     </main>
 
@@ -141,7 +230,7 @@
         if (!email) { window.location.href = '/admin/users'; return; }
 
         const titleEl = document.getElementById('page-title');
-        titleEl.textContent = '> ' + email;
+        titleEl.textContent = email;
         document.title = email + ' - Lead Scanner Admin';
 
         // ── Helpers ────────────────────────────────────────────────
