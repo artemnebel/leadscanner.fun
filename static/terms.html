@@ -26,57 +26,36 @@
     <meta name="twitter:image" content="https://leadscanner.fun/static/og-image.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
     <link rel="icon" href="/favicon.ico"/>
     <link rel="shortcut icon" href="/favicon.ico"/>
-    <link rel="stylesheet" href="/static/style.css?v={{ version }}"/>
+    <link rel="stylesheet" href="/static/page.css?v={{ version }}"/>
 </head>
-<body class="page">
+<body>
     {% if maintenance %}{% include '_maintenance_banner.html' %}{% endif %}
-
-    <div id="crt-overlay"></div>
-
-    <header id="top-bar">
-        <div id="logo">
-            <span id="logo-blink">█</span>
-            <a href="/" style="text-decoration:none"><span id="logo-text">&gt;_ LEAD_SCANNER.EXE</span></a>
-        </div>
-    </header>
-
-    <nav id="main-nav">
-        <div class="nav-left">
-            <a href="/" class="nav-link">[ HOME ]</a>
-            <a href="/about" class="nav-link">[ ABOUT ]</a>
-            <a href="/how-it-works" class="nav-link">[ HOW_IT_WORKS ]</a>
-        </div>
-        <div class="nav-right">
-            <a href="/contact" class="nav-link">[ CONTACT ]</a>
-            <a href="/pricing" class="nav-link">[ PRICING ]</a>
-            <a href="/login" class="nav-link" id="nav-auth-link">[ LOGIN ]</a>
-        </div>
-    </nav>
+    {% include '_brand_header.html' %}
 
     <main class="page-content">
-        <h1 class="page-title">&gt; TERMS_OF_SERVICE.TXT</h1>
+        <h1 class="page-title">Terms of Service</h1>
         <p class="page-subtitle">Last updated: March 2026</p>
 
         <div class="page-section">
-            <h2>&gt; 1. ACCEPTANCE</h2>
+            <h2>1. Acceptance</h2>
             <p>By creating an account or using Lead Scanner ("the Service"), you agree to these Terms of Service. If you do not agree, do not use the Service.</p>
         </div>
 
         <div class="page-section">
-            <h2>&gt; 2. WHAT_THE_SERVICE_DOES</h2>
+            <h2>2. What the Service Does</h2>
             <p>Lead Scanner queries the Google Maps API in real time to surface local businesses that lack a website. Results are provided for informational and prospecting purposes only. We do not guarantee the accuracy, completeness, or timeliness of any data returned by Google.</p>
         </div>
 
         <div class="page-section">
-            <h2>&gt; 3. ACCEPTABLE_USE</h2>
+            <h2>3. Acceptable Use</h2>
             <p>You agree not to:</p>
-            <ul style="margin:0.75rem 0 0.75rem 1.5rem; line-height:2">
+            <ul>
                 <li>Use the Service to spam, harass, or send unsolicited bulk messages to businesses</li>
                 <li>Resell, redistribute, or sublicense access to the Service</li>
                 <li>Attempt to reverse-engineer, scrape, or extract the underlying API calls</li>
@@ -87,7 +66,7 @@
         </div>
 
         <div class="page-section">
-            <h2>&gt; 4. PAYMENTS_AND_PLANS</h2>
+            <h2>4. Payments and Plans</h2>
             <p>Lead Scanner is pay-per-lead. One-time lead packs are a single charge for a fixed number of leads that never expire. Monthly subscription plans (Agency and Agency Plus) grant a set number of leads each billing period, with unused leads rolling over for a limited number of months; subscriptions are billed recurringly via Stripe and renew automatically until cancelled.</p>
             <p><strong>Cancellation:</strong> You can cancel a subscription anytime from your dashboard. Cancellation stops future charges and remains in effect through the end of the current billing period. One-time lead pack purchases are not recurring and require no cancellation.</p>
             <p><strong>Refunds:</strong> If something isn't right, use the <a href="/contact">contact page</a> and we'll make it right.</p>
@@ -95,36 +74,35 @@
         </div>
 
         <div class="page-section">
-            <h2>&gt; 5. FREE_DEMO</h2>
+            <h2>5. Free Demo</h2>
             <p>A limited, unauthenticated demo scan is available on the homepage without creating an account or providing payment details. The number of demo scans permitted per visitor is limited and subject to change. Beyond the demo, an account and a lead purchase are required to scan. We reserve the right to apply reasonable anti-abuse rate limits to keep the service available to everyone.</p>
         </div>
 
         <div class="page-section">
-            <h2>&gt; 6. SERVICE_AVAILABILITY</h2>
+            <h2>6. Service Availability</h2>
             <p>We aim for high availability but do not guarantee uninterrupted access. The Service depends on third-party APIs (Google Maps, Stripe) and may be unavailable during outages of those services. We are not liable for losses caused by downtime.</p>
         </div>
 
         <div class="page-section">
-            <h2>&gt; 7. LIMITATION_OF_LIABILITY</h2>
+            <h2>7. Limitation of Liability</h2>
             <p>Lead Scanner is provided "as is" without warranties of any kind. We are not responsible for how you use the lead data, outcomes of your outreach, or any indirect, incidental, or consequential damages arising from use of the Service. Our total liability to you shall not exceed the amount you paid us in the 30 days prior to the claim.</p>
         </div>
 
         <div class="page-section">
-            <h2>&gt; 8. TERMINATION</h2>
+            <h2>8. Termination</h2>
             <p>We reserve the right to suspend or terminate accounts that violate these terms, engage in abuse, or present a security risk, without prior notice in severe cases. You may delete your account at any time by contacting us.</p>
         </div>
 
         <div class="page-section">
-            <h2>&gt; 9. CHANGES_TO_TERMS</h2>
+            <h2>9. Changes to Terms</h2>
             <p>We may update these terms occasionally. Continued use of the Service after changes constitutes acceptance. We will notify registered users of material changes by email.</p>
         </div>
 
         <div class="page-section">
-            <h2>&gt; 10. CONTACT</h2>
+            <h2>10. Contact</h2>
             <p>Questions? Use the <a href="/contact">contact page</a>.</p>
         </div>
     </main>
 
-    <script src="/static/auth.js?v={{ version }}"></script>
 </body>
 </html>
