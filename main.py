@@ -107,7 +107,11 @@ ROLLOVER_MONTHS = 3   # unused leads roll over up to this many months' worth
 # ── Plan gating ────────────────────────────────────────────────────────────
 # Everyone now scans against a lead balance. The only uncapped accounts are the
 # admin and anyone already on a legacy paid tier, who stay grandfathered.
-FREE_RADIUS_M     = 8_000     # ~5mi
+FREE_RADIUS_M     = 48_280    # ~30mi. No current purchase path ever sets user.tier
+                              # (packs/subscriptions only grant lead_credits), so
+                              # PRO_RADIUS_M is unreachable for real customers —
+                              # keep this equal to it rather than silently capping
+                              # everyone's slider at a much smaller radius.
 PRO_RADIUS_M      = 48_280    # ~30mi
 FREE_PORTAL_LIMIT = 5
 PAID_TIERS = {"pro", "starter", "business", "unlimited"}
@@ -2173,8 +2177,8 @@ async def search_leads(
 
     feats = plan_features(user)
 
-    # Per-plan radius cap, enforced server-side (defends crafted requests that bypass
-    # the slider). Free ~5mi, Pro ~30mi. A wide scan tiles into many 8km sub-circles,
+    # Radius cap, enforced server-side (defends crafted requests that bypass the
+    # slider): ~30mi for everyone. A wide scan tiles into many 8km sub-circles,
     # each a paid Places call, so the cap directly bounds worst-case cost. Silent clamp.
     max_radius = feats["max_radius_m"]
     if req.radius_meters > max_radius:

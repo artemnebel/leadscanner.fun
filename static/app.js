@@ -711,11 +711,10 @@ async function applyPlanToUI() {
     state.plan = user && user.plan ? user.plan : null;
     const slider = document.getElementById('radius-slider');
     if (!slider || !state.plan || !state.plan.max_radius_m) return;
-    // Cap the slider at the plan's max radius (Free ~5mi, Pro ~15mi).
+    // Cap the slider at the plan's max radius (~30mi for everyone today).
     const maxM = state.plan.max_radius_m;
     slider.max = String(maxM);
     if (parseInt(slider.value, 10) > maxM) slider.value = String(maxM);
-    if (!state.plan.pro) slider.title = 'Your plan caps the scan radius at ~5mi';
     slider.dispatchEvent(new Event('input'));
 }
 
