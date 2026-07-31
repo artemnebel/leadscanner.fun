@@ -167,19 +167,13 @@
         padding: 20px 22px; border-radius: 14px;
         background: #0b0c0e; border: 1px solid rgba(255,255,255,0.08);
     }
-    .ov-chart-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+    .ov-chart-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
     .ov-chart-title { color: #fff; font: 700 15px 'Space Grotesk', sans-serif; }
     .ov-chart-total { color: #7c8798; font-size: 13px; font-variant-numeric: tabular-nums; }
-    .ov-bars { display: flex; align-items: flex-end; gap: 3px; height: 90px; }
-    .ov-bar {
-        flex: 1 1 0; min-width: 2px; border-radius: 2px 2px 0 0;
-        background: rgba(62,232,123,0.22); transition: background 0.15s ease;
-    }
-    .ov-bar:hover { background: rgba(62,232,123,0.55); }
-    .ov-bar.is-peak { background: #3ee87b; }
-    .ov-chart-axis { display: flex; justify-content: space-between; margin-top: 8px; color: #5b626d; font-size: 11.5px; }
-    .ov-chart-labels { display: flex; gap: 3px; margin-top: 6px; }
-    .ov-chart-labels span { flex: 1 1 0; text-align: center; color: #5b626d; font-size: 10.5px; }
+    .ov-line-chart-wrap { line-height: 0; }
+    .ov-line-chart-wrap svg { width: 100%; height: 170px; display: block; }
+    .ov-line-point { transition: r 0.12s ease; }
+    .ov-line-point:hover { r: 5.5; }
 
     /* ── Users section ─────────────────────────────────────────────── */
     .ov-section { margin-bottom: 34px; }
@@ -339,16 +333,14 @@
                         <span class="ov-chart-title">Signups</span>
                         <span class="ov-chart-total" id="ov-signups-total"></span>
                     </div>
-                    <div class="ov-bars" id="ov-chart-signups"></div>
-                    <div class="ov-chart-labels" id="ov-labels-signups"></div>
+                    <div class="ov-line-chart-wrap" id="ov-chart-signups"></div>
                 </div>
                 <div class="ov-chart-panel">
                     <div class="ov-chart-head">
                         <span class="ov-chart-title">Scans</span>
                         <span class="ov-chart-total" id="ov-scans-total"></span>
                     </div>
-                    <div class="ov-bars" id="ov-chart-scans"></div>
-                    <div class="ov-chart-labels" id="ov-labels-scans"></div>
+                    <div class="ov-line-chart-wrap" id="ov-chart-scans"></div>
                 </div>
             </div>
 
@@ -437,30 +429,71 @@
         let currentRange = 'month';
         let currentAnchor = null;  // null = current period
 
-        function renderBars(containerId, labelsId, totalId, series, rangeMode) {
-            const box = document.getElementById(containerId);
-            const labelsBox = document.getElementById(labelsId);
-            if (!box) return;
-            const max = Math.max(1, ...series.map(d => d.count));
-            const total = series.reduce((a, d) => a + d.count, 0);
-            box.innerHTML = '';
-            labelsBox.innerHTML = '';
-            series.forEach(d => {
-                const bar = document.createElement('div');
-                bar.className = 'ov-bar' + (d.count === max && max > 0 ? ' is-peak' : '');
-                bar.style.height = Math.max(2, Math.round((d.count / max) * 100)) + '%';
-                bar.title = d.date + ' — ' + d.count;
-                box.appendChild(bar);
+        // Rounds a data max up to a "nice" axis ceiling (1/2/5 x a power of ten)
+        // so the y-axis tick labels are round numbers instead of jagged ones.
+        function niceAxisMax(rawMax) {
+            if (rawMax <= 0) return 1;
+            const pow = Math.pow(10, Math.floor(Math.log10(rawMax)));
+            const norm = rawMax / pow;
+            const niceNorm = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+            return niceNorm * pow;
+        }
 
-                // Per-bar labels make sense for week (7) and year (12); month (28-31)
-                // is too dense, so it keeps the start/end axis line instead.
-                if (rangeMode !== 'month') {
-                    const lab = document.createElement('span');
-                    lab.textContent = d.label;
-                    labelsBox.appendChild(lab);
-                }
-            });
+        function svgEl(tag, attrs) {
+            return '<' + tag + ' ' + Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(' ') + '/>';
+        }
+
+        // A hand-rolled line chart (no charting library): axis grid + numeric
+        // y-labels on the left, date x-labels on the bottom, one point per day
+        // (or per month in year view) connected by a line.
+        function renderLineChart(containerId, totalId, series) {
+            const box = document.getElementById(containerId);
+            if (!box) return;
+            const total = series.reduce((a, d) => a + d.count, 0);
             document.getElementById(totalId).textContent = total.toLocaleString() + ' total';
+
+            const n = series.length;
+            const rawMax = Math.max(1, ...series.map(d => d.count));
+            const axisMax = niceAxisMax(rawMax);
+
+            const W = 640, H = 190;
+            const padL = 34, padR = 8, padT = 10, padB = 22;
+            const plotW = W - padL - padR;
+            const plotH = H - padT - padB;
+            const xFor = (i) => n <= 1 ? padL + plotW / 2 : padL + (i / (n - 1)) * plotW;
+            const yFor = (v) => padT + plotH - (v / axisMax) * plotH;
+
+            let grid = '';
+            [0, 0.25, 0.5, 0.75, 1].forEach(f => {
+                const val = Math.round(axisMax * f);
+                const y = yFor(val);
+                grid += svgEl('line', { x1: padL, y1: y.toFixed(1), x2: W - padR, y2: y.toFixed(1), stroke: 'rgba(255,255,255,0.07)', 'stroke-width': 1 });
+                grid += `<text x="${padL - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#5b626d" font-family="'JetBrains Mono',monospace">${val}</text>`;
+            });
+
+            // Label every tick for week (7) / year (12); subsample month (28-31)
+            // so dates don't collide, but a point is still drawn for every day.
+            const step = n <= 12 ? 1 : Math.ceil(n / 6);
+            let xLabels = '';
+            series.forEach((d, i) => {
+                if (i % step !== 0 && i !== n - 1) return;
+                xLabels += `<text x="${xFor(i).toFixed(1)}" y="${H - 5}" text-anchor="middle" font-size="9.5" fill="#5b626d" font-family="'JetBrains Mono',monospace">${d.label}</text>`;
+            });
+
+            const linePts = series.map((d, i) => `${xFor(i).toFixed(1)},${yFor(d.count).toFixed(1)}`).join(' ');
+            const area = `${xFor(0).toFixed(1)},${yFor(0).toFixed(1)} ${linePts} ${xFor(n - 1).toFixed(1)},${yFor(0).toFixed(1)}`;
+            const areaFill = `<polygon points="${area}" fill="rgba(62,232,123,0.08)"/>`;
+            const line = `<polyline points="${linePts}" fill="none" stroke="#3ee87b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+            const peak = Math.max(...series.map(d => d.count));
+            let points = '';
+            series.forEach((d, i) => {
+                const isPeak = d.count === peak && peak > 0;
+                points += `<circle class="ov-line-point" cx="${xFor(i).toFixed(1)}" cy="${yFor(d.count).toFixed(1)}" r="3" ` +
+                    `fill="${isPeak ? '#3ee87b' : '#000'}" stroke="#3ee87b" stroke-width="2"><title>${d.date} — ${d.count}</title></circle>`;
+            });
+
+            box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img">${grid}${areaFill}${line}${points}${xLabels}</svg>`;
         }
 
         async function loadStats() {
@@ -476,8 +509,8 @@
             document.getElementById('ov-prev').dataset.anchor = s.nav.prev;
             document.getElementById('ov-next').dataset.anchor = s.nav.next;
 
-            renderBars('ov-chart-signups', 'ov-labels-signups', 'ov-signups-total', s.signups_by_day, s.range);
-            renderBars('ov-chart-scans', 'ov-labels-scans', 'ov-scans-total', s.searches_by_day, s.range);
+            renderLineChart('ov-chart-signups', 'ov-signups-total', s.signups_by_day);
+            renderLineChart('ov-chart-scans', 'ov-scans-total', s.searches_by_day);
         }
 
         document.querySelectorAll('.ov-range-btn').forEach(btn => {
