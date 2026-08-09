@@ -149,6 +149,7 @@
                 }
                 localStorage.setItem('ls_token', data.token);
                 localStorage.removeItem('ls_user');
+                gtag('event', 'login', { method: 'email' });
                 // Clicking a pack while logged out parks the return path here, so
                 // the visitor lands back on pricing instead of losing the purchase.
                 const back = sessionStorage.getItem('ls_after_login');

@@ -130,13 +130,23 @@
             if (params.get('upgraded') || params.get('credits_added')) {
                 gtag('event', 'conversion_event_purchase');  // existing (Google Ads)
                 const plan = params.get('plan');
-                if (plan) {
-                    const value = plan === 'annual' ? 490 : 49;
-                    gtag('event', 'purchase', {         // GA4 funnel: subscription completed
-                        transaction_id: params.get('sid') || ('sub_' + Date.now()),
+                const pack = params.get('pack');
+                const PACK_VALUE = { solo: 15, business: 49, scale: 89 };
+                const PLAN_VALUE = { agency: 20, 'agency-plus': 39 };
+                // item_id/item_name mirror what pricing.html's begin_checkout sends, so GA4
+                // can join checkout -> purchase by item.
+                let item = null;
+                if (plan && PLAN_VALUE[plan] != null) {
+                    item = { item_id: 'plan_' + plan, item_name: 'plan_' + plan, price: PLAN_VALUE[plan], quantity: 1 };
+                } else if (pack && PACK_VALUE[pack] != null) {
+                    item = { item_id: 'pack_' + pack, item_name: 'pack_' + pack, price: PACK_VALUE[pack], quantity: 1 };
+                }
+                if (item) {
+                    gtag('event', 'purchase', {         // GA4 funnel: subscription/pack purchase completed
+                        transaction_id: params.get('sid') || ('order_' + item.item_id + '_' + Date.now()),
                         currency: 'USD',
-                        value: value,
-                        items: [{ item_id: 'pro_' + plan, item_name: 'Pro (' + plan + ')', price: value, quantity: 1 }]
+                        value: item.price,
+                        items: [item],
                     });
                 }
                 history.replaceState({}, '', '/dashboard');

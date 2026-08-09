@@ -168,6 +168,7 @@
                 }
                 localStorage.setItem('ls_token', data.token);
                 localStorage.removeItem('ls_user');
+                gtag('event', 'sign_up', { method: 'email' });
                 // Someone who started a purchase and signed up instead of logging
                 // in still gets taken back to what they were buying.
                 const back = sessionStorage.getItem('ls_after_login');

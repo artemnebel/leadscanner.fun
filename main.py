@@ -1549,7 +1549,7 @@ async def create_checkout(
             payment_method_types=["card"],
             line_items=[{"price": price_id, "quantity": 1}],
             mode="payment",
-            success_url=f"{BASE_URL}/dashboard?credits_added=1",
+            success_url=f"{BASE_URL}/dashboard?credits_added=1&pack={pack_name}",
             cancel_url=f"{BASE_URL}/pricing",
             metadata={"user_id": user.id, "pack": pack_name},
         )

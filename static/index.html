@@ -2367,6 +2367,8 @@
                 const category = (input.value || '').trim() || 'plumbers';
                 const c = window._demoScanCenter ? window._demoScanCenter() : { lat: 40.0379, lng: -76.3055 };
 
+                gtag('event', 'demo_scan', { category });
+
                 busy = true;
                 btn.classList.add('loading');
                 btn.textContent = 'SCANNING';
@@ -2396,6 +2398,7 @@
                         try { detail = (await res.json()).detail || ''; } catch (e) {}
                         if (detail === 'DEMO_LIMIT_REACHED') {
                             demoLocked = true;
+                            gtag('event', 'demo_scan_locked');
                             showDemoLimit();
                         } else {
                             show('<div class="lp-demo-note">Too many scans at once. Give it a minute and try again.</div>');

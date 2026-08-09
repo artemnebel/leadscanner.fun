@@ -333,6 +333,12 @@
             const label = btn.textContent;
             errEl.style.display = 'none';
 
+            // Fired on click, before the login gate below, so plan intent is captured
+            // even for signed-out visitors who get bounced to /login.
+            gtag('event', 'select_item', {
+                items: [{ item_id: gaItem, item_name: gaItem, price: value, quantity: 1 }],
+            });
+
             const token = getToken();
             if (!token) {
                 // Come back here after login so the click is not lost.
