@@ -2418,9 +2418,9 @@
                     // Remembered across the /login or /signup redirect (same tab, same
                     // origin) so the authenticated app view can pick this scan back up
                     // for real once they're signed in — see resumeDemoScan() in app.js.
-                    // `total` lets a fresh signup claim just enough free credits to
-                    // cover it (see the claim-scan call in signup.html).
-                    sessionStorage.setItem('ls_pending_demo_scan', JSON.stringify({ category, lat: c.lat, lng: c.lng, total: data.total || 0 }));
+                    // `token` redeems the full server-side result via /api/demo/resume,
+                    // no re-scan and no client-supplied lead count involved.
+                    sessionStorage.setItem('ls_pending_demo_scan', JSON.stringify({ category, lat: c.lat, lng: c.lng, total: data.total || 0, token: data.token || null }));
                     renderLeads(category, data);
                 } catch (err) {
                     // Reached only if parsing or rendering threw, never the network.

@@ -2069,7 +2069,6 @@ class SearchRequest(BaseModel):
     lat: float
     lng: float
     radius_meters: int
-    demo_resume: bool = False  # rerunning a pre-signup demo scan — use its finer tiling so leads line up
 
 
 
@@ -2219,16 +2218,6 @@ async def search_leads(
     # For grid mode use 8 km sub-circles and 2 pages each; single mode uses full radius + 3 pages
     sub_radius = 8_000 if is_grid else req.radius_meters
     sub_pages = 2 if is_grid else 3
-
-    # A demo-resume scan uses the demo's own finer 4km tiling instead of the
-    # coarser default above, so it surfaces the same leads the demo did
-    # (and, via the shared 30-day Places cache, often the very same tiles).
-    # Capped to the demo's own radius so this can't be used to cheapen a
-    # normal large-radius scan into finer, costlier tiling.
-    if req.demo_resume and req.radius_meters <= DEMO_RADIUS_M:
-        sub_circles = _generate_sub_circles(req.lat, req.lng, req.radius_meters, DEMO_SUB_RADIUS_M)
-        sub_radius = DEMO_SUB_RADIUS_M
-        sub_pages = DEMO_MAX_PAGES
 
     # Nearest-first: for a metered account, tiles stop getting fetched (and
     # paid for) as soon as there are enough qualifying leads to cover the
@@ -2397,6 +2386,34 @@ DEMO_SCAN_WINDOW_HOURS = 24    # rolling window the allowance refills over
 # control — X-Forwarded-For is client-supplied and therefore spoofable.
 _demo_scan_hits: dict[str, list[datetime]] = {}
 
+# token -> {"leads": [...full lead dicts...], "expires": datetime}
+# The full, un-thinned demo result, held server-side so signup can hand every
+# lead straight over without re-running the scan (no extra Places spend) and
+# without trusting a client-supplied count for how many to grant. Single-use:
+# popped on redemption. In-process like _demo_scan_hits above — a restart
+# just means an in-flight demo has to be re-run, which is an acceptable loss.
+_demo_results: dict[str, dict] = {}
+DEMO_RESULT_TTL_MIN = 30
+
+
+def _prune_demo_results() -> None:
+    now = datetime.utcnow()
+    expired = [t for t, v in _demo_results.items() if v["expires"] <= now]
+    for t in expired:
+        _demo_results.pop(t, None)
+
+
+def _store_demo_result(leads: list) -> str:
+    _prune_demo_results()
+    token = secrets.token_urlsafe(24)
+    _demo_results[token] = {"leads": leads, "expires": datetime.utcnow() + timedelta(minutes=DEMO_RESULT_TTL_MIN)}
+    return token
+
+
+def _pop_demo_result(token: str) -> dict | None:
+    _prune_demo_results()
+    return _demo_results.pop(token, None)
+
 
 def _client_ip(request: Request) -> str:
     """Real client IP behind Render's proxy.
@@ -2526,6 +2543,10 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
         for lead in leads[DEMO_VISIBLE_LEADS:]
     ]
 
+    # The full list (every field, not just the teaser split above) held
+    # server-side so a signup can redeem it wholesale — see /api/demo/resume.
+    token = _store_demo_result(leads) if leads else None
+
     # Burn one of this IP's demo scans. Charged only once the scan actually
     # succeeded, so a Places outage never costs the visitor an attempt.
     if DEMO_SCAN_LIMIT > 0:
@@ -2550,25 +2571,26 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
         "total": total,
         "visible": len(visible),
         "locked": len(locked),
+        "token": token,
     }
 
 
-# One-time free grant so a brand-new signup can see, for real, the leads their
-# pre-signup demo scan teased — capped well below what a demo can turn up
-# (DEMO_RADIUS_M is untiled/unthinned) so this can't be used to farm free leads.
-DEMO_CLAIM_MAX_LEADS = 20
+class DemoResumeBody(BaseModel):
+    token: str
 
 
-class DemoClaimBody(BaseModel):
-    count: int
-
-
-@app.post("/api/demo/claim-scan")
-async def claim_demo_scan(
-    body: DemoClaimBody,
+@app.post("/api/demo/resume")
+async def resume_demo_scan(
+    body: DemoResumeBody,
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """One-time free unlock of a pre-signup demo scan's full results.
+
+    Redeems the token minted by /api/demo-search: hands over every lead the
+    demo actually found, straight from the cached results, so signup never
+    re-runs the scan (no extra Places spend) and never trusts a client-
+    supplied count for how many leads to grant."""
     if not user:
         raise HTTPException(status_code=401, detail="Login required.")
     # Gated on the account never having held any credits — purchased or
@@ -2576,13 +2598,23 @@ async def claim_demo_scan(
     if (user.lead_credits_total or 0) > 0:
         raise HTTPException(status_code=400, detail="ALREADY_CLAIMED")
 
-    count = max(0, min(int(body.count or 0), DEMO_CLAIM_MAX_LEADS))
-    if count <= 0:
-        raise HTTPException(status_code=400, detail="Nothing to claim.")
+    entry = _pop_demo_result(body.token)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Demo results expired. Run a new scan to keep going.")
 
-    granted = grant_leads(user, count)
-    db.commit()
-    return {"granted": granted, "usage": usage_info(user)}
+    leads = entry["leads"]
+    count = len(leads)
+    if count > 0:
+        grant_leads(user, count)
+        consume_leads(user, count)
+        db.commit()
+
+    return {
+        "leads": leads,
+        "total_found": count,
+        "usage": usage_info(user),
+        "plan": plan_payload(user),
+    }
 
 
 if __name__ == "__main__":

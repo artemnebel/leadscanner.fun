@@ -258,10 +258,6 @@ function initLocateBtn() {
 // same origin) so we can rerun it here for real once they're authenticated.
 const DEMO_RESUME_RADIUS_M = 8047;   // matches DEMO_RADIUS_M in main.py (fixed 5mi)
 
-// Read (and cleared) by handleSearch()'s single-scan request so only the one
-// resumed search asks the backend to match the demo's finer tiling.
-let pendingDemoResume = false;
-
 async function resumeDemoScan() {
     const raw = sessionStorage.getItem('ls_pending_demo_scan');
     if (!raw) return;
@@ -274,20 +270,7 @@ async function resumeDemoScan() {
     let demo;
     try { demo = JSON.parse(raw); } catch (e) { return; }
     if (!demo || typeof demo.lat !== 'number' || typeof demo.lng !== 'number' || !demo.category) return;
-    if (demo.total === 0) return;   // nothing was found; a real search would just 429 on a zero balance
-
-    // signup.html claims these as free credits before redirecting here, but
-    // that only runs from its form-submit handler — someone already signed
-    // in (or who logged in instead of signing up) lands here without ever
-    // claiming. Best-effort retry: a no-op 400 ALREADY_CLAIMED if signup
-    // already did it, otherwise this is what actually grants the balance.
-    try {
-        await fetch('/api/demo/claim-scan', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ count: demo.total }),
-        });
-    } catch (e) { /* search below will 429 on its own if the balance is still empty */ }
+    if (!demo.total || !demo.token) return;   // nothing found, or too old a payload to carry a token
 
     const latlng = L.latLng(demo.lat, demo.lng);
     state.centerMarker.setLatLng(latlng);
@@ -297,11 +280,46 @@ async function resumeDemoScan() {
     const radiusSlider = document.getElementById('radius-slider');
     radiusSlider.value = DEMO_RESUME_RADIUS_M;
     radiusSlider.dispatchEvent(new Event('input'));
-
     document.getElementById('category-input').value = demo.category;
-    showToast('Picking up your demo scan for real...', 'success');
-    pendingDemoResume = true;
-    handleSearch();
+
+    // The demo already tiled the whole disc and paid for these results
+    // server-side — redeem them directly instead of re-scanning, so signing
+    // up doesn't spend more Places budget or leave anyone waiting again for
+    // leads they've already seen.
+    try {
+        const resp = await fetch('/api/demo/resume', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ token: demo.token }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            // ALREADY_CLAIMED just means an earlier load already redeemed this
+            // (e.g. signup's "already signed in" shortcut firing resume twice) —
+            // quiet, not an error worth surfacing.
+            if (data.detail !== 'ALREADY_CLAIMED') {
+                showToast(typeof data.detail === 'string' ? data.detail : 'Could not load your demo results.', 'warn');
+            }
+            return;
+        }
+
+        if (data.plan) {
+            state.plan = data.plan;
+            localStorage.removeItem('ls_user');
+        }
+
+        const newLeads = (data.leads || []).filter(l => !state.seenUrls.has(l.maps_url));
+        newLeads.forEach(l => state.seenUrls.add(l.maps_url));
+        state.allLeads = [...state.allLeads, ...newLeads];
+        state.totalScanned += data.total_found || newLeads.length;
+
+        addResultPins(newLeads);
+        applyFilterAndRender();
+        showLeadsUI();
+        showToast(`Unlocked ${newLeads.length} leads from your demo scan`, 'success');
+    } catch (err) {
+        showToast('Could not load your demo results.', 'warn');
+    }
 }
 
 /* ===== XSS HELPER ===== */
@@ -525,8 +543,6 @@ async function handleSearch() {
 
     // ── SINGLE SCAN ──
     const { lat, lng } = state.centerMarker.getLatLng();
-    const demoResume = pendingDemoResume;
-    pendingDemoResume = false;
     setLoading(true);
 
     try {
@@ -536,7 +552,7 @@ async function handleSearch() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({ category, lat, lng, radius_meters: radius, demo_resume: demoResume }),
+            body: JSON.stringify({ category, lat, lng, radius_meters: radius }),
         });
 
         const data = await resp.json();
@@ -580,7 +596,7 @@ async function handleSearch() {
         applyFilterAndRender();
         showLeadsUI();
 
-        if (data.limit_reached && !demoResume) {
+        if (data.limit_reached) {
             showPaywallModal('You\'ve reached your monthly limit. Here are the leads we found before the cutoff — upgrade to keep scanning.');
         }
 
