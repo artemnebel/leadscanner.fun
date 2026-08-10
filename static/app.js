@@ -252,6 +252,39 @@ function initLocateBtn() {
     });
 }
 
+/* ===== RESUME A DEMO SCAN AFTER LOGIN/SIGNUP ===== */
+// index.html's landing-page demo stashes its last scan in sessionStorage before
+// sending someone to /login or /signup; it survives that redirect (same tab,
+// same origin) so we can rerun it here for real once they're authenticated.
+const DEMO_RESUME_RADIUS_M = 8047;   // matches DEMO_RADIUS_M in main.py (fixed 5mi)
+
+function resumeDemoScan() {
+    const raw = sessionStorage.getItem('ls_pending_demo_scan');
+    if (!raw) return;
+
+    const token = typeof getToken === 'function' ? getToken() : null;
+    if (!token) return;   // not signed in yet — leave it for the next load
+
+    sessionStorage.removeItem('ls_pending_demo_scan');
+
+    let demo;
+    try { demo = JSON.parse(raw); } catch (e) { return; }
+    if (!demo || typeof demo.lat !== 'number' || typeof demo.lng !== 'number' || !demo.category) return;
+
+    const latlng = L.latLng(demo.lat, demo.lng);
+    state.centerMarker.setLatLng(latlng);
+    state.searchCircle.setLatLng(latlng);
+    state.map.setView(latlng, state.map.getZoom());
+
+    const radiusSlider = document.getElementById('radius-slider');
+    radiusSlider.value = DEMO_RESUME_RADIUS_M;
+    radiusSlider.dispatchEvent(new Event('input'));
+
+    document.getElementById('category-input').value = demo.category;
+    showToast('Picking up your demo scan for real...', 'success');
+    handleSearch();
+}
+
 /* ===== XSS HELPER ===== */
 function esc(str) {
     return String(str ?? '')
@@ -1055,6 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSortSelect();
     initLocateBtn();
     applyPlanToUI();
+    resumeDemoScan();
 
     document.getElementById('search-btn').addEventListener('click', handleSearch);
     document.getElementById('multi-btn').addEventListener('click', toggleBulkMode);
