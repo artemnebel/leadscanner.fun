@@ -169,6 +169,26 @@
                 localStorage.setItem('ls_token', data.token);
                 localStorage.removeItem('ls_user');
                 gtag('event', 'sign_up', { method: 'email' });
+
+                // A demo scan run before signing up gets claimed as free credits here,
+                // so the app view (resumeDemoScan() in app.js) shows it fully unlocked
+                // instead of hitting the paywall a brand-new, zero-credit account would.
+                const pendingDemo = sessionStorage.getItem('ls_pending_demo_scan');
+                if (pendingDemo) {
+                    try {
+                        const demo = JSON.parse(pendingDemo);
+                        if (demo && demo.total) {
+                            await fetch('/api/demo/claim-scan', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + data.token },
+                                body: JSON.stringify({ count: demo.total }),
+                            });
+                        }
+                    } catch (err) {
+                        console.error('[signup] demo claim failed', err);
+                    }
+                }
+
                 // Someone who started a purchase and signed up instead of logging
                 // in still gets taken back to what they were buying.
                 const back = sessionStorage.getItem('ls_after_login');

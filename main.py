@@ -2507,6 +2507,38 @@ async def demo_search(request: Request, req: DemoSearchRequest, db: Session = De
     }
 
 
+# One-time free grant so a brand-new signup can see, for real, the leads their
+# pre-signup demo scan teased — capped well below what a demo can turn up
+# (DEMO_RADIUS_M is untiled/unthinned) so this can't be used to farm free leads.
+DEMO_CLAIM_MAX_LEADS = 20
+
+
+class DemoClaimBody(BaseModel):
+    count: int
+
+
+@app.post("/api/demo/claim-scan")
+async def claim_demo_scan(
+    body: DemoClaimBody,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required.")
+    # Gated on the account never having held any credits — purchased or
+    # claimed — so this one-time grant can't be replayed.
+    if (user.lead_credits_total or 0) > 0:
+        raise HTTPException(status_code=400, detail="ALREADY_CLAIMED")
+
+    count = max(0, min(int(body.count or 0), DEMO_CLAIM_MAX_LEADS))
+    if count <= 0:
+        raise HTTPException(status_code=400, detail="Nothing to claim.")
+
+    granted = grant_leads(user, count)
+    db.commit()
+    return {"granted": granted, "usage": usage_info(user)}
+
+
 if __name__ == "__main__":
     import uvicorn
 

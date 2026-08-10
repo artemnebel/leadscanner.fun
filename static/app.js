@@ -270,6 +270,7 @@ function resumeDemoScan() {
     let demo;
     try { demo = JSON.parse(raw); } catch (e) { return; }
     if (!demo || typeof demo.lat !== 'number' || typeof demo.lng !== 'number' || !demo.category) return;
+    if (demo.total === 0) return;   // nothing was found; a real search would just 429 on a zero balance
 
     const latlng = L.latLng(demo.lat, demo.lng);
     state.centerMarker.setLatLng(latlng);
