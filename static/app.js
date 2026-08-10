@@ -567,7 +567,7 @@ async function handleSearch() {
         applyFilterAndRender();
         showLeadsUI();
 
-        if (data.limit_reached) {
+        if (data.limit_reached && !demoResume) {
             showPaywallModal('You\'ve reached your monthly limit. Here are the leads we found before the cutoff — upgrade to keep scanning.');
         }
 
