@@ -262,7 +262,7 @@ const DEMO_RESUME_RADIUS_M = 8047;   // matches DEMO_RADIUS_M in main.py (fixed 
 // resumed search asks the backend to match the demo's finer tiling.
 let pendingDemoResume = false;
 
-function resumeDemoScan() {
+async function resumeDemoScan() {
     const raw = sessionStorage.getItem('ls_pending_demo_scan');
     if (!raw) return;
 
@@ -275,6 +275,19 @@ function resumeDemoScan() {
     try { demo = JSON.parse(raw); } catch (e) { return; }
     if (!demo || typeof demo.lat !== 'number' || typeof demo.lng !== 'number' || !demo.category) return;
     if (demo.total === 0) return;   // nothing was found; a real search would just 429 on a zero balance
+
+    // signup.html claims these as free credits before redirecting here, but
+    // that only runs from its form-submit handler — someone already signed
+    // in (or who logged in instead of signing up) lands here without ever
+    // claiming. Best-effort retry: a no-op 400 ALREADY_CLAIMED if signup
+    // already did it, otherwise this is what actually grants the balance.
+    try {
+        await fetch('/api/demo/claim-scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ count: demo.total }),
+        });
+    } catch (e) { /* search below will 429 on its own if the balance is still empty */ }
 
     const latlng = L.latLng(demo.lat, demo.lng);
     state.centerMarker.setLatLng(latlng);
