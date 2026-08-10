@@ -2000,6 +2000,25 @@ def _haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return 2 * R * math.asin(math.sqrt(a))
 
 
+def _is_lead_candidate(place: dict, lat: float, lng: float, radius_m: float) -> bool:
+    """Same qualifying rules search_leads() builds a lead with, boolean-only.
+
+    Used to tell, mid-scan, whether enough tiles have been fetched yet for a
+    metered account — so a big radius on a small balance doesn't pay for
+    tiles whose leads would just get trimmed off afterward anyway."""
+    if place.get("businessStatus") == "CLOSED_PERMANENTLY":
+        return False
+    if place.get("websiteUri"):
+        return False
+    if not (place.get("nationalPhoneNumber") or "") or not (place.get("userRatingCount") or 0):
+        return False
+    geo = place.get("location", {})
+    plat, plng = geo.get("latitude"), geo.get("longitude")
+    if plat is None or plng is None:
+        return False
+    return _haversine_m(lat, lng, plat, plng) <= radius_m
+
+
 def _generate_sub_circles(
     lat: float,
     lng: float,
@@ -2211,7 +2230,15 @@ async def search_leads(
         sub_radius = DEMO_SUB_RADIUS_M
         sub_pages = DEMO_MAX_PAGES
 
+    # Nearest-first: for a metered account, tiles stop getting fetched (and
+    # paid for) as soon as there are enough qualifying leads to cover the
+    # remaining balance, so the ones skipped are the farthest from center —
+    # a wide radius on a small balance no longer pays to tile the whole disc
+    # just to trim almost all of it away below.
+    sub_circles.sort(key=lambda c: _haversine_m(req.lat, req.lng, c[0], c[1]))
+
     _search_sem = asyncio.Semaphore(5)  # max 5 concurrent sub-circle requests
+    TILE_BATCH = 5  # matches the concurrency cap; also the early-stop check granularity
 
     async with httpx.AsyncClient(timeout=60.0) as client:
 
@@ -2224,16 +2251,24 @@ async def search_leads(
                 except Exception:
                     return []
 
-        sub_results = await asyncio.gather(*[_fetch_sub(slat, slng) for slat, slng in sub_circles])
-
         seen_ids: set[str] = set()
         all_places: list = []
-        for batch in sub_results:
-            for place in batch:
-                pid = place.get("id")
-                if pid and pid not in seen_ids:
-                    seen_ids.add(pid)
-                    all_places.append(place)
+        for i in range(0, len(sub_circles), TILE_BATCH):
+            batch = sub_circles[i:i + TILE_BATCH]
+            batch_results = await asyncio.gather(*[_fetch_sub(slat, slng) for slat, slng in batch])
+            for places in batch_results:
+                for place in places:
+                    pid = place.get("id")
+                    if pid and pid not in seen_ids:
+                        seen_ids.add(pid)
+                        all_places.append(place)
+
+            if available_before is not None:
+                qualifying = sum(
+                    1 for p in all_places if _is_lead_candidate(p, req.lat, req.lng, req.radius_meters)
+                )
+                if qualifying >= available_before:
+                    break
 
         # Filter to businesses without a website. We trust Text Search's websiteUri
         # field — no per-business Place Details confirmation (that was the dominant cost).
