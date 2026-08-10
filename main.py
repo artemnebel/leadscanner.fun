@@ -2050,6 +2050,7 @@ class SearchRequest(BaseModel):
     lat: float
     lng: float
     radius_meters: int
+    demo_resume: bool = False  # rerunning a pre-signup demo scan — use its finer tiling so leads line up
 
 
 
@@ -2199,6 +2200,16 @@ async def search_leads(
     # For grid mode use 8 km sub-circles and 2 pages each; single mode uses full radius + 3 pages
     sub_radius = 8_000 if is_grid else req.radius_meters
     sub_pages = 2 if is_grid else 3
+
+    # A demo-resume scan uses the demo's own finer 4km tiling instead of the
+    # coarser default above, so it surfaces the same leads the demo did
+    # (and, via the shared 30-day Places cache, often the very same tiles).
+    # Capped to the demo's own radius so this can't be used to cheapen a
+    # normal large-radius scan into finer, costlier tiling.
+    if req.demo_resume and req.radius_meters <= DEMO_RADIUS_M:
+        sub_circles = _generate_sub_circles(req.lat, req.lng, req.radius_meters, DEMO_SUB_RADIUS_M)
+        sub_radius = DEMO_SUB_RADIUS_M
+        sub_pages = DEMO_MAX_PAGES
 
     _search_sem = asyncio.Semaphore(5)  # max 5 concurrent sub-circle requests
 

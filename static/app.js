@@ -258,6 +258,10 @@ function initLocateBtn() {
 // same origin) so we can rerun it here for real once they're authenticated.
 const DEMO_RESUME_RADIUS_M = 8047;   // matches DEMO_RADIUS_M in main.py (fixed 5mi)
 
+// Read (and cleared) by handleSearch()'s single-scan request so only the one
+// resumed search asks the backend to match the demo's finer tiling.
+let pendingDemoResume = false;
+
 function resumeDemoScan() {
     const raw = sessionStorage.getItem('ls_pending_demo_scan');
     if (!raw) return;
@@ -283,6 +287,7 @@ function resumeDemoScan() {
 
     document.getElementById('category-input').value = demo.category;
     showToast('Picking up your demo scan for real...', 'success');
+    pendingDemoResume = true;
     handleSearch();
 }
 
@@ -507,6 +512,8 @@ async function handleSearch() {
 
     // ── SINGLE SCAN ──
     const { lat, lng } = state.centerMarker.getLatLng();
+    const demoResume = pendingDemoResume;
+    pendingDemoResume = false;
     setLoading(true);
 
     try {
@@ -516,7 +523,7 @@ async function handleSearch() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({ category, lat, lng, radius_meters: radius }),
+            body: JSON.stringify({ category, lat, lng, radius_meters: radius, demo_resume: demoResume }),
         });
 
         const data = await resp.json();
