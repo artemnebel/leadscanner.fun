@@ -2079,6 +2079,7 @@ class SearchRequest(BaseModel):
     lng: float
     radius_meters: int
     include_poor_websites: bool = False  # admin-only test flag — see `enhanced` in search_leads()
+    poor_websites_only: bool = False     # admin-only: drop plain no-website leads too — see `poor_only`
 
 
 
@@ -2451,6 +2452,9 @@ async def search_leads(
     # Poor-website detection is an admin-only test feature — silently ignored for
     # anyone else, since the frontend never renders the control for them either.
     enhanced = bool(req.include_poor_websites) and user.email == ADMIN_EMAIL
+    # "Poor websites only" narrows enhanced mode further: skip plain no-website
+    # leads so results are exclusively businesses that have a neglected site.
+    poor_only = enhanced and bool(req.poor_websites_only)
 
     feats = plan_features(user)
 
@@ -2570,6 +2574,11 @@ async def search_leads(
             }
             if website and enhanced:
                 website_candidates.append((lead, website))
+                continue
+            if poor_only:
+                # This business has no real website at all — poor_only wants
+                # exclusively businesses whose existing site is neglected, so
+                # skip it rather than adding a plain no-website lead.
                 continue
             leads.append(lead)
 

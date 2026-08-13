@@ -472,7 +472,9 @@ async function handleSearch() {
     }
 
     const radius = parseInt(document.getElementById('radius-slider').value, 10);
-    const includePoorWebsites = document.getElementById('include-poor-websites-toggle')?.checked || false;
+    const websiteFilter = document.querySelector('input[name="website-filter"]:checked')?.value || 'none';
+    const includePoorWebsites = websiteFilter !== 'none';
+    const poorWebsitesOnly = websiteFilter === 'poor_only';
 
     // ── BULK SCAN ──
     if (state.bulkMode) {
@@ -489,7 +491,7 @@ async function handleSearch() {
                 const resp = await fetch('/api/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ category, lat: latlng.lat, lng: latlng.lng, radius_meters: radius, include_poor_websites: includePoorWebsites }),
+                    body: JSON.stringify({ category, lat: latlng.lat, lng: latlng.lng, radius_meters: radius, include_poor_websites: includePoorWebsites, poor_websites_only: poorWebsitesOnly }),
                 });
                 const data = await resp.json();
                 if (resp.status === 401) { window.location.href = '/login'; return; }
@@ -553,7 +555,7 @@ async function handleSearch() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({ category, lat, lng, radius_meters: radius, include_poor_websites: includePoorWebsites }),
+            body: JSON.stringify({ category, lat, lng, radius_meters: radius, include_poor_websites: includePoorWebsites, poor_websites_only: poorWebsitesOnly }),
         });
 
         const data = await resp.json();
@@ -1149,8 +1151,9 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         document.getElementById('quality-filter-menu').classList.toggle('hidden');
     });
-    document.getElementById('include-poor-websites-toggle')?.addEventListener('change', e => {
-        document.getElementById('quality-filter-btn')?.classList.toggle('qf-active', e.target.checked);
+    document.getElementById('quality-filter-menu')?.addEventListener('change', e => {
+        if (e.target.name !== 'website-filter') return;
+        document.getElementById('quality-filter-btn')?.classList.toggle('qf-active', e.target.value !== 'none');
     });
     document.addEventListener('click', () => {
         document.getElementById('export-menu')?.classList.add('hidden');

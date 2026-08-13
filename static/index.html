@@ -1974,12 +1974,25 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                         Filter
                     </button>
-                    <div id="quality-filter-menu" class="qf-menu hidden">
+                    <div id="quality-filter-menu" class="qf-menu hidden" role="radiogroup" aria-label="Website filter">
                         <label class="settings-toggle-row qf-option">
-                            <input type="checkbox" id="include-poor-websites-toggle">
+                            <input type="radio" name="website-filter" id="wf-none" value="none" checked>
                             <span>
-                                <span class="settings-toggle-title">Include poor/outdated websites</span>
+                                <span class="settings-toggle-title">No website only</span>
+                            </span>
+                        </label>
+                        <label class="settings-toggle-row qf-option">
+                            <input type="radio" name="website-filter" id="wf-include-poor" value="include_poor">
+                            <span>
+                                <span class="settings-toggle-title">No website + poor websites</span>
                                 <span class="settings-toggle-sub">Admin test only. Also surface businesses whose site looks abandoned.</span>
+                            </span>
+                        </label>
+                        <label class="settings-toggle-row qf-option">
+                            <input type="radio" name="website-filter" id="wf-poor-only" value="poor_only">
+                            <span>
+                                <span class="settings-toggle-title">Poor websites only</span>
+                                <span class="settings-toggle-sub">Admin test only. Skip no-website leads entirely.</span>
                             </span>
                         </label>
                     </div>
