@@ -472,6 +472,7 @@ async function handleSearch() {
     }
 
     const radius = parseInt(document.getElementById('radius-slider').value, 10);
+    const includePoorWebsites = document.getElementById('include-poor-websites-toggle')?.checked || false;
 
     // ── BULK SCAN ──
     if (state.bulkMode) {
@@ -488,7 +489,7 @@ async function handleSearch() {
                 const resp = await fetch('/api/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ category, lat: latlng.lat, lng: latlng.lng, radius_meters: radius }),
+                    body: JSON.stringify({ category, lat: latlng.lat, lng: latlng.lng, radius_meters: radius, include_poor_websites: includePoorWebsites }),
                 });
                 const data = await resp.json();
                 if (resp.status === 401) { window.location.href = '/login'; return; }
@@ -552,7 +553,7 @@ async function handleSearch() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({ category, lat, lng, radius_meters: radius }),
+            body: JSON.stringify({ category, lat, lng, radius_meters: radius, include_poor_websites: includePoorWebsites }),
         });
 
         const data = await resp.json();
@@ -663,9 +664,16 @@ function renderTable() {
         const ratingCell = (lead.rating != null)
             ? `<span class="rating-value"><span class="rating-star">★</span> ${Number(lead.rating).toFixed(1)} <span class="rating-reviews">(${lead.reviews ?? 0})</span></span>`
             : '<span class="muted">—</span>';
+        const websiteBadge = lead.website_status === 'poor'
+            ? `<span class="lead-badge lead-badge-poor"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="#icon-poor-website"/></svg>Poor Site</span>`
+            : '';
+        // A long business name plus the badge would otherwise both get clipped by
+        // .name-cell's overflow:hidden (style.css) — the has-badge variant (below)
+        // truncates just the name text so the "Poor Site" flag is never what gets cut off.
+        const nameCellClass = websiteBadge ? 'name-cell has-badge' : 'name-cell';
         tr.innerHTML = `
             <td class="select-cell"><input type="checkbox" class="row-select" data-url="${esc(lead.maps_url)}" ${checked ? 'checked' : ''}></td>
-            <td class="name-cell" title="${esc(lead.name)}"><a href="${esc(lead.maps_url)}" target="_blank" rel="noopener" class="name-link">${esc(lead.name)}</a></td>
+            <td class="${nameCellClass}" title="${esc(lead.name)}"><a href="${esc(lead.maps_url)}" target="_blank" rel="noopener" class="name-link">${esc(lead.name)}</a>${websiteBadge}</td>
             <td data-label="PHONE">${phoneCell}</td>
             <td data-label="RATING">${ratingCell}</td>
             <td class="muted" data-label="ADDRESS" title="${esc(lead.city)}">${esc(lead.city)}</td>
@@ -779,6 +787,8 @@ async function bulkSaveSelected() {
 async function applyPlanToUI() {
     const user = typeof getUser === 'function' ? await getUser() : null;
     state.plan = user && user.plan ? user.plan : null;
+    // Poor-website filter is an admin-only test control — stays hidden for everyone else.
+    document.getElementById('quality-filter-wrap')?.classList.toggle('hidden', !(user && user.is_admin));
     const slider = document.getElementById('radius-slider');
     if (!slider || !state.plan || !state.plan.max_radius_m) return;
     // Cap the slider at the plan's max radius (~30mi for everyone today).
@@ -1101,6 +1111,8 @@ function setLoading(isLoading) {
     if (!isLoading) document.getElementById('search-btn').textContent = 'SCAN';
     const multiBtn = document.getElementById('multi-btn');
     if (multiBtn) multiBtn.disabled = isLoading;
+    const qfBtn = document.getElementById('quality-filter-btn');
+    if (qfBtn) qfBtn.disabled = isLoading;
 }
 
 function showLeadsUI() {
@@ -1133,8 +1145,16 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         document.getElementById('export-menu').classList.toggle('hidden');
     });
+    document.getElementById('quality-filter-btn')?.addEventListener('click', e => {
+        e.stopPropagation();
+        document.getElementById('quality-filter-menu').classList.toggle('hidden');
+    });
+    document.getElementById('include-poor-websites-toggle')?.addEventListener('change', e => {
+        document.getElementById('quality-filter-btn')?.classList.toggle('qf-active', e.target.checked);
+    });
     document.addEventListener('click', () => {
         document.getElementById('export-menu')?.classList.add('hidden');
+        document.getElementById('quality-filter-menu')?.classList.add('hidden');
     });
     document.getElementById('clear-btn').addEventListener('click', handleClearClick);
     document.getElementById('save-btn').addEventListener('click', bulkSaveSelected);

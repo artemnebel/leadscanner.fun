@@ -82,8 +82,21 @@ class SavedClient(Base):
     reviews = Column(Integer)
     status = Column(String, default="new")                # new | contacted | interested | won | lost
     notes = Column(Text, default="")
+    website = Column(String, nullable=True)               # set when saved from a poor-website lead
+    website_status = Column(String, nullable=True)        # "none" | "poor" at the time it was saved
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class WebsiteCache(Base):
+    __tablename__ = "website_cache"
+
+    key = Column(String, primary_key=True)               # sha256 of the lowercased/stripped URL
+    url = Column(String)                                  # original URL, for debugging
+    status = Column(String)                               # "fine" | "poor"
+    score = Column(Integer)
+    issues = Column(Text)                                 # JSON list of reason strings
+    checked_at = Column(DateTime, default=datetime.utcnow)
 
 
 def init_db():
@@ -115,18 +128,27 @@ def init_db():
         # Last Stripe invoice granted, so webhook retries do not top up twice.
         ("last_invoice_id", "VARCHAR"),
     ]
+    saved_client_migrations = [
+        ("website", "VARCHAR"),
+        ("website_status", "VARCHAR"),
+    ]
     with engine.connect() as conn:
-        for col, typedef in migrations:
-            try:
-                if is_postgres:
-                    conn.execute(text(f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col} {typedef}"))
-                else:
-                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {typedef}"))
-                conn.commit()
-                print(f"[init_db] migrated column: {col}", flush=True)
-            except Exception as e:
-                conn.rollback()
-                print(f"[init_db] column {col} skipped: {e}", flush=True)
+        _run_migrations(conn, "users", is_postgres, migrations)
+        _run_migrations(conn, "saved_clients", is_postgres, saved_client_migrations)
+
+
+def _run_migrations(conn, table: str, is_postgres: bool, migrations: list[tuple[str, str]]) -> None:
+    for col, typedef in migrations:
+        try:
+            if is_postgres:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {typedef}"))
+            else:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {typedef}"))
+            conn.commit()
+            print(f"[init_db] migrated column: {table}.{col}", flush=True)
+        except Exception as e:
+            conn.rollback()
+            print(f"[init_db] column {table}.{col} skipped: {e}", flush=True)
 
 
 def get_db():

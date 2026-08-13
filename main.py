@@ -13,6 +13,9 @@ from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel
 import httpx
 import asyncio
+import ipaddress
+import socket
+import time
 import os
 import stripe
 from datetime import date, datetime, timezone, timedelta
@@ -25,7 +28,7 @@ import bcrypt
 from sqlalchemy.orm import Session
 from sqlalchemy import text, func
 
-from database import User, PlacesCache, SearchLog, SavedClient, get_db, init_db
+from database import User, PlacesCache, SearchLog, SavedClient, WebsiteCache, get_db, init_db
 from send_promo import (
     build_html as build_promo_html,
     build_text as build_promo_text,
@@ -1884,6 +1887,8 @@ class SaveClientBody(BaseModel):
     maps_url: str | None = ""
     rating: float | None = None
     reviews: int | None = None
+    website: str | None = ""
+    website_status: str | None = None
 
 class UpdateClientBody(BaseModel):
     status: str | None = None
@@ -1900,6 +1905,8 @@ def _client_to_dict(c: SavedClient) -> dict:
         "reviews": c.reviews,
         "status": c.status,
         "notes": c.notes or "",
+        "website": c.website,
+        "website_status": c.website_status,
         "created_at": c.created_at.isoformat() if c.created_at else None,
     }
 
@@ -1948,6 +1955,8 @@ async def save_client(body: SaveClientBody, user=Depends(get_current_user), db: 
         reviews=body.reviews,
         status="new",
         notes="",
+        website=body.website or None,
+        website_status=body.website_status,
     )
     db.add(client)
     db.commit()
@@ -2069,6 +2078,7 @@ class SearchRequest(BaseModel):
     lat: float
     lng: float
     radius_meters: int
+    include_poor_websites: bool = False  # admin-only test flag — see `enhanced` in search_leads()
 
 
 
@@ -2174,6 +2184,250 @@ async def get_nearby_places(
     return places
 
 
+# ── Website quality check (admin-only test feature) ────────────────────────────
+# Evaluates a business's own website directly (no paid third-party API) so a
+# business that technically has a site but hasn't touched it in years can still
+# surface as a lead. Gated to the admin account only — see `enhanced` in
+# search_leads(). Cost is our own outbound bandwidth/CPU only.
+
+POOR_SCORE_THRESHOLD = 4           # score >= this => "poor". Starting guess — tune from WebsiteCache.score.
+MAX_WEBSITE_CHECKS_PER_SCAN = 30   # cache-miss fetches only; bounds latency + target-site load
+MAX_REDIRECTS = 3
+MAX_RESPONSE_BYTES = 300_000
+WEBSITE_FETCH_TIMEOUT = httpx.Timeout(connect=3.0, read=5.0, write=3.0, pool=3.0)
+WEBSITE_USER_AGENT = "LeadScannerBot/1.0 (+https://leadscanner.fun/about)"
+WEBSITE_CACHE_TTL = timedelta(days=30)
+
+# A business whose Places "website" is actually a social/aggregator page —
+# fetching those produces misleading scores (login walls, SPA shells), so
+# route them into the plain no-website bucket instead of scoring them.
+SOCIAL_HOST_SUFFIXES = ("facebook.com", "instagram.com", "linktr.ee", "m.me", "wa.me")
+
+_OLD_CMS_GENERATORS = (
+    "wordpress 1.", "wordpress 2.", "wordpress 3.", "wordpress 4.0", "wordpress 4.1",
+    "wordpress 4.2", "wordpress 4.3", "wordpress 4.4", "wordpress 4.5", "wordpress 4.6",
+    "joomla! 1.5", "joomla! 2.5", "drupal 6", "drupal 7",
+    "microsoft frontpage", "adobe dreamweaver",
+)
+_PLACEHOLDER_TITLES = (
+    "untitled document", "welcome to nginx", "apache2 ubuntu default page",
+    "iis windows server", "new page 1", "index of /",
+)
+_PARKED_PHRASES = (
+    "domain is for sale", "this domain is parked", "buy this domain",
+    "domain parking", "future home of",
+)
+
+_RE_VIEWPORT = re.compile(r'<meta[^>]+name=["\']viewport["\']', re.IGNORECASE)
+_RE_GENERATOR = re.compile(r'<meta[^>]+name=["\']generator["\'][^>]+content=["\']([^"\']+)["\']', re.IGNORECASE)
+_RE_TITLE = re.compile(r'<title[^>]*>(.*?)</title>', re.IGNORECASE | re.DOTALL)
+_RE_COPYRIGHT_YEAR = re.compile(r'(?:copyright|©|&copy;)[^0-9]{0,15}(20\d{2})', re.IGNORECASE)
+_RE_TABLE = re.compile(r'<table', re.IGNORECASE)
+_RE_RESPONSIVE_CSS = re.compile(r'flex|grid|@media', re.IGNORECASE)
+_RE_OBSOLETE_TAGS = re.compile(r'<marquee|<frameset|<frame[\s>]|<font[\s>]', re.IGNORECASE)
+_RE_FLASH = re.compile(r'\.swf|application/x-shockwave-flash', re.IGNORECASE)
+_RE_TAG = re.compile(r'<[^>]+>')
+
+
+def _is_social_website(url: str) -> bool:
+    host = (httpx.URL(url).host or "").lower()
+    return any(host == s or host.endswith("." + s) for s in SOCIAL_HOST_SUFFIXES)
+
+
+def _is_blocked_ip(ip_str: str) -> bool:
+    """True if this address is private/loopback/link-local/etc — not a real public site."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+    except ValueError:
+        return True
+    return (
+        ip.is_private or ip.is_loopback or ip.is_link_local
+        or ip.is_multicast or ip.is_reserved or ip.is_unspecified
+    )
+
+
+async def _validate_url_host(url: str) -> str | None:
+    """Resolves and IP-checks a URL before we let httpx connect to it (SSRF guard).
+    Returns the scheme if the URL is safe to fetch, else None."""
+    parsed = httpx.URL(url)
+    if parsed.scheme not in ("http", "https") or not parsed.host:
+        return None
+    try:
+        infos = await asyncio.to_thread(socket.getaddrinfo, parsed.host, None)
+    except Exception:
+        return None
+    ips = {info[4][0] for info in infos}
+    if not ips or any(_is_blocked_ip(ip) for ip in ips):
+        return None
+    return parsed.scheme
+
+
+async def _safe_fetch_website(client: httpx.AsyncClient, url: str) -> tuple[str | None, str | None, float, bool]:
+    """Fetches a business's own site defensively. Returns (html, final_scheme, elapsed_seconds,
+    blocked). On failure html is None; `blocked` distinguishes a site that actively refused the
+    request (403/429 — almost always bot-protection on an otherwise-healthy site, not neglect)
+    from every other failure (DNS/connection/TLS/timeout/5xx — a real reachability problem).
+    Redirects are followed manually (not via httpx's follow_redirects) so every hop gets
+    re-validated against the SSRF guard above."""
+    current = url
+    started = time.monotonic()
+    for _ in range(MAX_REDIRECTS + 1):
+        scheme = await _validate_url_host(current)
+        if not scheme:
+            return None, None, 0.0, False
+        try:
+            async with client.stream(
+                "GET", current, timeout=WEBSITE_FETCH_TIMEOUT,
+                headers={
+                    "User-Agent": WEBSITE_USER_AGENT,
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "en-US,en;q=0.9",
+                },
+            ) as resp:
+                if resp.status_code in (301, 302, 303, 307, 308):
+                    loc = resp.headers.get("location")
+                    if not loc:
+                        return None, None, 0.0, False
+                    current = str(httpx.URL(current).join(loc))
+                    continue
+                if resp.status_code in (403, 429):
+                    return None, None, 0.0, True
+                if resp.status_code >= 400:
+                    return None, None, 0.0, False
+                ctype = resp.headers.get("content-type", "")
+                if ctype and "html" not in ctype.lower() and "text" not in ctype.lower():
+                    return None, None, 0.0, False
+                body: list[bytes] = []
+                total = 0
+                async for chunk in resp.aiter_bytes():
+                    body.append(chunk)
+                    total += len(chunk)
+                    if total >= MAX_RESPONSE_BYTES:
+                        break
+                html = b"".join(body).decode(resp.encoding or "utf-8", errors="replace")
+                return html, scheme, time.monotonic() - started, False
+        except Exception:
+            return None, None, 0.0, False
+    return None, None, 0.0, False
+
+
+def _score_website(html: str, final_scheme: str, elapsed_s: float) -> tuple[str, int, list[str]]:
+    """Heuristic-only scoring (regex over the raw HTML — no parser dependency).
+    Higher score = more outdated/neglected. Returns (status, score, issues)."""
+    score = 0
+    issues: list[str] = []
+
+    if final_scheme != "https":
+        score += 3
+        issues.append("No HTTPS")
+
+    if not _RE_VIEWPORT.search(html):
+        score += 3
+        issues.append("Not mobile-friendly")
+
+    if _RE_OBSOLETE_TAGS.search(html):
+        score += 4
+        issues.append("Obsolete HTML (marquee/frames/font tags)")
+
+    if _RE_FLASH.search(html):
+        score += 4
+        issues.append("Relies on Adobe Flash")
+
+    gen_match = _RE_GENERATOR.search(html)
+    if gen_match:
+        generator = gen_match.group(1).strip()
+        if any(old in generator.lower() for old in _OLD_CMS_GENERATORS):
+            score += 3
+            issues.append(f"Outdated CMS ({generator})")
+
+    has_responsive_css = bool(_RE_RESPONSIVE_CSS.search(html))
+    if len(_RE_TABLE.findall(html)) >= 4 and not _RE_VIEWPORT.search(html) and not has_responsive_css:
+        score += 2
+        issues.append("Old table-based layout")
+
+    year_matches = _RE_COPYRIGHT_YEAR.findall(html)
+    if year_matches:
+        newest_year = max(int(y) for y in year_matches)
+        if datetime.utcnow().year - newest_year >= 4:
+            score += 2
+            issues.append(f"Copyright not updated since {newest_year}")
+
+    title_match = _RE_TITLE.search(html)
+    title_text = re.sub(r'\s+', ' ', title_match.group(1)).strip().lower() if title_match else ""
+    if not title_text or title_text in _PLACEHOLDER_TITLES:
+        score += 3
+        issues.append("Missing or placeholder page title")
+
+    text_only = _RE_TAG.sub(' ', html)
+    if len(text_only.strip()) < 1500:
+        score += 2
+        issues.append("Almost no content on the homepage")
+
+    lower_html = html.lower()
+    if any(phrase in lower_html for phrase in _PARKED_PHRASES):
+        score = max(score, 8)
+        issues.append("Domain appears parked / for sale")
+
+    if elapsed_s > 4.0:
+        score += 1
+        issues.append("Site is slow to load")
+
+    status = "poor" if score >= POOR_SCORE_THRESHOLD else "fine"
+    return status, score, issues
+
+
+def _website_cache_key(url: str) -> str:
+    return hashlib.sha256(url.strip().lower().encode()).hexdigest()
+
+
+def _website_cache_get(db: Session, key: str) -> dict | None:
+    row = db.query(WebsiteCache).filter(WebsiteCache.key == key).first()
+    if row and row.checked_at and (datetime.utcnow() - row.checked_at) < WEBSITE_CACHE_TTL:
+        try:
+            return {"status": row.status, "score": row.score, "issues": json.loads(row.issues or "[]")}
+        except Exception:
+            return None
+    return None
+
+
+def _website_cache_put(db: Session, key: str, url: str, status: str, score: int, issues: list[str]) -> None:
+    try:
+        row = db.query(WebsiteCache).filter(WebsiteCache.key == key).first()
+        if row:
+            row.url, row.status, row.score, row.issues, row.checked_at = url, status, score, json.dumps(issues), datetime.utcnow()
+        else:
+            db.add(WebsiteCache(key=key, url=url, status=status, score=score, issues=json.dumps(issues), checked_at=datetime.utcnow()))
+        db.commit()
+    except Exception:
+        db.rollback()
+
+
+async def check_website_quality(client: httpx.AsyncClient, db: Session, url: str) -> dict | None:
+    """Cache-first website quality check. Returns {"status", "score", "issues"} where status
+    is "poor" (flag it), "fine" (don't), or "blocked" (site actively refused the request —
+    almost always bot-protection on an otherwise-healthy site, e.g. the real homedepot.com
+    403s a bare-User-Agent GET; treated as inconclusive, NOT as evidence of neglect, and the
+    caller drops it the same as "fine"). A connection-level failure (DNS/TLS/timeout/5xx) is
+    a genuine reachability problem and is scored "poor". Blocked/scored results are both
+    cached; a bot-block is a stable site policy, not a transient blip."""
+    key = _website_cache_key(url)
+    cached = _website_cache_get(db, key)
+    if cached is not None:
+        return cached
+
+    html, final_scheme, elapsed_s, blocked = await _safe_fetch_website(client, url)
+    if blocked:
+        result = {"status": "blocked", "score": 0, "issues": ["Site blocks automated requests"]}
+        _website_cache_put(db, key, url, result["status"], result["score"], result["issues"])
+        return result
+    if html is None:
+        return {"status": "poor", "score": 999, "issues": ["Site is unreachable"]}
+
+    status, score, issues = _score_website(html, final_scheme, elapsed_s)
+    _website_cache_put(db, key, url, status, score, issues)
+    return {"status": status, "score": score, "issues": issues}
+
+
 @app.post("/api/search")
 @limiter.limit("15/minute")
 async def search_leads(
@@ -2193,6 +2447,10 @@ async def search_leads(
         raise HTTPException(status_code=401, detail="LOGIN_REQUIRED")
     if not API_KEY:
         raise HTTPException(status_code=500, detail="GOOGLE_MAPS_API_KEY not set in .env file")
+
+    # Poor-website detection is an admin-only test feature — silently ignored for
+    # anyone else, since the frontend never renders the control for them either.
+    enhanced = bool(req.include_poor_websites) and user.email == ADMIN_EMAIL
 
     feats = plan_features(user)
 
@@ -2259,16 +2517,24 @@ async def search_leads(
                 if qualifying >= available_before:
                     break
 
-        # Filter to businesses without a website. We trust Text Search's websiteUri
-        # field — no per-business Place Details confirmation (that was the dominant cost).
+        # Filter to businesses without a website (or, in the admin-only enhanced
+        # mode, also businesses whose website scores as neglected/outdated). We
+        # trust Text Search's websiteUri field — no per-business Place Details
+        # confirmation (that was the dominant cost); the website quality check
+        # below is a direct fetch of the business's own site, still zero
+        # additional Google API cost.
         leads = []
+        website_candidates: list[tuple[dict, str]] = []
         skipped_has_website = 0
         skipped_no_contact = 0
         skipped_out_of_radius = 0
         for place in all_places:
             if place.get("businessStatus") == "CLOSED_PERMANENTLY":
                 continue
-            if place.get("websiteUri"):
+            website = place.get("websiteUri") or ""
+            if website and enhanced and _is_social_website(website):
+                website = ""  # a Facebook/Instagram/etc page isn't a real website — treat as none
+            if website and not enhanced:
                 skipped_has_website += 1
                 continue
             phone = place.get("nationalPhoneNumber", "") or ""
@@ -2289,18 +2555,49 @@ async def search_leads(
             if _haversine_m(req.lat, req.lng, plat, plng) > req.radius_meters:
                 skipped_out_of_radius += 1
                 continue
-            leads.append(
-                {
-                    "name": place.get("displayName", {}).get("text", "Unknown"),
-                    "city": _short_city(place),
-                    "maps_url": place.get("googleMapsUri", ""),
-                    "lat": geo.get("latitude"),
-                    "lng": geo.get("longitude"),
-                    "phone": phone,
-                    "rating": place.get("rating"),
-                    "reviews": place.get("userRatingCount"),
-                }
-            )
+            lead = {
+                "name": place.get("displayName", {}).get("text", "Unknown"),
+                "city": _short_city(place),
+                "maps_url": place.get("googleMapsUri", ""),
+                "lat": geo.get("latitude"),
+                "lng": geo.get("longitude"),
+                "phone": phone,
+                "rating": place.get("rating"),
+                "reviews": place.get("userRatingCount"),
+                "website": None,
+                "website_status": "none",
+                "website_issues": [],
+            }
+            if website and enhanced:
+                website_candidates.append((lead, website))
+                continue
+            leads.append(lead)
+
+        # Second pass: score the has-website candidates by fetching each site
+        # directly. Admin-only — website_candidates is always empty otherwise.
+        # Runs after the Places client above has finished with its own 60s
+        # timeout; this uses a separate, short-timeout client.
+        poor_websites_found = 0
+        if enhanced and website_candidates:
+            website_candidates = website_candidates[:MAX_WEBSITE_CHECKS_PER_SCAN]
+            website_sem = asyncio.Semaphore(10)
+            async with httpx.AsyncClient(timeout=WEBSITE_FETCH_TIMEOUT) as wclient:
+                async def _check(lead: dict, url: str):
+                    async with website_sem:
+                        try:
+                            return lead, url, await check_website_quality(wclient, db, url)
+                        except Exception:
+                            return lead, url, None
+                checked = await asyncio.gather(*[_check(l, u) for l, u in website_candidates])
+            for lead, url, result in checked:
+                if not result or result["status"] != "poor":
+                    skipped_has_website += 1
+                    continue
+                lead["website"] = url
+                lead["website_status"] = "poor"
+                lead["website_issues"] = result["issues"]
+                leads.append(lead)
+                poor_websites_found += 1
 
     leads_count = len(leads)
 
@@ -2339,6 +2636,7 @@ async def search_leads(
         "skipped_has_website": skipped_has_website,
         "skipped_no_contact": skipped_no_contact,
         "skipped_out_of_radius": skipped_out_of_radius,
+        "poor_websites_found": poor_websites_found,
         "usage": usage_info(user),
         "plan": plan_payload(user),
         "limit_reached": limit_reached,

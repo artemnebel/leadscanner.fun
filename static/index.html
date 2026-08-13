@@ -719,6 +719,41 @@
         background: #ffb000; border-color: #ffb000; color: #04150a;
         text-shadow: none; box-shadow: none;
     }
+    #quality-filter-wrap { position: relative; flex-shrink: 0; }
+    #quality-filter-btn.qf-active {
+        background: rgba(255,176,0,0.12); border-color: #ffb000; color: #ffb000;
+        text-shadow: none; box-shadow: none; animation: none;
+    }
+    #quality-filter-btn.qf-active:hover {
+        background: #ffb000; border-color: #ffb000; color: #04150a;
+    }
+    .qf-menu {
+        position: absolute; top: calc(100% + 6px); left: 0; z-index: 650; min-width: 260px;
+        background: #101418; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
+        overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.4); padding: 4px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    .qf-menu .settings-toggle-row { padding: 10px; border-radius: 7px; }
+    .qf-menu .settings-toggle-row:hover { background: rgba(255,255,255,0.06); }
+    .lead-badge {
+        display: inline-flex; align-items: center; gap: 4px; margin-left: 8px;
+        padding: 2px 7px; border-radius: 999px;
+        font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700;
+        letter-spacing: 0.04em; text-transform: uppercase; vertical-align: middle; white-space: nowrap;
+    }
+    .lead-badge svg { width: 11px; height: 11px; }
+    .lead-badge-poor { background: rgba(255,176,0,0.12); color: #ffb000; border: 1px solid rgba(255,176,0,0.4); }
+    /* style.css's td.name-cell clips overflow on the whole cell (max-width:160px),
+       which would cut the badge off along with a long name. Truncate just the name
+       text instead so the flag itself always stays visible. */
+    #leads-table tbody td.name-cell.has-badge {
+        max-width: none; overflow: visible; white-space: nowrap;
+        display: flex; align-items: center; gap: 0;
+    }
+    #leads-table tbody td.name-cell.has-badge .name-link {
+        max-width: 130px; overflow: hidden; text-overflow: ellipsis;
+        white-space: nowrap; display: inline-block; vertical-align: middle;
+    }
     #search-form .btn-primary {
         background: #3ee87b; border-color: #3ee87b; color: #04150a;
         font-weight: 700; letter-spacing: 0.02em; padding: 0 24px;
@@ -1541,6 +1576,18 @@
                     <path d="M16.3 16.3 19.7 19.7 M19.7 16.3 16.3 19.7"
                           fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>
                 </symbol>
+                <!-- "Poor website" mark: same globe, amber "!" badge instead of a red
+                     "X" — the business has a site, it's just neglected. Admin-only test badge. -->
+                <symbol id="icon-poor-website" viewBox="0 0 24 24">
+                    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                        <circle cx="10.5" cy="10.5" r="8"/>
+                        <line x1="2.5" y1="10.5" x2="18.5" y2="10.5"/>
+                        <ellipse cx="10.5" cy="10.5" rx="3.7" ry="8"/>
+                    </g>
+                    <circle cx="18" cy="18" r="5.7" fill="#101418"/>
+                    <circle cx="18" cy="18" r="4.6" fill="#ffb000"/>
+                    <path d="M18 15.3v3.1M18 20.5v.1" stroke="#04150a" stroke-width="2" stroke-linecap="round"/>
+                </symbol>
             </svg>
             <div class="lr-hero-inner">
                 <div class="lr-hero-copy">
@@ -1919,6 +1966,23 @@
                 <div class="input-wrap">
                     <svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
                     <input type="text" id="category-input" placeholder="Business category, e.g. restaurants"/>
+                </div>
+                <!-- Admin-only test control: stays hidden (see applyPlanToUI in app.js)
+                     unless /api/auth/me reports is_admin. -->
+                <div id="quality-filter-wrap" class="hidden">
+                    <button id="quality-filter-btn" class="btn-term" type="button" title="Choose which kinds of leads to include" aria-haspopup="true" aria-expanded="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        Filter
+                    </button>
+                    <div id="quality-filter-menu" class="qf-menu hidden">
+                        <label class="settings-toggle-row qf-option">
+                            <input type="checkbox" id="include-poor-websites-toggle">
+                            <span>
+                                <span class="settings-toggle-title">Include poor/outdated websites</span>
+                                <span class="settings-toggle-sub">Admin test only. Also surface businesses whose site looks abandoned.</span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
                 <button id="search-btn" class="btn-term btn-primary">SCAN</button>
                 <div class="sf-divider" aria-hidden="true"></div>
