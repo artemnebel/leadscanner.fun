@@ -2247,9 +2247,27 @@
         document.getElementById('logo-blink').addEventListener('click', showLanding);
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
+    <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@latest/dist/Leaflet.GoogleMutant.js"></script>
     <script>
         // Landing demo map — same look as the app (dark tiles + dashed green
         // scan circle), fixed 5-mile scanning area.
+        window.LS_DARK_MAP_STYLE = [
+            { elementType: 'geometry', stylers: [{ color: '#212121' }] },
+            { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+            { elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+            { elementType: 'labels.text.stroke', stylers: [{ color: '#212121' }] },
+            { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#757575' }] },
+            { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+            { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#181818' }] },
+            { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+            { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: '#2c2c2c' }] },
+            { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
+            { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3c3c3c' }] },
+            { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#2f2f2f' }] },
+            { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#000000' }] },
+            { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d3d3d' }] },
+        ];
         (function () {
             const el = document.getElementById('demo-map');
             if (!el || typeof L === 'undefined') return;
@@ -2262,9 +2280,9 @@
                     zoomControl: false,
                     attributionControl: false,
                 }).setView(center, 11);   // frames the 5-mile circle on load; wheel/pinch zoom + drag panning like the real app
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    subdomains: 'abcd',
-                    maxZoom: 20,
+                L.gridLayer.googleMutant({
+                    type: 'roadmap',
+                    styles: window.LS_DARK_MAP_STYLE,
                 }).addTo(map);
                 const circle = L.circle(center, {
                     radius: 8047,                            // 5 miles in meters
