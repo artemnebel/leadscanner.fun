@@ -169,10 +169,9 @@ async function toggleBulkMode() {
 /* ===== MAP INIT ===== */
 function initMap() {
     state.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([40.0379, -76.3055], 11); // Lancaster, PA default
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20,
+    L.gridLayer.googleMutant({
+        type: 'roadmap',
+        styles: window.LS_DARK_MAP_STYLE,
     }).addTo(state.map);
 
     state.markersLayer = L.layerGroup().addTo(state.map);

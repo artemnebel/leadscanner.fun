@@ -421,6 +421,7 @@ def _ctx(request: Request):
         "facebook_enabled": bool(FACEBOOK_APP_ID and FACEBOOK_APP_SECRET),
         "github_enabled": bool(GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET),
         "maintenance": APP_MAINTENANCE,
+        "google_maps_api_key": API_KEY or "",
     }
 
 @app.get("/")
