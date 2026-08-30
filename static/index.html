@@ -2252,6 +2252,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
     <script src="https://unpkg.com/mapbox-gl-leaflet@0.0.16/leaflet-mapbox-gl.js"></script>
+    <script src="/static/map-dark-style.js?v={{ version }}"></script>
     <script>
         // Landing demo map — same look as the app (dark tiles + dashed green
         // scan circle), fixed 5-mile scanning area.
@@ -2270,10 +2271,11 @@
                     zoomControl: false,
                     attributionControl: false,
                 }).setView(center, 11);   // frames the 5-mile circle on load; wheel/pinch zoom + drag panning like the real app
-                L.mapboxGL({
+                const glLayer = L.mapboxGL({
                     style: window.LS_MAPBOX_STYLE,
                     accessToken: window.LS_MAPBOX_TOKEN,
                 }).addTo(map);
+                glLayer.getMapboxMap().on('style.load', () => window.LS_applyDarkMapboxStyle(glLayer.getMapboxMap()));
                 const circle = L.circle(center, {
                     radius: 8047,                            // 5 miles in meters
                     color: '#33ff00',

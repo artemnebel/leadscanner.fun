@@ -223,6 +223,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
     <script src="https://unpkg.com/mapbox-gl-leaflet@0.0.16/leaflet-mapbox-gl.js"></script>
+    <script src="/static/map-dark-style.js?v={{ version }}"></script>
     <script src="/static/auth.js?v={{ version }}"></script>
     <script>
     (async function() {
@@ -432,10 +433,11 @@
             if (!userMap) {
                 userMap = L.map('user-map', { attributionControl: false, zoomControl: true });
                 if (window.mapboxgl) mapboxgl.accessToken = "{{ mapbox_token }}";
-                L.mapboxGL({
+                const glLayer = L.mapboxGL({
                     style: "mapbox://styles/mapbox/dark-v11",
                     accessToken: "{{ mapbox_token }}",
                 }).addTo(userMap);
+                glLayer.getMapboxMap().on('style.load', () => window.LS_applyDarkMapboxStyle(glLayer.getMapboxMap()));
             }
             if (mapLayer) { mapLayer.remove(); }
             mapLayer = L.layerGroup().addTo(userMap);
