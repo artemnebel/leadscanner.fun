@@ -17,6 +17,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
@@ -220,8 +221,8 @@
     </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
-    <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@latest/dist/Leaflet.GoogleMutant.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <script src="https://unpkg.com/mapbox-gl-leaflet@0.0.16/leaflet-mapbox-gl.js"></script>
     <script src="/static/auth.js?v={{ version }}"></script>
     <script>
     (async function() {
@@ -430,24 +431,10 @@
             if (!mapDiv) return;
             if (!userMap) {
                 userMap = L.map('user-map', { attributionControl: false, zoomControl: true });
-                L.gridLayer.googleMutant({
-                    type: 'roadmap',
-                    styles: [
-                        { elementType: 'geometry', stylers: [{ color: '#212121' }] },
-                        { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-                        { elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
-                        { elementType: 'labels.text.stroke', stylers: [{ color: '#212121' }] },
-                        { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#757575' }] },
-                        { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
-                        { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#181818' }] },
-                        { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
-                        { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: '#2c2c2c' }] },
-                        { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
-                        { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3c3c3c' }] },
-                        { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#2f2f2f' }] },
-                        { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#000000' }] },
-                        { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d3d3d' }] },
-                    ],
+                if (window.mapboxgl) mapboxgl.accessToken = "{{ mapbox_token }}";
+                L.mapboxGL({
+                    style: "mapbox://styles/mapbox/dark-v11",
+                    accessToken: "{{ mapbox_token }}",
                 }).addTo(userMap);
             }
             if (mapLayer) { mapLayer.remove(); }

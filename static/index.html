@@ -34,6 +34,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
     <link rel="icon" type="image/png" sizes="48x48" href="/static/favicon-48.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon-180.png"/>
@@ -2326,27 +2327,14 @@
         document.getElementById('logo-blink').addEventListener('click', showLanding);
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
-    <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@latest/dist/Leaflet.GoogleMutant.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <script src="https://unpkg.com/mapbox-gl-leaflet@0.0.16/leaflet-mapbox-gl.js"></script>
     <script>
         // Landing demo map — same look as the app (dark tiles + dashed green
         // scan circle), fixed 5-mile scanning area.
-        window.LS_DARK_MAP_STYLE = [
-            { elementType: 'geometry', stylers: [{ color: '#0a0a0a' }] },
-            { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-            { elementType: 'labels.text.fill', stylers: [{ color: '#6b6b6b' }] },
-            { elementType: 'labels.text.stroke', stylers: [{ color: '#0a0a0a' }] },
-            { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#6b6b6b' }] },
-            { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#6b6b6b' }] },
-            { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#0d0d0d' }] },
-            { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#4a4a4a' }] },
-            { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: '#1a1a1a' }] },
-            { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#767676' }] },
-            { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#242424' }] },
-            { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#141414' }] },
-            { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#000000' }] },
-            { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d3d3d' }] },
-        ];
+        window.LS_MAPBOX_TOKEN = "{{ mapbox_token }}";
+        window.LS_MAPBOX_STYLE = "mapbox://styles/mapbox/dark-v11";
+        if (window.mapboxgl) mapboxgl.accessToken = window.LS_MAPBOX_TOKEN;
         (function () {
             const el = document.getElementById('demo-map');
             if (!el || typeof L === 'undefined') return;
@@ -2359,9 +2347,9 @@
                     zoomControl: false,
                     attributionControl: false,
                 }).setView(center, 11);   // frames the 5-mile circle on load; wheel/pinch zoom + drag panning like the real app
-                L.gridLayer.googleMutant({
-                    type: 'roadmap',
-                    styles: window.LS_DARK_MAP_STYLE,
+                L.mapboxGL({
+                    style: window.LS_MAPBOX_STYLE,
+                    accessToken: window.LS_MAPBOX_TOKEN,
                 }).addTo(map);
                 const circle = L.circle(center, {
                     radius: 8047,                            // 5 miles in meters
