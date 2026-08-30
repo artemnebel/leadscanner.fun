@@ -169,10 +169,11 @@ async function toggleBulkMode() {
 /* ===== MAP INIT ===== */
 function initMap() {
     state.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([40.0379, -76.3055], 11); // Lancaster, PA default
-    L.mapboxGL({
+    const glLayer = L.mapboxGL({
         style: window.LS_MAPBOX_STYLE,
         accessToken: window.LS_MAPBOX_TOKEN,
     }).addTo(state.map);
+    glLayer.getMapboxMap().on('style.load', () => window.LS_applyDarkMapboxStyle(glLayer.getMapboxMap()));
 
     state.markersLayer = L.layerGroup().addTo(state.map);
 
