@@ -349,8 +349,8 @@ body {
     width: 100%;
 }
 
-/* Apply green tint only to map tiles, not circle/pin overlays */
-#map .leaflet-tile-pane {
+/* Apply green tint only to the map canvas, not circle/pin overlays */
+#map .mapboxgl-canvas {
     filter: saturate(0.3) brightness(0.85) sepia(0.2) hue-rotate(60deg);
 }
 

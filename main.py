@@ -38,8 +38,8 @@ load_dotenv()
 load_dotenv(".env.local", override=True)  # local overrides — not committed
 
 # ── Config ──────────────────────────────────────────────────────────────────
-API_KEY               = os.getenv("GOOGLE_MAPS_API_KEY")
-GOOGLE_MAPS_JS_API_KEY = os.getenv("GOOGLE_MAPS_JS_API_KEY")  # separate, HTTP-referrer-restricted key for the browser map (Maps JS API); API_KEY above is IP-restricted and server-side only (Places)
+API_KEY               = os.getenv("GOOGLE_MAPS_API_KEY")  # server-side only (Places search)
+MAPBOX_ACCESS_TOKEN   = os.getenv("MAPBOX_ACCESS_TOKEN")  # public token for the browser map (Mapbox GL); restrict it to your domain(s) in the Mapbox dashboard
 JWT_SECRET            = os.getenv("JWT_SECRET", "changeme")
 JWT_ALGORITHM         = "HS256"
 GOOGLE_CLIENT_ID      = os.getenv("GOOGLE_CLIENT_ID")
@@ -419,7 +419,7 @@ def _ctx(request: Request):
         "facebook_enabled": bool(FACEBOOK_APP_ID and FACEBOOK_APP_SECRET),
         "github_enabled": bool(GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET),
         "maintenance": APP_MAINTENANCE,
-        "google_maps_api_key": GOOGLE_MAPS_JS_API_KEY or "",
+        "mapbox_token": MAPBOX_ACCESS_TOKEN or "",
     }
 
 @app.get("/")

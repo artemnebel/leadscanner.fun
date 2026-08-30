@@ -169,9 +169,9 @@ async function toggleBulkMode() {
 /* ===== MAP INIT ===== */
 function initMap() {
     state.map = L.map('map', { zoomControl: false, attributionControl: false }).setView([40.0379, -76.3055], 11); // Lancaster, PA default
-    L.gridLayer.googleMutant({
-        type: 'roadmap',
-        styles: window.LS_DARK_MAP_STYLE,
+    L.mapboxGL({
+        style: window.LS_MAPBOX_STYLE,
+        accessToken: window.LS_MAPBOX_TOKEN,
     }).addTo(state.map);
 
     state.markersLayer = L.layerGroup().addTo(state.map);
