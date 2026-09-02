@@ -328,11 +328,6 @@
         96%  { opacity: 0;    transform: translate(-50%, -50%) scale(0.85); }
         100% { opacity: 0;    transform: translate(-50%, -50%) scale(0.4); }
     }
-    /* Without motion the blips simply sit there, lit. */
-    @media (prefers-reduced-motion: reduce) {
-        .lr-blip { animation: none; opacity: 1; }
-    }
-
     .lr-tag {
         position: absolute; transform: translate(-50%, -50%);
         display: inline-flex; align-items: center; gap: 9px;
@@ -1126,10 +1121,6 @@
     .ql-list.is-armed.is-stacked .ql-item:nth-child(2) { transition-delay: 0.20s; }
     .ql-list.is-armed.is-stacked .ql-item:nth-child(1) { transition-delay: 0.30s; }
 
-    @media (prefers-reduced-motion: reduce) {
-        .ql-list.is-armed .ql-item { opacity: 1; transform: none; transition: none; }
-    }
-
     @media (max-width: 980px) {
         .ql-inner { grid-template-columns: 1fr; gap: 40px; align-items: start; }
         .ql-sub { max-width: none; }
@@ -1138,9 +1129,6 @@
         .ql-item { padding: 18px; gap: 14px; }
         .ql-check { width: 38px; height: 38px; }
         .ql-check svg { width: 17px; height: 17px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .ql-badge-dot { animation: none; }
     }
 
     /* ===== FOOTER ===== */
@@ -1339,12 +1327,6 @@
         animation: fc-arrow-up 0.9s ease-out backwards;
     }
 
-    @media (prefers-reduced-motion: reduce) {
-        .fc-card--zones:hover .fc-ring,
-        .fc-card--zones:hover .fc-plus,
-        .fc-card--radius:hover .fc-ring,
-        .fc-card--export:hover .fc-arrow { animation: none; }
-    }
     /* Once a card is narrower than the 560px canvas the composition would bleed off
        both edges, so scale it down instead of cropping it. */
     @media (max-width: 700px) {
@@ -1355,11 +1337,6 @@
         .fc-art { height: 214px; }
         .fc-art-inner { transform: translateX(-50%) scale(0.6); transform-origin: top center; }
     }
-    /* Motion here is decorative, so drop it entirely when asked. */
-    @media (prefers-reduced-motion: reduce) {
-        .lr-sweep, .lr-sweep-line, .lr-eyebrow-dot { animation: none; }
-    }
-
     /* ===== Demo section — white gap with text, then a rounded map box ===== */
     .lp-demo {
         background: #ffffff; text-align: center;
@@ -1791,10 +1768,9 @@
             (function () {
                 const list = document.querySelector('.ql-list');
                 if (!list) return;
-                // No observer support, or the visitor asked for less motion: leave
-                // the items in their normal, visible state and do nothing.
+                // No observer support: leave the items in their normal, visible
+                // state and do nothing.
                 if (!('IntersectionObserver' in window)) return;
-                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
                 list.classList.add('is-armed');
                 const io = new IntersectionObserver(function (entries) {
