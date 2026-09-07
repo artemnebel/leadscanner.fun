@@ -6,14 +6,16 @@ window.LS_applyDarkMapboxStyle = function (map) {
         try { if (map.getLayer(id)) map.setPaintProperty(id, prop, val); } catch (e) {}
     };
 
-    // Base canvas — land/water/buildings become near-black instead of dark gray.
+    // Base canvas — land/buildings stay near-black. Water is a deep green rather
+    // than black so continents still read as shapes when zoomed all the way out,
+    // where black land on black ocean used to merge into one flat void.
     set('land', 'background-color', '#0a0a0a');
     set('national-park', 'fill-color', '#0a0a0a');
     set('landuse', 'fill-color', '#0a0a0a');
     set('land-structure-polygon', 'fill-color', '#0a0a0a');
     set('land-structure-line', 'line-color', '#141414');
-    set('water', 'fill-color', '#000000');
-    set('waterway', 'line-color', '#000000');
+    set('water', 'fill-color', '#031a0d');
+    set('waterway', 'line-color', '#0a2e16');
     set('building', 'fill-color', '#0d0d0d');
     set('building', 'fill-outline-color', '#000000');
     set('aeroway-polygon', 'fill-color', '#141414');
@@ -34,4 +36,37 @@ window.LS_applyDarkMapboxStyle = function (map) {
     // Boundary halos — keep the borders themselves, darken their glow.
     set('admin-1-boundary-bg', 'line-color', '#0a0a0a');
     set('admin-0-boundary-bg', 'line-color', '#0a0a0a');
+
+    addCoastline(map);
 };
+
+/* Traces the water polygons in the app's scan green so coastlines glow against
+   the near-black land. Brightest at world zoom (where the separation is needed)
+   and faded down over cities, so lakes and rivers don't shout at street level. */
+function addCoastline(map) {
+    if (map.getLayer('ls-coastline')) return;
+
+    const water = map.getLayer('water');
+    if (!water) return;
+    const source = water.source;
+    const sourceLayer = water.sourceLayer || water['source-layer'];
+    if (!source || !sourceLayer) return;
+
+    // Keep the glow under the place labels.
+    const firstSymbol = (map.getStyle().layers || []).find(l => l.type === 'symbol');
+
+    try {
+        map.addLayer({
+            id: 'ls-coastline',
+            type: 'line',
+            source,
+            'source-layer': sourceLayer,
+            paint: {
+                'line-color': '#33ff00',
+                'line-width': ['interpolate', ['linear'], ['zoom'], 0, 0.7, 5, 0.9, 11, 0.6],
+                'line-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.85, 5, 0.5, 9, 0.22],
+                'line-blur': 0.4,
+            },
+        }, firstSymbol && firstSymbol.id);
+    } catch (e) {}
+}
