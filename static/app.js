@@ -172,6 +172,7 @@ function initMap() {
     const glLayer = L.mapboxGL({
         style: window.LS_MAPBOX_STYLE,
         accessToken: window.LS_MAPBOX_TOKEN,
+        projection: 'mercator', // dark-v11 ships globe; Leaflet places overlays in Mercator
     }).addTo(state.map);
     glLayer.getMapboxMap().on('style.load', () => window.LS_applyDarkMapboxStyle(glLayer.getMapboxMap()));
 

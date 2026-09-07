@@ -6,6 +6,16 @@ window.LS_applyDarkMapboxStyle = function (map) {
         try { if (map.getLayer(id)) map.setPaintProperty(id, prop, val); } catch (e) {}
     };
 
+    // dark-v11 declares a globe projection, which curves the world at low zoom
+    // and drifts out of alignment with the Leaflet overlays (markers, the scan
+    // circle) that are positioned in Mercator. Force the flat projection here so
+    // a style (re)load can never hand the globe back.
+    try {
+        if (map.getProjection && map.getProjection().name !== 'mercator') {
+            map.setProjection('mercator');
+        }
+    } catch (e) {}
+
     // Base canvas — land/buildings stay near-black. Water is a deep green rather
     // than black so continents still read as shapes when zoomed all the way out,
     // where black land on black ocean used to merge into one flat void.
