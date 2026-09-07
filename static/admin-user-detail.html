@@ -436,6 +436,7 @@
                 const glLayer = L.mapboxGL({
                     style: "mapbox://styles/mapbox/dark-v11",
                     accessToken: "{{ mapbox_token }}",
+                    projection: 'mercator', // dark-v11 ships globe; Leaflet places overlays in Mercator
                 }).addTo(userMap);
                 glLayer.getMapboxMap().on('style.load', () => window.LS_applyDarkMapboxStyle(glLayer.getMapboxMap()));
             }
