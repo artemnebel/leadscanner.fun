@@ -16,16 +16,16 @@ window.LS_applyDarkMapboxStyle = function (map) {
         }
     } catch (e) {}
 
-    // Base canvas — land/buildings stay near-black. Water is a deep green rather
-    // than black so continents still read as shapes when zoomed all the way out,
+    // Base canvas — land/buildings stay near-black. Water is navy rather than
+    // black so continents still read as shapes when zoomed all the way out,
     // where black land on black ocean used to merge into one flat void.
     set('land', 'background-color', '#0a0a0a');
     set('national-park', 'fill-color', '#0a0a0a');
     set('landuse', 'fill-color', '#0a0a0a');
     set('land-structure-polygon', 'fill-color', '#0a0a0a');
     set('land-structure-line', 'line-color', '#141414');
-    set('water', 'fill-color', '#031a0d');
-    set('waterway', 'line-color', '#0a2e16');
+    set('water', 'fill-color', '#0b1f45');
+    set('waterway', 'line-color', '#123a63');
     set('building', 'fill-color', '#0d0d0d');
     set('building', 'fill-outline-color', '#000000');
     set('aeroway-polygon', 'fill-color', '#141414');
