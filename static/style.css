@@ -357,10 +357,13 @@ body {
     background: #0a0a0a;
 }
 
-/* Apply green tint only to the map canvas, not circle/pin overlays */
-#map .mapboxgl-canvas {
-    filter: saturate(0.3) brightness(0.85) sepia(0.2) hue-rotate(60deg);
-}
+/* The GL canvas used to run through a green tint here:
+   saturate(0.3) brightness(0.85) sepia(0.2) hue-rotate(60deg). It flattened every
+   blue, so the navy water set in map-dark-style.js came out as rgb(28, 23, 28), a
+   purple gray with no blue left in it. No source color survives that filter as
+   navy either: inverting the matrix asks for a negative red channel. The style
+   paints the dark palette directly now, so the tint is gone and the app map
+   matches the landing and admin maps. */
 
 #spinner {
     position: absolute;
