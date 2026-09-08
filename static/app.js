@@ -173,6 +173,7 @@ function initMap() {
         style: window.LS_MAPBOX_STYLE,
         accessToken: window.LS_MAPBOX_TOKEN,
         projection: 'mercator', // dark-v11 ships globe; Leaflet places overlays in Mercator
+        padding: 0.5,           // draw the GL canvas at 2x the viewport: a one-level zoom-out halves it, so the newly exposed edges already hold map (the 0.1 default left a blank ring)
     }).addTo(state.map);
     glLayer.getMapboxMap().on('style.load', () => window.LS_applyDarkMapboxStyle(glLayer.getMapboxMap()));
 
