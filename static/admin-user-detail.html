@@ -437,6 +437,7 @@
                     style: "mapbox://styles/mapbox/dark-v11",
                     accessToken: "{{ mapbox_token }}",
                     projection: 'mercator', // dark-v11 ships globe; Leaflet places overlays in Mercator
+                    padding: 0.5,           // see app.js: keeps the zoom-out from uncovering blank edges
                 }).addTo(userMap);
                 glLayer.getMapboxMap().on('style.load', () => window.LS_applyDarkMapboxStyle(glLayer.getMapboxMap()));
             }

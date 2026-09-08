@@ -349,6 +349,14 @@ body {
     width: 100%;
 }
 
+/* Leaflet paints #ddd behind the GL canvas. A zoom-out scales that canvas down
+   before Mapbox re-renders at the new zoom, so the light gray flashed around
+   the edges for a frame. Near-black matches the tinted land underneath, so any
+   sliver the GL overlay has not covered yet reads as map, not as a flash. */
+.leaflet-container {
+    background: #0a0a0a;
+}
+
 /* Apply green tint only to the map canvas, not circle/pin overlays */
 #map .mapboxgl-canvas {
     filter: saturate(0.3) brightness(0.85) sepia(0.2) hue-rotate(60deg);

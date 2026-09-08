@@ -2328,6 +2328,7 @@
                     style: window.LS_MAPBOX_STYLE,
                     accessToken: window.LS_MAPBOX_TOKEN,
                     projection: 'mercator', // dark-v11 ships globe; Leaflet places overlays in Mercator
+                    padding: 0.5,           // see app.js: keeps the zoom-out from uncovering blank edges
                 }).addTo(map);
                 glLayer.getMapboxMap().on('style.load', () => window.LS_applyDarkMapboxStyle(glLayer.getMapboxMap()));
                 const circle = L.circle(center, {
